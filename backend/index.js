@@ -10,7 +10,7 @@ const app = express();
 const corsOptions = {
     origin: 'https://main.dgv1qqnbmvcnk.amplifyapp.com' // Replace with your actual Amplify URL
   };
-app.use(cors()); // Allows requests from your frontend
+app.use(cors(corsOptions)); // Allows requests from your frontend
 app.use(express.json()); // Allows parsing of JSON in request bodies
 
 // Create a PostgreSQL connection pool
