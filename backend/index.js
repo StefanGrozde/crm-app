@@ -108,7 +108,7 @@ app.get('/api/test-db', async (req, res) => {
 
 // --- Server Startup ---
 // Use the port provided by Elastic Beanstalk, or 3001 for local development.
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => {
   console.log(`Server is running and listening on port ${PORT}`);
 });
