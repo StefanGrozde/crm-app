@@ -22,9 +22,22 @@ if (missingEnv.length > 0) {
 const app = express();
 
 // --- Middleware ---
+const allowedOrigins = [
+    'https://main.dww6vb3yjjh85.amplifyapp.com',   // New URL from error
+    'http://localhost:3000'                      // For local development
+];
+
 const corsOptions = {
-    // You can keep this specific or open it up for debugging if needed
-    origin: 'https://main.dww6vb3yjjh85.amplifyapp.com'
+    origin: function (origin, callback) {
+        // Allow requests with no origin (like mobile apps or curl requests)
+        if (!origin) return callback(null, true);
+
+        if (allowedOrigins.indexOf(origin) === -1) {
+            const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
+            return callback(new Error(msg), false);
+        }
+        return callback(null, true);
+    }
 };
 app.use(cors(corsOptions));
 app.use(express.json());
