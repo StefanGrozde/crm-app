@@ -31,17 +31,25 @@ app.use(express.json());
 
 // --- PostgreSQL Connection Pool ---
 // This configuration will now use the validated environment variables.
+
+// Conditionally set SSL for production environments like Elastic Beanstalk
+const isProduction = process.env.NODE_ENV === 'production';
+console.log(`Running in ${isProduction ? 'production' : 'development'} mode.`);
+
 const pool = new Pool({
   host: process.env.DB_HOST,
   port: process.env.DB_PORT,
   database: process.env.DB_DATABASE,
   user: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
-  ssl: {
-    // This is common for cloud database connections.
-    rejectUnauthorized: false
-  }
+  // Only enforce SSL in production. This is a common practice.
+  // Note: `rejectUnauthorized: false` is a security risk and should ideally be
+  // replaced by using the actual RDS CA certificate.
+  ssl: isProduction ? { rejectUnauthorized: false } : false,
+  // Add a connection timeout to get faster feedback on connection issues
+  connectionTimeoutMillis: 10000, // 10 seconds
 });
+
 
 pool.on('error', (err, client) => {
     console.error('Unexpected error on idle client', err);
