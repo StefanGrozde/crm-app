@@ -1,4 +1,5 @@
 // backend/index.js
+
 const cors = require('cors');
 const express = require('express');
 const { Pool } = require('pg');
@@ -21,7 +22,22 @@ if (missingEnv.length > 0) {
 const app = express();
 
 // --- Middleware ---
-app.use(cors());
+const allowedOrigins = [
+    'https://main.dww6vb3yjjh85.amplifyapp.com',
+    'http://localhost:3000' // For local development
+];
+
+const corsOptions = {
+    origin: function (origin, callback) {
+        if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    }
+};
+
+app.use(cors(corsOptions));
 app.use(express.json());
 
 // --- PostgreSQL Connection Pool ---
