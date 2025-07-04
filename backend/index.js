@@ -24,7 +24,7 @@ const app = express();
 // --- Middleware ---
 const corsOptions = {
     // You can keep this specific or open it up for debugging if needed
-    origin: 'https://main.dgv1qqnbmvcnk.amplifyapp.com'
+    origin: 'https://main.dww6vb3yjjh85.amplifyapp.com'
 };
 app.use(cors(corsOptions));
 app.use(express.json());
