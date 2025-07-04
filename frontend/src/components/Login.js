@@ -11,6 +11,11 @@ const Login = ({ setToken }) => {
     const [isRegistering, setIsRegistering] = useState(false);
     const [error, setError] = useState('');
 
+    const handleMicrosoftLogin = () => {
+        // Redirect the user to our backend endpoint that starts the SSO flow
+        window.location.href = `${API_URL}/api/auth/microsoft/login`;
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
@@ -40,6 +45,21 @@ const Login = ({ setToken }) => {
             <h2 className="text-2xl font-bold mb-6 text-center text-gray-800">
                 {isRegistering ? 'Create Account' : 'Welcome Back'}
             </h2>
+            <button
+                onClick={handleMicrosoftLogin}
+                className="bg-gray-700 hover:bg-gray-800 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline w-full mb-4 flex items-center justify-center"
+            >
+                {/* You can add a Microsoft SVG icon here if you like */}
+                Sign in with Microsoft
+            </button>
+            <div className="relative my-4">
+                <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-gray-300"></div>
+                </div>
+                <div className="relative flex justify-center text-sm">
+                    <span className="px-2 bg-white text-gray-500">Or continue with</span>
+                </div>
+            </div>
             <form onSubmit={handleSubmit}>
                 {error && <p className="text-red-500 text-sm mb-4 text-center">{error}</p>}
                 
