@@ -68,5 +68,40 @@ router.get('/:id', protect, async (req, res) => {
         res.status(500).json({ message: 'Server Error' });
     }
 });
+
+// --- NEW: Route to update a company's details ---
+// @desc    Update company details
+// @route   PUT /api/companies/:id
+// @access  Private (Admins only)
+router.put('/:id', protect, authorize('Administrator'), async (req, res) => {
+    try {
+        const companyId = parseInt(req.params.id, 10);
+        const { name, industry, website, phone_number } = req.body;
+
+        // Security Check: Ensure the admin belongs to the company they are trying to update.
+        if (req.user.companyId !== companyId) {
+            return res.status(403).json({ message: 'Not authorized to update this company' });
+        }
+
+        const company = await Company.findByPk(companyId);
+
+        if (!company) {
+            return res.status(404).json({ message: 'Company not found' });
+        }
+
+        // Update the company fields
+        company.name = name || company.name;
+        company.industry = industry || company.industry;
+        company.website = website;
+        company.phone_number = phone_number;
+
+        await company.save();
+
+        res.json(company);
+    } catch (error) {
+        console.error('Error updating company:', error);
+        res.status(500).json({ message: 'Server Error' });
+    }
+});
   
 module.exports = router;
