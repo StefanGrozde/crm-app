@@ -3,8 +3,11 @@
 const cors = require('cors');
 const express = require('express');
 // REMOVE: const { Pool } = require('pg');
-const pool = require('./db'); // IMPORT our new db helper
+const pool = require('./config/db'); // IMPORT our new db helper
 const authRoutes = require('./auth'); // IMPORT our new auth routes
+const { connectDB, sequelize } = require('./config/db');
+const cookieParser = require('cookie-parser');
+const authRoutes = require('./routes/authRoutes');
 
 console.log("Application starting...");
 
@@ -37,8 +40,9 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
+app.use(cookieParser())
 app.use(express.json());
-
+;
 // --- REMOVE PostgreSQL Connection Pool section ---
 // We moved all this logic to `db.js`
 
@@ -72,9 +76,19 @@ app.get('/api/test-db', async (req, res) => {
     }
 });
 
-
+app.use('/api/auth', authRoutes);
 // --- Server Startup ---
 const PORT = process.env.PORT || 8080;
-app.listen(PORT, () => {
-  console.log(`Server is running and listening on port ${PORT}`);
-});
+const startServer = async () => {
+    await connectDB();
+    // Sync all models
+    // Use { force: true } only in development to drop and re-create tables
+    // await sequelize.sync({ force: true });
+    await sequelize.sync();
+    
+    app.listen(PORT, () => {
+        console.log(`Server running on port ${PORT}`);
+    });
+};
+
+startServer();
