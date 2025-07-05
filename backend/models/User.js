@@ -36,11 +36,14 @@ const User = sequelize.define('User', {
     },
     allowNull: true, // Let's allow this to be null for now
   },
+  
 
 }, {
-  tableName: 'users',
-  timestamps: true,
-});
+    tableName: 'users',
+    timestamps: true,
+    createdAt: 'created_at', // Add this line
+    updatedAt: 'updated_at', // Add this line
+  });
 
 // Define Associations
 Company.hasMany(User, { foreignKey: 'companyId' });

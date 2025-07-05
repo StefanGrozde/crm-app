@@ -24,8 +24,10 @@ const Company = sequelize.define('Company', {
     allowNull: true,
   },
 }, {
-  tableName: 'companies',
-  timestamps: true, // This will add createdAt and updatedAt fields
-});
+    tableName: 'companies',
+    timestamps: true,
+    createdAt: 'created_at', // <--- ADD THIS LINE
+    updatedAt: 'updated_at', // <--- ADD THIS LINE
+  });
 
 module.exports = Company;
