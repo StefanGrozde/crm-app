@@ -26,6 +26,7 @@ app.set('trust proxy', 1);
 // --- Middleware ---
 const allowedOrigins = [
     'https://main.dww6vb3yjjh85.amplifyapp.com',
+    'https://crm.svnikolaturs.mk',
     'http://localhost:3000'
 ];
 

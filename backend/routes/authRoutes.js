@@ -32,20 +32,32 @@ const sendTokenResponse = (user, statusCode, res) => {
         expiresIn: '1d',
     });
 
-    res.cookie('token', token, {
+    const cookieOptions = {
         httpOnly: true,
-        secure: true, 
-        sameSite: 'None',
-        maxAge: 24 * 60 * 60 * 1000,
-    });
+        maxAge: 24 * 60 * 60 * 1000, // 1 day
+    };
 
+    if (process.env.NODE_ENV === 'production') {
+        cookieOptions.secure = true;
+        // Set the parent domain for the cookie
+        cookieOptions.domain = '.svnikolaturs.mk'; 
+        // 'Lax' is now preferred since it's same-site
+        cookieOptions.sameSite = 'Lax'; 
+    } else {
+        cookieOptions.sameSite = 'Lax';
+    }
+
+    res.cookie('token', token, cookieOptions);
+    
     res.status(statusCode).json({
         id: user.id,
         email: user.email,
         role: user.role,
         companyId: user.companyId,
     });
+    
 };
+
 
 
 // =======================================================
