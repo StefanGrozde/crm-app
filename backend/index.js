@@ -76,7 +76,7 @@ app.get('/api/test-db', async (req, res) => {
     }
 });
 
-app.use('/api/auth', authRoutes);
+
 // --- Server Startup ---
 const PORT = process.env.PORT || 8080;
 const startServer = async () => {
