@@ -8,24 +8,14 @@ const msal = require('@azure/msal-node');
 const router = express.Router();
 const saltRounds = 10;
 
-// --- MSAL Configuration ---
+// MSAL Configuration
 const msalConfig = {
     auth: {
         clientId: process.env.MS_CLIENT_ID,
         authority: `https://login.microsoftonline.com/${process.env.MS_TENANT_ID}`,
         clientSecret: process.env.MS_CLIENT_SECRET,
-    },
-    system: {
-        loggerOptions: {
-            loggerCallback(loglevel, message, containsPii) {
-                console.log(message);
-            },
-            piiLoggingEnabled: false,
-            logLevel: msal.LogLevel.Info,
-        }
     }
 };
-
 const pca = new msal.ConfidentialClientApplication(msalConfig);
 
 const REDIRECT_URI = "https://backend.svnikolaturs.mk/api/auth/microsoft/callback";
@@ -33,34 +23,38 @@ const FRONTEND_URI = "https://main.dww6vb3yjjh85.amplifyapp.com";
 
 // 1. Redirect to Microsoft's login page
 router.get('/microsoft/login', (req, res) => {
-    const authCodeUrlParameters = {
-        scopes: ["openid", "email", "user.read"],
+    pca.getAuthCodeUrl({
+        scopes: ["openid", "email", "profile", "User.Read"],
         redirectUri: REDIRECT_URI,
-    };
-    pca.getAuthCodeUrl(authCodeUrlParameters)
-        .then((response) => res.redirect(response))
-        .catch((error) => {
-            console.error("Failed to get auth code URL:", error);
-            res.status(500).send("Error generating login URL.");
-        });
+    })
+    .then((response) => res.redirect(response))
+    .catch((error) => {
+        console.error("Failed to get auth code URL:", error);
+        res.status(500).send("Error generating login URL.");
+    });
 });
 
 // 2. Handle the callback from Microsoft
 router.get('/microsoft/callback', async (req, res) => {
+    const tokenRequest = {
+        code: req.query.code,
+        scopes: ["openid", "email", "profile", "User.Read"],
+        redirectUri: REDIRECT_URI,
+    };
+
     try {
-        const tokenRequest = {
-            code: req.query.code,
-            scopes: ["openid", "email", "user.read"],
-            redirectUri: REDIRECT_URI,
-        };
-
-        // --- ADDING MORE LOGGING ---
-        console.log("Attempting to acquire token with request:", JSON.stringify(tokenRequest, null, 2));
-
         const response = await pca.acquireTokenByCode(tokenRequest);
-        console.log("Successfully acquired token.");
+        console.log("Full MSAL account object:", response.account); // Log for debugging
 
-        const { email, name } = response.account;
+        // --- THE CRITICAL CHANGE IS HERE ---
+        // Look for the email in the idTokenClaims object.
+        const email = response.account.idTokenClaims.email || response.account.username;
+        const name = response.account.name;
+
+        if (!email) {
+            console.error("Could not find email in any claim. Full account info:", response.account);
+            return res.status(500).send("Could not retrieve user email from Microsoft.");
+        }
 
         let userResult = await pool.query("SELECT * FROM users WHERE email = $1", [email]);
         let user = userResult.rows[0];
@@ -86,10 +80,9 @@ router.get('/microsoft/callback', async (req, res) => {
         res.redirect(`${FRONTEND_URI}/login/callback?token=${appToken}`);
 
     } catch (error) {
-        // This should now catch and log ANY error from the process.
         console.error("--- A CATCH-ALL ERROR OCCURRED ---");
         console.error("Full Error Object:", error);
-        res.status(500).send("An unexpected error occurred during authentication. Please check the backend logs for details.");
+        res.status(500).send("An unexpected error occurred. Please check the backend logs.");
     }
 });
 
@@ -98,11 +91,9 @@ router.get('/microsoft/callback', async (req, res) => {
 // (The rest of your file remains the same)
 router.post('/register', async (req, res) => {
     const { username, email, password } = req.body;
-
     if (!username || !email || !password) {
         return res.status(400).json({ error: 'Username, email, and password are required.' });
     }
-
     try {
         const passwordHash = await bcrypt.hash(password, saltRounds);
         const newUser = await pool.query(
@@ -121,28 +112,23 @@ router.post('/register', async (req, res) => {
 
 router.post('/login', async (req, res) => {
     const { username, password } = req.body;
-
     if (!username || !password) {
         return res.status(400).json({ error: 'Username and password are required.' });
     }
-
     try {
         const userResult = await pool.query("SELECT * FROM users WHERE username = $1", [username]);
         if (userResult.rows.length === 0) {
             return res.status(401).json({ error: 'Invalid credentials.' });
         }
-
         const user = userResult.rows[0];
         const isMatch = await bcrypt.compare(password, user.password_hash);
         if (!isMatch) {
             return res.status(401).json({ error: 'Invalid credentials.' });
         }
-
         if (!process.env.JWT_SECRET) {
              console.error('FATAL: JWT_SECRET is not defined in environment variables.');
              return res.status(500).json({ error: 'Server configuration error.' });
         }
-
         const token = jwt.sign(
             { userId: user.id, username: user.username },
             process.env.JWT_SECRET,
