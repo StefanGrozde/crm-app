@@ -5,6 +5,7 @@ const bcrypt = require('bcryptjs');
 const msal = require('@azure/msal-node');
 const Company = require('../models/Company');
 const User = require('../models/User');
+const { protect } = require('../middleware/authMiddleware');
 
 // --- MSAL Configuration ---
 const msalConfig = {
