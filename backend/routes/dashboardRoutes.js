@@ -1,130 +1,211 @@
 const express = require('express');
-const router = express.Router();
-const { protect } = require('../middleware/authMiddleware');
-const { DashboardView, DashboardWidget } = require('../models/DashboardView'); // We will create this model
+const { authenticate } = require('../middleware/authMiddleware');
+const { DashboardView, DashboardWidget } = require('../models/DashboardView');
 
-// @desc    Get all dashboard views for a user
-// @route   GET /api/dashboard/views
-// @access  Private
-router.get('/views', protect, async (req, res) => {
+const router = express.Router();
+
+// Get all views for the authenticated user
+router.get('/views', authenticate, async (req, res) => {
     try {
-        const views = await DashboardView.findAll({ where: { userId: req.user.id } });
+        const views = await DashboardView.findAll({
+            where: { userId: req.user.id },
+            include: [{ model: DashboardWidget, as: 'widgets' }],
+            order: [['isDefault', 'DESC'], ['createdAt', 'ASC']] // Default views first, then by creation date
+        });
+        
         res.json(views);
     } catch (error) {
-        res.status(500).json({ message: 'Server Error' });
+        console.error('Error fetching dashboard views:', error);
+        res.status(500).json({ error: 'Failed to fetch dashboard views' });
     }
 });
 
-// @desc    Get a single dashboard view with its widgets
-// @route   GET /api/dashboard/views/:id
-// @access  Private
-router.get('/views/:id', protect, async (req, res) => {
+// Get a specific view by ID
+router.get('/views/:id', authenticate, async (req, res) => {
     try {
         const view = await DashboardView.findOne({
-            where: { id: req.params.id, userId: req.user.id },
+            where: { 
+                id: req.params.id,
+                userId: req.user.id 
+            },
             include: [{ model: DashboardWidget, as: 'widgets' }]
         });
-
+        
         if (!view) {
-            return res.status(404).json({ message: 'View not found' });
+            return res.status(404).json({ error: 'Dashboard view not found' });
         }
-
+        
         res.json(view);
     } catch (error) {
-        res.status(500).json({ message: 'Server Error' });
+        console.error('Error fetching dashboard view:', error);
+        res.status(500).json({ error: 'Failed to fetch dashboard view' });
     }
 });
 
-
-// @desc    Create a new dashboard view
-// @route   POST /api/dashboard/views
-// @access  Private
-router.post('/views', protect, async (req, res) => {
-    const { name, layout } = req.body; // layout is an array of widget configs
-
-    if (!name || !layout) {
-        return res.status(400).json({ message: 'View name and layout are required' });
-    }
-
+// Create a new view
+router.post('/views', authenticate, async (req, res) => {
     try {
-        const newView = await DashboardView.create({
-            name,
+        const { name, widgets = [], isDefault = false } = req.body;
+        
+        if (!name || name.trim() === '') {
+            return res.status(400).json({ error: 'View name is required' });
+        }
+        
+        // Create the view
+        const view = await DashboardView.create({
+            name: name.trim(),
             userId: req.user.id,
-            widgets: layout.map(item => ({
-                widgetKey: item.i,
-                x: item.x,
-                y: item.y,
-                w: item.w,
-                h: item.h,
-            }))
-        }, {
+            isDefault: isDefault
+        });
+        
+        // Add widgets if provided
+        if (widgets && widgets.length > 0) {
+            const widgetData = widgets.map(w => ({
+                widgetKey: w.widgetKey,
+                x: w.x || 0,
+                y: w.y || 0,
+                w: w.w || 6,
+                h: w.h || 2,
+                viewId: view.id
+            }));
+            
+            await DashboardWidget.bulkCreate(widgetData);
+        }
+        
+        // Fetch the complete view with widgets
+        const completeView = await DashboardView.findOne({
+            where: { id: view.id },
             include: [{ model: DashboardWidget, as: 'widgets' }]
         });
-
-        res.status(201).json(newView);
+        
+        res.status(201).json(completeView);
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: 'Server Error' });
+        console.error('Error creating dashboard view:', error);
+        res.status(500).json({ error: 'Failed to create dashboard view' });
     }
 });
 
-
-// @desc    Update a dashboard view
-// @route   PUT /api/dashboard/views/:id
-// @access  Private
-router.put('/views/:id', protect, async (req, res) => {
-    const { name, layout } = req.body;
-
+// Update a view
+router.put('/views/:id', authenticate, async (req, res) => {
     try {
-        const view = await DashboardView.findOne({ where: { id: req.params.id, userId: req.user.id } });
-
+        const { name, widgets = [], isDefault } = req.body;
+        
+        // Find the view
+        const view = await DashboardView.findOne({
+            where: { 
+                id: req.params.id,
+                userId: req.user.id 
+            }
+        });
+        
         if (!view) {
-            return res.status(404).json({ message: 'View not found' });
+            return res.status(404).json({ error: 'Dashboard view not found' });
         }
-
-        // Update view name
-        view.name = name || view.name;
-        await view.save();
-
-        // Remove old widgets
-        await DashboardWidget.destroy({ where: { viewId: view.id } });
-
-        // Add new widgets
-        const widgetInstances = layout.map(item => ({
-            widgetKey: item.i,
-            viewId: view.id,
-            x: item.x,
-            y: item.y,
-            w: item.w,
-            h: item.h,
-        }));
-        await DashboardWidget.bulkCreate(widgetInstances);
-
-
-        res.json({ message: "View updated successfully" });
+        
+        // Update view properties
+        const updateData = {};
+        if (name !== undefined) updateData.name = name.trim();
+        if (isDefault !== undefined) updateData.isDefault = isDefault;
+        
+        if (Object.keys(updateData).length > 0) {
+            await view.update(updateData);
+        }
+        
+        // Update widgets if provided
+        if (widgets) {
+            // Delete existing widgets
+            await DashboardWidget.destroy({
+                where: { viewId: view.id }
+            });
+            
+            // Add new widgets
+            if (widgets.length > 0) {
+                const widgetData = widgets.map(w => ({
+                    widgetKey: w.widgetKey,
+                    x: w.x || 0,
+                    y: w.y || 0,
+                    w: w.w || 6,
+                    h: w.h || 2,
+                    viewId: view.id
+                }));
+                
+                await DashboardWidget.bulkCreate(widgetData);
+            }
+        }
+        
+        // Fetch the complete updated view
+        const updatedView = await DashboardView.findOne({
+            where: { id: view.id },
+            include: [{ model: DashboardWidget, as: 'widgets' }]
+        });
+        
+        res.json(updatedView);
     } catch (error) {
-        res.status(500).json({ message: 'Server Error' });
+        console.error('Error updating dashboard view:', error);
+        res.status(500).json({ error: 'Failed to update dashboard view' });
     }
 });
 
-// @desc    Delete a dashboard view
-// @route   DELETE /api/dashboard/views/:id
-// @access  Private
-router.delete('/views/:id', protect, async (req, res) => {
+// Delete a view
+router.delete('/views/:id', authenticate, async (req, res) => {
     try {
-        const view = await DashboardView.findOne({ where: { id: req.params.id, userId: req.user.id } });
-
+        const view = await DashboardView.findOne({
+            where: { 
+                id: req.params.id,
+                userId: req.user.id 
+            }
+        });
+        
         if (!view) {
-            return res.status(404).json({ message: 'View not found' });
+            return res.status(404).json({ error: 'Dashboard view not found' });
         }
-
+        
         await view.destroy();
-        res.json({ message: 'View removed' });
-
+        
+        res.json({ message: 'Dashboard view deleted successfully' });
     } catch (error) {
-        res.status(500).json({ message: 'Server Error' });
+        console.error('Error deleting dashboard view:', error);
+        res.status(500).json({ error: 'Failed to delete dashboard view' });
     }
 });
 
+// Set a view as default
+router.post('/views/:id/set-default', authenticate, async (req, res) => {
+    try {
+        const view = await DashboardView.findOne({
+            where: { 
+                id: req.params.id,
+                userId: req.user.id 
+            }
+        });
+        
+        if (!view) {
+            return res.status(404).json({ error: 'Dashboard view not found' });
+        }
+        
+        await DashboardView.setDefaultForUser(view.id, req.user.id);
+        
+        res.json({ message: 'Default view updated successfully' });
+    } catch (error) {
+        console.error('Error setting default view:', error);
+        res.status(500).json({ error: 'Failed to set default view' });
+    }
+});
+
+// Get default view for user
+router.get('/default', authenticate, async (req, res) => {
+    try {
+        const defaultView = await DashboardView.findDefaultForUser(req.user.id);
+        
+        if (!defaultView) {
+            return res.status(404).json({ error: 'No default view found' });
+        }
+        
+        res.json(defaultView);
+    } catch (error) {
+        console.error('Error fetching default view:', error);
+        res.status(500).json({ error: 'Failed to fetch default view' });
+    }
+});
 
 module.exports = router;

@@ -1,0 +1,13 @@
+{
+    "key": "sample-chart",
+    "name": "Sample Chart Widget",
+    "description": "A sample chart widget that displays random data",
+    "version": "1.0.0",
+    "author": "Your Company",
+    "entry": "index.js",
+    "config": {
+      "refreshInterval": 30000,
+      "chartType": "line"
+    },
+    "dependencies": []
+  }

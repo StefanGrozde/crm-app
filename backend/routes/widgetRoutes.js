@@ -1,91 +1,136 @@
 const express = require('express');
+const multer = require('multer');
+const { authenticate, authorize } = require('../middleware/authMiddleware');
+const widgetService = require('../services/widgetService');
+
 const router = express.Router();
-const fs = require('fs');
-const path = require('path');
-const upload = require('../middleware/uploadMiddleware'); // Import the upload middleware
 
-// @desc    Upload a new widget
-// @route   POST /api/widgets/upload
-// @access  Private (Admin only, assuming you have an authorize middleware)
-router.post('/upload', upload.single('widget'), (req, res) => {
-  if (!req.file) {
-    return res.status(400).json({ error: 'No file uploaded.' });
-  }
-  
-  console.log('Widget uploaded:', req.file.filename);
-  
-  res.status(201).json({
-    message: 'Widget uploaded successfully',
-    fileName: req.file.filename,
-    path: `/api/widgets/uploaded/${req.file.filename}`,
-  });
-});
-
-// @desc    Get the combined widget manifest
-// @route   GET /api/widgets/manifest
-// @access  Private
-router.get('/manifest', (req, res) => {
-    const builtInWidgetsDir = path.join(__dirname, '..', 'widgets', 'builtin');
-    const uploadedWidgetsDir = path.join(__dirname, '..', 'widgets', 'uploaded');
-
-    const readWidgetsFromDirectory = (dir, type, urlPrefix = '') => {
-        if (!fs.existsSync(dir)) {
-            return [];
+// Configure multer for file uploads
+const upload = multer({
+    storage: multer.memoryStorage(),
+    limits: {
+        fileSize: 10 * 1024 * 1024, // 10MB limit
+        files: 20 // Maximum 20 files per upload
+    },
+    fileFilter: (req, file, cb) => {
+        // Allow common web files
+        const allowedTypes = [
+            'application/javascript',
+            'text/javascript',
+            'text/html',
+            'text/css',
+            'application/json',
+            'image/png',
+            'image/jpeg',
+            'image/gif',
+            'image/svg+xml'
+        ];
+        
+        const allowedExtensions = ['.js', '.jsx', '.html', '.css', '.json', '.png', '.jpg', '.jpeg', '.gif', '.svg'];
+        const fileExtension = file.originalname.toLowerCase().substring(file.originalname.lastIndexOf('.'));
+        
+        if (allowedTypes.includes(file.mimetype) || allowedExtensions.includes(fileExtension)) {
+            cb(null, true);
+        } else {
+            cb(new Error('Invalid file type. Only web files are allowed.'));
         }
+    }
+});
 
-        return fs.readdirSync(dir)
-            .filter(file => file.endsWith('.js'))
-            .map(file => {
-                const componentName = path.basename(file, '.js');
-                const displayName = componentName.replace(/([A-Z])/g, ' $1').replace('Widget', '').trim();
-
-                return {
-                    key: componentName,
-                    name: displayName,
-                    path: `${urlPrefix}/${file}`,
-                    type: type
-                };
-            });
-    };
-
+// Get widget manifest (list of all available widgets)
+router.get('/manifest', authenticate, async (req, res) => {
     try {
-        const builtInWidgets = readWidgetsFromDirectory(builtInWidgetsDir, 'builtin', '/api/widgets/builtin');
-        const uploadedWidgets = readWidgetsFromDirectory(uploadedWidgetsDir, 'uploaded', '/api/widgets/uploaded');
-
-        // Combine and return the lists
-        res.json([...builtInWidgets, ...uploadedWidgets]);
+        const widgets = await widgetService.getWidgetManifest();
+        res.json(widgets);
     } catch (error) {
-        console.error('Failed to generate widget manifest:', error);
-        res.status(500).json({ message: 'Cannot generate widget manifest' });
+        console.error('Error fetching widget manifest:', error);
+        res.status(500).json({ error: 'Failed to fetch widget manifest' });
     }
 });
 
-// @desc    Serve built-in widgets
-// @route   GET /api/widgets/builtin/:filename
-// @access  Private
-router.get('/builtin/:filename', (req, res) => {
-    const filename = req.params.filename;
-    const filePath = path.join(__dirname, '..', 'widgets', 'builtin', filename);
-    
-    if (!fs.existsSync(filePath)) {
-        return res.status(404).json({ message: 'Widget not found' });
+// Serve widget files
+router.get('/:type/:directory/:filename', authenticate, async (req, res) => {
+    try {
+        const { type, directory, filename } = req.params;
+        const { content, mimeType } = await widgetService.getWidgetFile(type, directory, filename);
+        
+        res.set('Content-Type', mimeType);
+        res.send(content);
+    } catch (error) {
+        console.error('Error serving widget file:', error);
+        res.status(404).json({ error: error.message });
     }
-    
-    res.sendFile(filePath);
 });
 
-// @desc    Serve uploaded widgets
-// @route   GET /api/widgets/uploaded/:filename
-// @access  Private
-router.get('/uploaded/:filename', (req, res) => {
-    const filename = req.params.filename;
-    const filePath = path.join(__dirname, '..', 'widgets', 'uploaded', filename);
-    
-    if (!fs.existsSync(filePath)) {
-        return res.status(404).json({ message: 'Widget not found' });
+// Serve widget files with nested paths
+router.get('/:type/:directory/*', authenticate, async (req, res) => {
+    try {
+        const { type, directory } = req.params;
+        const filename = req.params[0]; // This captures the rest of the path
+        
+        const { content, mimeType } = await widgetService.getWidgetFile(type, directory, filename);
+        
+        res.set('Content-Type', mimeType);
+        res.send(content);
+    } catch (error) {
+        console.error('Error serving widget file:', error);
+        res.status(404).json({ error: error.message });
     }
-    
-    res.sendFile(filePath);
+});
+
+// Upload new widget (Admin only)
+router.post('/upload', authenticate, authorize(['Administrator']), upload.array('files'), async (req, res) => {
+    try {
+        const { key, name, description, version, author, entry } = req.body;
+        
+        if (!req.files || req.files.length === 0) {
+            return res.status(400).json({ error: 'No files uploaded' });
+        }
+        
+        const widgetData = { key, name, description, version, author, entry };
+        const manifest = await widgetService.uploadWidget(widgetData, req.files);
+        
+        res.json({
+            success: true,
+            message: 'Widget uploaded successfully',
+            widget: manifest
+        });
+    } catch (error) {
+        console.error('Error uploading widget:', error);
+        res.status(400).json({ error: error.message });
+    }
+});
+
+// Delete widget (Admin only)
+router.delete('/:type/:key', authenticate, authorize(['Administrator']), async (req, res) => {
+    try {
+        const { type, key } = req.params;
+        
+        await widgetService.deleteWidget(key, type);
+        
+        res.json({
+            success: true,
+            message: 'Widget deleted successfully'
+        });
+    } catch (error) {
+        console.error('Error deleting widget:', error);
+        res.status(400).json({ error: error.message });
+    }
+});
+
+// Refresh widget cache (Admin only)
+router.post('/refresh', authenticate, authorize(['Administrator']), async (req, res) => {
+    try {
+        const widgets = await widgetService.getWidgetManifest(true);
+        res.json({
+            success: true,
+            message: 'Widget cache refreshed',
+            count: widgets.length
+        });
+    } catch (error) {
+        console.error('Error refreshing widget cache:', error);
+        res.status(500).json({ error: 'Failed to refresh widget cache' });
+    }
 });
 
 module.exports = router;

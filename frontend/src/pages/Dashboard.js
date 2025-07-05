@@ -50,33 +50,41 @@ const Dashboard = () => {
         const loadInitialData = async () => {
             try {
                 console.log('Loading initial data...');
+                console.log('API_URL:', API_URL);
+                console.log('User:', user);
+
                 // Load widget library
+                console.log('Fetching widget library...');
                 const widgetResponse = await axios.get(`${API_URL}/api/widgets/manifest`, { withCredentials: true });
+                console.log('Widget library response:', widgetResponse);
                 setWidgetLibrary(widgetResponse.data);
                 console.log('Widget library loaded:', widgetResponse.data);
 
                 // Load views
+                console.log('Fetching views...');
                 const viewsResponse = await axios.get(`${API_URL}/api/dashboard/views`, { withCredentials: true });
+                console.log('Views response:', viewsResponse);
                 setViews(viewsResponse.data);
                 console.log('Views loaded:', viewsResponse.data);
 
-                // Load default view if available
-                if (viewsResponse.data.length > 0) {
-                    const defaultView = viewsResponse.data[0];
-                    const newLayout = defaultView.widgets.map(w => ({ 
-                        i: w.widgetKey, 
-                        x: w.x, 
-                        y: w.y, 
-                        w: w.w, 
-                        h: w.h 
-                    }));
-                    console.log('Setting default layout:', newLayout);
-                    setLayout(newLayout);
-                    setOriginalLayout([...newLayout]); // Ensure deep copy
-                    setCurrentViewId(defaultView.id);
+                // Check if user has any views, if not create a default one
+                if (!viewsResponse.data || viewsResponse.data.length === 0) {
+                    console.log('No views found, creating default view...');
+                    await createDefaultView();
+                } else {
+                    // Load the first view (or a view marked as default)
+                    const defaultView = viewsResponse.data.find(v => v.isDefault) || viewsResponse.data[0];
+                    console.log('Loading default view:', defaultView);
+                    await loadViewData(defaultView);
                 }
             } catch (error) {
                 console.error("Failed to load initial data", error);
+                console.error("Error details:", error.response?.data);
+                console.error("Error status:", error.response?.status);
+                
+                // Create a fallback default view
+                console.log('Creating fallback default view due to error');
+                await createDefaultView();
             }
         };
 
@@ -84,6 +92,89 @@ const Dashboard = () => {
             loadInitialData();
         }
     }, [user]);
+
+    // Create a default view for the user
+    const createDefaultView = async () => {
+        try {
+            console.log('Creating default view...');
+            
+            // Get available widgets to populate the default view
+            const availableWidgets = widgetLibrary.slice(0, 4); // Take first 4 widgets
+            
+            // Create default layout with available widgets
+            const defaultWidgets = availableWidgets.map((widget, index) => ({
+                widgetKey: widget.key,
+                x: (index % 2) * 6, // Alternate between x=0 and x=6
+                y: Math.floor(index / 2) * 2, // Stack rows
+                w: 6,
+                h: 2
+            }));
+
+            // If no widgets available, create empty view
+            const viewData = {
+                name: 'My Dashboard',
+                widgets: defaultWidgets,
+                isDefault: true
+            };
+
+            console.log('Creating default view with data:', viewData);
+            
+            const response = await axios.post(`${API_URL}/api/dashboard/views`, viewData, { withCredentials: true });
+            console.log('Default view created:', response.data);
+            
+            // Update state with the new default view
+            const newViews = [response.data];
+            setViews(newViews);
+            
+            // Load the newly created default view
+            await loadViewData(response.data);
+            
+        } catch (error) {
+            console.error('Failed to create default view:', error);
+            
+            // Create a client-side fallback
+            const fallbackView = {
+                id: 'fallback-default',
+                name: 'My Dashboard',
+                widgets: [],
+                isDefault: true
+            };
+            
+            const fallbackLayout = [];
+            setViews([fallbackView]);
+            setLayout(fallbackLayout);
+            setOriginalLayout([...fallbackLayout]);
+            setCurrentViewId(fallbackView.id);
+        }
+    };
+
+    // Load view data into the layout
+    const loadViewData = async (view) => {
+        try {
+            console.log('Loading view data:', view);
+            
+            if (view.widgets && view.widgets.length > 0) {
+                const newLayout = view.widgets.map(w => ({ 
+                    i: w.widgetKey, 
+                    x: w.x || 0, 
+                    y: w.y || 0, 
+                    w: w.w || 6, 
+                    h: w.h || 2 
+                }));
+                console.log('Setting layout from view:', newLayout);
+                setLayout(newLayout);
+                setOriginalLayout([...newLayout]);
+            } else {
+                console.log('View has no widgets, setting empty layout');
+                setLayout([]);
+                setOriginalLayout([]);
+            }
+            
+            setCurrentViewId(view.id);
+        } catch (error) {
+            console.error('Failed to load view data:', error);
+        }
+    };
 
     // Handle clicks outside menu
     useEffect(() => {
@@ -101,11 +192,7 @@ const Dashboard = () => {
         try {
             console.log('Loading view:', viewId);
             const { data } = await axios.get(`${API_URL}/api/dashboard/views/${viewId}`, { withCredentials: true });
-            const newLayout = data.widgets.map(w => ({ i: w.widgetKey, x: w.x, y: w.y, w: w.w, h: w.h }));
-            console.log('New layout from view:', newLayout);
-            setLayout(newLayout);
-            setOriginalLayout([...newLayout]); // Ensure deep copy
-            setCurrentViewId(viewId);
+            await loadViewData(data);
             
             // If we were in edit mode, exit it when switching views
             if (isEditMode) {
@@ -127,16 +214,12 @@ const Dashboard = () => {
         console.log('Edit Layout button clicked');
         console.log('Current state - isEditMode:', isEditMode, 'currentViewId:', currentViewId);
         console.log('Current layout before edit:', layout);
+        console.log('Widget library:', widgetLibrary);
+        console.log('Views:', views);
         
         if (!currentViewId) {
             console.log('No view selected, cannot edit');
-            alert('Please select a view first');
-            return;
-        }
-
-        if (layout.length === 0) {
-            console.log('No widgets in layout');
-            alert('No widgets to edit');
+            alert('Please select a view first. If you have no views, a default view should be created automatically.');
             return;
         }
 
@@ -324,7 +407,7 @@ const Dashboard = () => {
                                         onClick={handleEditLayoutClick}
                                         className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
                                         disabled={!currentViewId}
-                                        title={!currentViewId ? "Select a view first" : "Enter edit mode"}
+                                        title={!currentViewId ? "No view selected - a default view should be created automatically" : "Enter edit mode"}
                                     >
                                         Edit Layout
                                     </button>
@@ -452,7 +535,14 @@ const Dashboard = () => {
                                     {widget ? (
                                         <DynamicWidget widgetKey={widget.key} widgetPath={widget.path} type={widget.type} />
                                     ) : (
-                                        <div className="text-red-500">Unknown Widget: {item.i}</div>
+                                        <div className="text-center p-4">
+                                            <div className="text-gray-600 text-sm">
+                                                Demo Widget: {item.i}
+                                            </div>
+                                            <div className="text-xs text-gray-400 mt-1">
+                                                Size: {item.w}x{item.h} | Position: ({item.x}, {item.y})
+                                            </div>
+                                        </div>
                                     )}
                                 </div>
                             );
