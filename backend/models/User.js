@@ -29,12 +29,14 @@ const User = sequelize.define('User', {
   },
   companyId: {
     type: DataTypes.INTEGER,
+    field: 'company_id', // <--- ADD THIS LINE
     references: {
       model: Company,
       key: 'id',
     },
-    allowNull: false,
+    allowNull: true, // Let's allow this to be null for now
   },
+
 }, {
   tableName: 'users',
   timestamps: true,

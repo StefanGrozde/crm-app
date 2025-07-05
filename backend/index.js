@@ -7,6 +7,7 @@ const pool = require('./config/db');
 const { connectDB, sequelize } = require('./config/db');
 const cookieParser = require('cookie-parser');
 const authRoutes = require('./routes/authRoutes');
+const companyRoutes = require('./routes/companyRoutes');
 
 console.log("Application starting...");
 
@@ -53,7 +54,7 @@ app.get('/', (req, res) => {
 
 // Use the auth routes
 app.use('/api/auth', authRoutes); // ADD THIS LINE
-
+app.use('/api/companies', companyRoutes);
 // Test Route to check DB connection
 app.get('/api/test-db', async (req, res) => {
     let client;
