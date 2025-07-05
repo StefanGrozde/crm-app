@@ -19,10 +19,19 @@ const LoginSuccess = () => {
                     { withCredentials: true }
                 );
                 
+                const user = response.data;
                 // Set user state from the response data
-                setUser(response.data);
-                // Navigate to the main dashboard
-                navigate('/dashboard');
+                setUser(user);
+
+                // --- NEW: Redirection Logic ---
+                // Check if the user object has a companyId.
+                if (user && user.companyId) {
+                    // If they have a company, navigate to the main dashboard.
+                    navigate('/dashboard');
+                } else {
+                    // If not, they need to create one.
+                    navigate('/create-company');
+                }
 
             } catch (err) {
                 const errorMessage = err.response?.data?.message || 'An error occurred during login.';

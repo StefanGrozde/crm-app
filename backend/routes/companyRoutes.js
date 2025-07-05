@@ -42,5 +42,31 @@ router.post('/', protect, async (req, res) => {
       res.status(500).json({ message: 'Server Error' });
     }
   });
+
+// --- NEW: Route to get a single company's details ---
+// @desc    Get company by ID
+// @route   GET /api/companies/:id
+// @access  Private (must be a member of the company)
+router.get('/:id', protect, async (req, res) => {
+    try {
+        const companyId = parseInt(req.params.id, 10);
+
+        // Security Check: Ensure the logged-in user belongs to the company they are requesting.
+        if (req.user.companyId !== companyId) {
+            return res.status(403).json({ message: 'Not authorized to access this company' });
+        }
+
+        const company = await Company.findByPk(companyId);
+
+        if (!company) {
+            return res.status(404).json({ message: 'Company not found' });
+        }
+
+        res.json(company);
+    } catch (error) {
+        console.error('Error fetching company:', error);
+        res.status(500).json({ message: 'Server Error' });
+    }
+});
   
-  module.exports = router;
+module.exports = router;
