@@ -6,50 +6,111 @@ const msal = require('@azure/msal-node');
 const Company = require('../models/Company');
 const User = require('../models/User');
 
+// --- MSAL Configuration ---
+const msalConfig = {
+    auth: {
+        clientId: process.env.MS_CLIENT_ID,
+        authority: `https://login.microsoftonline.com/${process.env.MS_TENANT_ID}`,
+        clientSecret: process.env.MS_CLIENT_SECRET,
+    },
+};
+const pca = new msal.ConfidentialClientApplication(msalConfig);
+const REDIRECT_URI = process.env.BACKEND_URL + "/api/auth/microsoft/callback";
+const FRONTEND_URI = process.env.FRONTEND_URL;
+
+
 // --- Helper function to generate and send token ---
 const sendTokenResponse = (user, statusCode, res) => {
-    // ... (payload and token generation is the same) ...
-  
+    const payload = {
+        userId: user.id,
+        companyId: user.companyId,
+        role: user.role,
+    };
+
     const token = jwt.sign(payload, process.env.JWT_SECRET, {
-      expiresIn: '1d',
+        expiresIn: '1d',
     });
-  
-    // --- THIS IS THE CRITICAL CHANGE ---
+
     res.cookie('token', token, {
-      httpOnly: true,
-      secure: true, // Must be true if sameSite is 'None'
-      sameSite: 'None', // Allow the cookie to be set from a different domain
-      maxAge: 24 * 60 * 60 * 1000, // 1 day
+        httpOnly: true,
+        secure: true, 
+        sameSite: 'None',
+        maxAge: 24 * 60 * 60 * 1000,
     });
-  
+
     res.status(statusCode).json({
-      id: user.id,
-      email: user.email,
-      role: user.role,
-      companyId: user.companyId,
+        id: user.id,
+        email: user.email,
+        role: user.role,
+        companyId: user.companyId,
     });
-  };
-  
-  // ... MSAL Configuration ...
-  
-  // 2. Handle the callback from Microsoft
-  router.get('/microsoft/callback', async (req, res) => {
-      // ... (logic to get user) ...
-  
-      try {
-          // ... (existing try block) ...
-  
-          // --- THIS IS THE SECOND CRITICAL CHANGE ---
-          res.cookie('token', appToken, {
-               httpOnly: true,
-               secure: true, // Must be true if sameSite is 'None'
-               sameSite: 'None', // Allow the cookie to be set from a different domain
-               maxAge: 24 * 60 * 60 * 1000,
-          });
-          
-          res.redirect(`${FRONTEND_URI}/login/success`);
-  
-      } catch (error) {
+};
+
+// =======================================================
+// THIS IS THE MISSING ROUTE THAT NEEDS TO BE ADDED BACK
+// =======================================================
+// 1. Redirect to Microsoft's login page
+router.get('/microsoft/login', (req, res) => {
+    pca
+        .getAuthCodeUrl({
+            scopes: ['openid', 'email', 'profile', 'User.Read'],
+            redirectUri: REDIRECT_URI,
+        })
+        .then((response) => res.redirect(response))
+        .catch((error) => {
+            console.error("Failed to get auth code URL:", error);
+            res.status(500).send('Error generating login URL.');
+        });
+});
+// =======================================================
+
+
+// 2. Handle the callback from Microsoft
+router.get('/microsoft/callback', async (req, res) => {
+    const tokenRequest = {
+        code: req.query.code,
+        scopes: ['openid', 'email', 'profile', 'User.Read'],
+        redirectUri: REDIRECT_URI,
+    };
+
+    try {
+        const response = await pca.acquireTokenByCode(tokenRequest);
+        const email = response.account.idTokenClaims.email || response.account.username;
+        const name = response.account.name;
+
+        if (!email) {
+            return res.status(500).send("Could not retrieve user email from Microsoft.");
+        }
+
+        let user = await User.findOne({ where: { email } });
+
+        if (!user) {
+            const company = await Company.create({ name: `${name}'s Company` });
+            
+            user = await User.create({
+                email,
+                password: Math.random().toString(36),
+                companyId: company.id,
+                role: 'Administrator',
+            });
+        }
+        
+        const appToken = jwt.sign(
+            { userId: user.id, companyId: user.companyId, role: user.role },
+            process.env.JWT_SECRET,
+            { expiresIn: '1h' }
+        );
+
+        res.cookie('token', appToken, {
+             httpOnly: true,
+             secure: true,
+             sameSite: 'None',
+             maxAge: 24 * 60 * 60 * 1000,
+        });
+        
+        res.redirect(`${FRONTEND_URI}/login/success`);
+
+    } catch (error) {
         console.error(error);
         res.status(500).send("An unexpected error occurred during Microsoft sign-in.");
     }
