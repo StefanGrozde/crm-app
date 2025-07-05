@@ -1,42 +1,65 @@
-// frontend/src/pages/LoginSuccess.js
-import React, { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 
+const API_URL = process.env.REACT_APP_API_URL;
+
 const LoginSuccess = () => {
-  const navigate = useNavigate();
-  // Get the checkUserLoggedIn function and the latest user state from the context
-  const { checkUserLoggedIn, user, loading } = useAuth();
+    const { setUser } = useAuth();
+    const navigate = useNavigate();
+    const location = useLocation();
+    const [error, setError] = useState(null);
 
-  useEffect(() => {
-    // When this page loads, it means the user has just returned from Microsoft.
-    // We tell our AuthContext to re-check the user's status, which will now
-    // hopefully find the new cookie.
-    checkUserLoggedIn();
-  }, [checkUserLoggedIn]);
-  
-  // This effect will run whenever the user or loading state changes.
-  useEffect(() => {
-    // Don't do anything until the auth check is complete
-    if (loading) return;
+    useEffect(() => {
+        const completeMicrosoftLogin = async (code) => {
+            try {
+                const response = await axios.post(`${API_URL}/api/auth/microsoft/complete`, 
+                    { mscode: code },
+                    { withCredentials: true }
+                );
+                
+                // Set user state from the response data
+                setUser(response.data);
+                // Navigate to the main dashboard
+                navigate('/dashboard');
 
-    if (user) {
-      if (user.companyId) {
-        navigate('/dashboard');
-      } else {
-        navigate('/create-company');
-      }
-    } else {
-      // If after checking, the user is still not found, go to login.
-      navigate('/login');
+            } catch (err) {
+                const errorMessage = err.response?.data?.message || 'An error occurred during login.';
+                setError(errorMessage);
+                // Optional: redirect back to login after a delay
+                setTimeout(() => navigate('/login'), 3000);
+            }
+        };
+
+        // Get the Microsoft code from the URL query parameters
+        const params = new URLSearchParams(location.search);
+        const code = params.get('mscode');
+
+        if (code) {
+            completeMicrosoftLogin(code);
+        } else {
+            // No code found, redirect to login
+            setError('Invalid login attempt. Redirecting...');
+            setTimeout(() => navigate('/login'), 2000);
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []); // Run only once on component mount
+
+    if (error) {
+        return (
+            <div style={{ padding: '20px', textAlign: 'center' }}>
+                <h2>Login Failed</h2>
+                <p style={{ color: 'red' }}>{error}</p>
+            </div>
+        );
     }
-  }, [user, loading, navigate]);
-
-  return (
-    <div className="flex items-center justify-center min-h-screen">
-      <p>Finalizing login...</p>
-    </div>
-  );
+    
+    return (
+        <div style={{ padding: '20px', textAlign: 'center' }}>
+            <h2>Finalizing login...</h2>
+        </div>
+    );
 };
 
 export default LoginSuccess;
