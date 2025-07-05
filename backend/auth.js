@@ -50,6 +50,7 @@ router.get('/microsoft/login', (req, res) => {
 
 // 2. Handle the callback from Microsoft
 router.get('/microsoft/callback', async (req, res) => {
+    console.log("Constructed Redirect URI for token request:", REDIRECT_URI);
     const tokenRequest = {
         code: req.query.code,
         scopes: ["user.read"],
