@@ -1,39 +1,25 @@
-// frontend/src/App.js
-import React, { useState } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
-import LoginPage from './components/LoginPage';
-import Dashboard from './components/Dashboard';
-import LoginCallback from './components/LoginCallback';
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { AuthProvider } from './context/AuthContext';
+import Dashboard from './pages/Dashboard'; // We will create this next
+import Login from './pages/Login';         // We will create this next
+import LoginSuccess from './pages/LoginSuccess';
+import CreateCompany from './pages/CreateCompany'; // We will create this next
 
 function App() {
-    const [token, setToken] = useState(localStorage.getItem('token'));
-
-    const handleSetToken = (newToken) => {
-        localStorage.setItem('token', newToken);
-        setToken(newToken);
-    };
-    
-    const handleLogout = () => {
-        setToken(null);
-        localStorage.removeItem('token');
-    };
-
-    return (
+  return (
+    <AuthProvider>
+      <Router>
         <Routes>
-            <Route
-                path="/login"
-                element={!token ? <LoginPage setToken={handleSetToken} /> : <Navigate to="/" />}
-            />
-            <Route 
-                path="/login/callback" 
-                element={<LoginCallback setToken={handleSetToken} />}
-            />
-            <Route
-                path="/*"
-                element={token ? <Dashboard handleLogout={handleLogout} /> : <Navigate to="/login" />}
-            />
+          <Route path="/login" element={<Login />} />
+          <Route path="/login/success" element={<LoginSuccess />} />
+          <Route path="/create-company" element={<CreateCompany />} />
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/" element={<Login />} /> {/* Default route */}
         </Routes>
-    );
+      </Router>
+    </AuthProvider>
+  );
 }
 
 export default App;
