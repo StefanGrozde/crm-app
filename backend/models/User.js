@@ -20,6 +20,7 @@ const User = sequelize.define('User', {
   password: {
     type: DataTypes.STRING,
     allowNull: false,
+    field: 'password_hash' // <--- ADD THIS LINE
   },
   role: {
     type: DataTypes.STRING,
