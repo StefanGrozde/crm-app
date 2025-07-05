@@ -197,24 +197,15 @@ const Dashboard = () => {
         setIsEditMode(false);
     };
 
-    const handleWidgetUpload = async (file) => {
-        const formData = new FormData();
-        formData.append('widget', file);
-
+    const handleWidgetUpload = async (uploadResult) => {
         try {
-            await axios.post(`${API_URL}/api/widgets/upload`, formData, {
-                withCredentials: true,
-                headers: { 'Content-Type': 'multipart/form-data' },
-            });
             // Refresh the widget library after upload
             const { data } = await axios.get(`${API_URL}/api/widgets/manifest`, { withCredentials: true });
             setWidgetLibrary(data);
             alert('Widget uploaded successfully!');
         } catch (error) {
-            console.error('Failed to upload widget', error);
-            alert('Failed to upload widget.');
-        } finally {
-            setUploadModalOpen(false);
+            console.error('Failed to refresh widget library', error);
+            alert('Widget uploaded but failed to refresh library. Please reload the page.');
         }
     };
 
@@ -273,8 +264,17 @@ const Dashboard = () => {
                                 ) : (
                                     <div className="flex space-x-2">
                                         <button
+                                            onClick={() => setAddModalOpen(true)}
+                                            className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 flex items-center space-x-2"
+                                        >
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                            </svg>
+                                            <span>Add Widget</span>
+                                        </button>
+                                        <button
                                             onClick={handleUpdateView}
-                                            className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
+                                            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
                                             disabled={!currentViewId}
                                         >
                                             Save Changes
@@ -308,14 +308,6 @@ const Dashboard = () => {
 
                                     {menuOpen && (
                                         <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10">
-                                            {isEditMode && (
-                                                <button 
-                                                    onClick={() => { setAddModalOpen(true); setMenuOpen(false); }} 
-                                                    className="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                                                >
-                                                    Add Widget
-                                                </button>
-                                            )}
                                             {user.role === 'Administrator' && (
                                                 <button 
                                                     onClick={() => { setUploadModalOpen(true); setMenuOpen(false); }} 
