@@ -47,29 +47,49 @@ const sendTokenResponse = (user, statusCode, res) => {
     });
 };
 
+
 // =======================================================
-// THIS IS THE MISSING ROUTE THAT NEEDS TO BE ADDED BACK
+//          MICROSOFT SSO AUTHENTICATION ROUTES
 // =======================================================
-// 1. Redirect to Microsoft's login page
+
+// STEP 1: Redirect to Microsoft's login page to get an auth code.
 router.get('/microsoft/login', (req, res) => {
     pca
         .getAuthCodeUrl({
             scopes: ['openid', 'email', 'profile', 'User.Read'],
             redirectUri: REDIRECT_URI,
         })
-        .then((response) => res.redirect(response))
+        .then((response) => {
+            res.redirect(response);
+        })
         .catch((error) => {
             console.error("Failed to get auth code URL:", error);
             res.status(500).send('Error generating login URL.');
         });
 });
-// =======================================================
 
+// STEP 2: Handle the callback from Microsoft and pass the code to the frontend.
+router.get('/microsoft/callback', (req, res) => {
+    const code = req.query.code;
+    if (code) {
+        // Redirect to a dedicated success page on the frontend with the code
+        res.redirect(`${FRONTEND_URI}/login/success?mscode=${code}`);
+    } else {
+        // Handle cases where no code is provided
+        res.redirect(`${FRONTEND_URI}/login?error=microsoft-login-failed`);
+    }
+});
 
-// 2. Handle the callback from Microsoft
-router.get('/microsoft/callback', async (req, res) => {
+// STEP 3: Complete the login using the code from the frontend.
+router.post('/microsoft/complete', async (req, res) => {
+    const { mscode } = req.body;
+
+    if (!mscode) {
+        return res.status(400).json({ message: 'Microsoft authentication code is missing.' });
+    }
+
     const tokenRequest = {
-        code: req.query.code,
+        code: mscode,
         scopes: ['openid', 'email', 'profile', 'User.Read'],
         redirectUri: REDIRECT_URI,
     };
@@ -96,80 +116,27 @@ router.get('/microsoft/callback', async (req, res) => {
             });
         }
         
-        const appToken = jwt.sign(
-            { userId: user.id, companyId: user.companyId, role: user.role },
-            process.env.JWT_SECRET,
-            { expiresIn: '1h' }
-        );
-
-        res.cookie('token', appToken, {
-             httpOnly: true,
-             secure: true,
-             sameSite: 'None',
-             maxAge: 24 * 60 * 60 * 1000,
-        });
-        
-        res.redirect(`${FRONTEND_URI}/login/success`);
+        sendTokenResponse(user, 200, res);
 
     } catch (error) {
-        console.error(error);
-        res.status(500).send("An unexpected error occurred during Microsoft sign-in.");
+        console.error("Error during Microsoft token acquisition:", error);
+        res.status(500).json({ message: "Failed to verify Microsoft login. Please try again." });
     }
 });
 
 
 // --- Username/Password Routes ---
+// (The rest of your file: /register, /login, /me routes should be here)
 router.post('/register', async (req, res) => {
-    const { companyName, email, password } = req.body;
-    if (!companyName || !email || !password) {
-        return res.status(400).json({ message: 'Company name, email, and password are required.' });
-    }
-    try {
-        await User.sequelize.transaction(async (t) => {
-            const company = await Company.create({ name: companyName }, { transaction: t });
-            await User.create({
-                email,
-                password,
-                companyId: company.id,
-                role: 'Administrator',
-            }, { transaction: t });
-        });
-        res.status(201).json({ message: 'Company and Admin user registered successfully' });
-    } catch (err) {
-        if (err.name === 'SequelizeUniqueConstraintError') {
-             return res.status(409).json({ message: 'Email already exists.' });
-        }
-        res.status(500).json({ message: 'Server Error' });
-    }
+    // ... your existing register code
 });
 
 router.post('/login', async (req, res) => {
-    const { email, password } = req.body;
-    try {
-        const user = await User.findOne({ where: { email } });
-
-        // Add this check to prevent a crash if the user is not found
-        if (!user) {
-            return res.status(401).json({ message: 'Invalid email or password' });
-        }
-
-        if (await user.matchPassword(password)) {
-            sendTokenResponse(user, 200, res);
-        } else {
-            res.status(401).json({ message: 'Invalid email or password' });
-        }
-    } catch (err) {
-        res.status(500).json({ message: 'Server Error' });
-    }
+    // ... your existing login code
 });
 
 router.get('/me', protect, (req, res) => {
-    // The 'protect' middleware has already fetched the user and attached it to req.user
-    if (req.user) {
-      res.status(200).json(req.user);
-    } else {
-      res.status(404).json({ message: 'User not found' });
-    }
+    // ... your existing me code
 });
   
-  module.exports = router;
+module.exports = router;
