@@ -106,26 +106,73 @@ const Dashboard = () => {
 
     const handleSaveNewView = async (viewName) => {
         try {
-            await axios.post(`${API_URL}/api/dashboard/views`, { name: viewName, layout }, { withCredentials: true });
+            // Transform layout to match API expected format
+            const widgetsData = layout.map(item => ({
+                widgetKey: item.i,
+                x: item.x,
+                y: item.y,
+                w: item.w,
+                h: item.h
+            }));
+
+            const response = await axios.post(`${API_URL}/api/dashboard/views`, { 
+                name: viewName, 
+                widgets: widgetsData 
+            }, { withCredentials: true });
+
+            console.log("New view saved successfully:", response.data);
+            
             setSaveModalOpen(false);
             const { data } = await axios.get(`${API_URL}/api/dashboard/views`, { withCredentials: true });
             setViews(data);
+            
+            // Optionally set the new view as current
+            if (response.data && response.data.id) {
+                setCurrentViewId(response.data.id);
+            }
+            
         } catch (error) { 
-            console.error("Failed to save new view", error); 
+            console.error("Failed to save new view", error);
+            console.error("Error details:", error.response?.data);
+            alert("Failed to save new view. Please try again.");
         }
     };
 
     const handleUpdateView = async () => {
         try {
             const currentView = views.find(v => v.id === currentViewId);
-            if (!currentView) return;
+            if (!currentView) {
+                console.error("No current view selected");
+                return;
+            }
 
-            await axios.put(`${API_URL}/api/dashboard/views/${currentViewId}`, { name: currentView.name, layout }, { withCredentials: true });
+            // Transform layout to match API expected format
+            const widgetsData = layout.map(item => ({
+                widgetKey: item.i,
+                x: item.x,
+                y: item.y,
+                w: item.w,
+                h: item.h
+            }));
 
+            const response = await axios.put(`${API_URL}/api/dashboard/views/${currentViewId}`, { 
+                name: currentView.name, 
+                widgets: widgetsData 
+            }, { withCredentials: true });
+
+            console.log("View updated successfully:", response.data);
+            
             setIsEditMode(false);
             setOriginalLayout(layout);
+            
+            // Refresh the views list to reflect any changes
+            const { data } = await axios.get(`${API_URL}/api/dashboard/views`, { withCredentials: true });
+            setViews(data);
+            
         } catch (error) { 
-            console.error("Failed to update view", error); 
+            console.error("Failed to update view", error);
+            console.error("Error details:", error.response?.data);
+            alert("Failed to update view. Please try again.");
         }
     };
 
@@ -214,8 +261,12 @@ const Dashboard = () => {
                                 {/* Edit mode toggle */}
                                 {!isEditMode ? (
                                     <button
-                                        onClick={() => setIsEditMode(true)}
+                                        onClick={() => {
+                                            setIsEditMode(true);
+                                            setOriginalLayout([...layout]); // Create a deep copy
+                                        }}
                                         className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                                        disabled={!currentViewId}
                                     >
                                         Edit Layout
                                     </button>
@@ -224,6 +275,7 @@ const Dashboard = () => {
                                         <button
                                             onClick={handleUpdateView}
                                             className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
+                                            disabled={!currentViewId}
                                         >
                                             Save Changes
                                         </button>
