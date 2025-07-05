@@ -8,107 +8,48 @@ const User = require('../models/User');
 
 // --- Helper function to generate and send token ---
 const sendTokenResponse = (user, statusCode, res) => {
-  const payload = {
-    userId: user.id,
-    companyId: user.companyId,
-    role: user.role,
+    // ... (payload and token generation is the same) ...
+  
+    const token = jwt.sign(payload, process.env.JWT_SECRET, {
+      expiresIn: '1d',
+    });
+  
+    // --- THIS IS THE CRITICAL CHANGE ---
+    res.cookie('token', token, {
+      httpOnly: true,
+      secure: true, // Must be true if sameSite is 'None'
+      sameSite: 'None', // Allow the cookie to be set from a different domain
+      maxAge: 24 * 60 * 60 * 1000, // 1 day
+    });
+  
+    res.status(statusCode).json({
+      id: user.id,
+      email: user.email,
+      role: user.role,
+      companyId: user.companyId,
+    });
   };
-
-  const token = jwt.sign(payload, process.env.JWT_SECRET, {
-    expiresIn: '1d',
-  });
-
-  res.cookie('token', token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict',
-    maxAge: 24 * 60 * 60 * 1000, // 1 day
-  });
-
-  res.status(statusCode).json({
-    id: user.id,
-    email: user.email,
-    role: user.role,
-    companyId: user.companyId,
-  });
-};
-
-// --- MSAL Configuration ---
-const msalConfig = {
-  auth: {
-    clientId: process.env.MS_CLIENT_ID,
-    authority: `https://login.microsoftonline.com/${process.env.MS_TENANT_ID}`,
-    clientSecret: process.env.MS_CLIENT_SECRET,
-  },
-};
-const pca = new msal.ConfidentialClientApplication(msalConfig);
-const REDIRECT_URI = process.env.BACKEND_URL + "/api/auth/microsoft/callback";
-const FRONTEND_URI = process.env.FRONTEND_URL;
-
-// 1. Redirect to Microsoft's login page
-router.get('/microsoft/login', (req, res) => {
-  pca
-    .getAuthCodeUrl({
-      scopes: ['openid', 'email', 'profile', 'User.Read'],
-      redirectUri: REDIRECT_URI,
-    })
-    .then((response) => res.redirect(response))
-    .catch((error) => res.status(500).send('Error generating login URL.'));
-});
-
-// 2. Handle the callback from Microsoft
-router.get('/microsoft/callback', async (req, res) => {
-    const tokenRequest = {
-        code: req.query.code,
-        scopes: ['openid', 'email', 'profile', 'User.Read'],
-        redirectUri: REDIRECT_URI,
-    };
-
-    try {
-        const response = await pca.acquireTokenByCode(tokenRequest);
-        const email = response.account.idTokenClaims.email || response.account.username;
-        const name = response.account.name;
-
-        if (!email) {
-            return res.status(500).send("Could not retrieve user email from Microsoft.");
-        }
-
-        let user = await User.findOne({ where: { email } });
-
-        if (!user) {
-            // For SSO, we'll create a new company for the user.
-            // A more advanced CRM might look up the domain of the email.
-            const company = await Company.create({ name: `${name}'s Company` });
-            
-            user = await User.create({
-                email,
-                password: Math.random().toString(36), // Create a random password since it's SSO
-                companyId: company.id,
-                role: 'Administrator',
-            });
-        }
-        
-        // At this point, `user` is guaranteed to be a valid user from our DB.
-        // We create a JWT for *our* application and redirect to the frontend.
-         const appToken = jwt.sign(
-            { userId: user.id, companyId: user.companyId, role: user.role },
-            process.env.JWT_SECRET,
-            { expiresIn: '1h' }
-        );
-
-        // Instead of sending the token in the URL, we'll set it as a cookie
-        // and redirect. The frontend will then just need to know the login was successful.
-        res.cookie('token', appToken, {
-             httpOnly: true,
-             secure: process.env.NODE_ENV === 'production',
-             sameSite: 'strict',
-             maxAge: 24 * 60 * 60 * 1000,
-        });
-        
-        res.redirect(`${FRONTEND_URI}/login/success`);
-
-
-    } catch (error) {
+  
+  // ... MSAL Configuration ...
+  
+  // 2. Handle the callback from Microsoft
+  router.get('/microsoft/callback', async (req, res) => {
+      // ... (logic to get user) ...
+  
+      try {
+          // ... (existing try block) ...
+  
+          // --- THIS IS THE SECOND CRITICAL CHANGE ---
+          res.cookie('token', appToken, {
+               httpOnly: true,
+               secure: true, // Must be true if sameSite is 'None'
+               sameSite: 'None', // Allow the cookie to be set from a different domain
+               maxAge: 24 * 60 * 60 * 1000,
+          });
+          
+          res.redirect(`${FRONTEND_URI}/login/success`);
+  
+      } catch (error) {
         console.error(error);
         res.status(500).send("An unexpected error occurred during Microsoft sign-in.");
     }
