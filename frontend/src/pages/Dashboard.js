@@ -38,17 +38,27 @@ const Dashboard = () => {
     const [menuOpen, setMenuOpen] = useState(false);
     const menuRef = useRef(null);
 
+    // Debug: Log state changes
+    useEffect(() => {
+        console.log('Edit mode changed:', isEditMode);
+        console.log('Current layout:', layout);
+        console.log('Original layout:', originalLayout);
+    }, [isEditMode, layout, originalLayout]);
+
     // Load initial data
     useEffect(() => {
         const loadInitialData = async () => {
             try {
+                console.log('Loading initial data...');
                 // Load widget library
                 const widgetResponse = await axios.get(`${API_URL}/api/widgets/manifest`, { withCredentials: true });
                 setWidgetLibrary(widgetResponse.data);
+                console.log('Widget library loaded:', widgetResponse.data);
 
                 // Load views
                 const viewsResponse = await axios.get(`${API_URL}/api/dashboard/views`, { withCredentials: true });
                 setViews(viewsResponse.data);
+                console.log('Views loaded:', viewsResponse.data);
 
                 // Load default view if available
                 if (viewsResponse.data.length > 0) {
@@ -60,8 +70,9 @@ const Dashboard = () => {
                         w: w.w, 
                         h: w.h 
                     }));
+                    console.log('Setting default layout:', newLayout);
                     setLayout(newLayout);
-                    setOriginalLayout(newLayout);
+                    setOriginalLayout([...newLayout]); // Ensure deep copy
                     setCurrentViewId(defaultView.id);
                 }
             } catch (error) {
@@ -88,11 +99,18 @@ const Dashboard = () => {
     // Load specific view
     const loadView = async (viewId) => {
         try {
+            console.log('Loading view:', viewId);
             const { data } = await axios.get(`${API_URL}/api/dashboard/views/${viewId}`, { withCredentials: true });
             const newLayout = data.widgets.map(w => ({ i: w.widgetKey, x: w.x, y: w.y, w: w.w, h: w.h }));
+            console.log('New layout from view:', newLayout);
             setLayout(newLayout);
-            setOriginalLayout(newLayout);
+            setOriginalLayout([...newLayout]); // Ensure deep copy
             setCurrentViewId(viewId);
+            
+            // If we were in edit mode, exit it when switching views
+            if (isEditMode) {
+                setIsEditMode(false);
+            }
         } catch (error) { 
             console.error("Failed to load view", error); 
         }
@@ -104,8 +122,37 @@ const Dashboard = () => {
         navigate('/login');
     };
 
+    // Enhanced Edit Layout handler with debugging
+    const handleEditLayoutClick = () => {
+        console.log('Edit Layout button clicked');
+        console.log('Current state - isEditMode:', isEditMode, 'currentViewId:', currentViewId);
+        console.log('Current layout before edit:', layout);
+        
+        if (!currentViewId) {
+            console.log('No view selected, cannot edit');
+            alert('Please select a view first');
+            return;
+        }
+
+        if (layout.length === 0) {
+            console.log('No widgets in layout');
+            alert('No widgets to edit');
+            return;
+        }
+
+        // Create a proper deep copy of the layout
+        const layoutCopy = layout.map(item => ({ ...item }));
+        console.log('Creating layout copy:', layoutCopy);
+        
+        setOriginalLayout(layoutCopy);
+        setIsEditMode(true);
+        
+        console.log('Edit mode should now be active');
+    };
+
     const handleSaveNewView = async (viewName) => {
         try {
+            console.log('Saving new view:', viewName);
             // Transform layout to match API expected format
             const widgetsData = layout.map(item => ({
                 widgetKey: item.i,
@@ -140,6 +187,7 @@ const Dashboard = () => {
 
     const handleUpdateView = async () => {
         try {
+            console.log('Updating view:', currentViewId);
             const currentView = views.find(v => v.id === currentViewId);
             if (!currentView) {
                 console.error("No current view selected");
@@ -163,7 +211,7 @@ const Dashboard = () => {
             console.log("View updated successfully:", response.data);
             
             setIsEditMode(false);
-            setOriginalLayout(layout);
+            setOriginalLayout([...layout]); // Update original layout to current
             
             // Refresh the views list to reflect any changes
             const { data } = await axios.get(`${API_URL}/api/dashboard/views`, { withCredentials: true });
@@ -177,8 +225,12 @@ const Dashboard = () => {
     };
 
     const handleAddWidget = (widgetKey) => {
+        console.log('Adding widget:', widgetKey);
         const widgetToAdd = widgetLibrary.find(w => w.key === widgetKey);
-        if (!widgetToAdd) return;
+        if (!widgetToAdd) {
+            console.log('Widget not found in library');
+            return;
+        }
 
         const newLayoutItem = {
             i: widgetKey,
@@ -188,12 +240,15 @@ const Dashboard = () => {
             h: 2, // Default height
         };
 
+        console.log('Adding new layout item:', newLayoutItem);
         setLayout([...layout, newLayoutItem]);
         setAddModalOpen(false);
     };
 
     const handleCancelEdit = () => {
-        setLayout(originalLayout);
+        console.log('Canceling edit, reverting to original layout');
+        console.log('Original layout:', originalLayout);
+        setLayout([...originalLayout]); // Restore original layout
         setIsEditMode(false);
     };
 
@@ -216,6 +271,12 @@ const Dashboard = () => {
         setEditPopupOpen(true);
     };
 
+    // Handle layout changes during edit mode
+    const handleLayoutChange = (newLayout) => {
+        console.log('Layout changed:', newLayout);
+        setLayout(newLayout);
+    };
+
     // Derived state
     const currentWidgetKeys = layout.map(item => item.i);
     const availableWidgets = widgetLibrary.filter(widget => !currentWidgetKeys.includes(widget.key));
@@ -225,6 +286,14 @@ const Dashboard = () => {
     return (
         <>
             <div className="min-h-screen bg-gray-100">
+                {/* Debug info - Remove in production */}
+                <div className="bg-yellow-100 p-2 text-xs">
+                    <strong>Debug:</strong> EditMode: {isEditMode ? 'ON' : 'OFF'} | 
+                    ViewID: {currentViewId || 'None'} | 
+                    Layout items: {layout.length} | 
+                    Widgets: {widgetLibrary.length}
+                </div>
+
                 {/* Modals */}
                 {isSaveModalOpen && <SaveViewModal onSave={handleSaveNewView} onClose={() => setSaveModalOpen(false)} />}
                 {isEditPopupOpen && <EditUserPopup onClose={() => setEditPopupOpen(false)} />}
@@ -252,12 +321,10 @@ const Dashboard = () => {
                                 {/* Edit mode toggle */}
                                 {!isEditMode ? (
                                     <button
-                                        onClick={() => {
-                                            setIsEditMode(true);
-                                            setOriginalLayout([...layout]); // Create a deep copy
-                                        }}
-                                        className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                                        onClick={handleEditLayoutClick}
+                                        className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
                                         disabled={!currentViewId}
+                                        title={!currentViewId ? "Select a view first" : "Enter edit mode"}
                                     >
                                         Edit Layout
                                     </button>
@@ -346,22 +413,42 @@ const Dashboard = () => {
                 </header>
 
                 <main className="p-4">
+                    {/* Edit mode indicator */}
+                    {isEditMode && (
+                        <div className="mb-4 p-3 bg-blue-100 border border-blue-300 rounded-lg">
+                            <p className="text-blue-800 font-medium">
+                                🎯 Edit Mode Active - You can now drag and resize widgets
+                            </p>
+                        </div>
+                    )}
+
                     <ResponsiveReactGridLayout
                         layouts={{ lg: layout }}
-                        onLayoutChange={(layout) => setLayout(layout)}
+                        onLayoutChange={handleLayoutChange}
                         className="layout"
                         cols={{ lg: 12, md: 10, sm: 6, xs: 4, xxs: 2 }}
                         rowHeight={100}
                         isDraggable={isEditMode}
                         isResizable={isEditMode}
+                        margin={[10, 10]}
+                        containerPadding={[10, 10]}
                     >
                         {layout.map(item => {
                             const widget = widgetLibrary.find(w => w.key === item.i);
                             return (
                                 <div 
                                     key={item.i} 
-                                    className={`bg-white rounded-lg shadow-lg p-2 overflow-hidden ${isEditMode ? 'ring-2 ring-blue-500 ring-offset-2' : ''}`}
+                                    className={`bg-white rounded-lg shadow-lg p-2 overflow-hidden transition-all duration-200 ${
+                                        isEditMode ? 'ring-2 ring-blue-500 ring-offset-2 cursor-move' : ''
+                                    }`}
                                 >
+                                    {isEditMode && (
+                                        <div className="absolute top-1 right-1 z-10">
+                                            <span className="bg-blue-500 text-white text-xs px-2 py-1 rounded">
+                                                Edit Mode
+                                            </span>
+                                        </div>
+                                    )}
                                     {widget ? (
                                         <DynamicWidget widgetKey={widget.key} widgetPath={widget.path} type={widget.type} />
                                     ) : (
