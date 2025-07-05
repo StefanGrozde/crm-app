@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react';
 import axios from 'axios';
-import { RGL, WidthProvider } from 'react-grid-layout';
+import { Responsive, WidthProvider } from 'react-grid-layout';
 import { AuthContext } from '../context/AuthContext';
 import SalesPipelineWidget from '../components/widgets/SalesPipelineWidget'; // Example widget
 import SaveViewModal from '../components/SaveViewModal';
