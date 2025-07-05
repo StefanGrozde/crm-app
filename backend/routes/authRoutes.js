@@ -125,18 +125,59 @@ router.post('/microsoft/complete', async (req, res) => {
 });
 
 
+
 // --- Username/Password Routes ---
-// (The rest of your file: /register, /login, /me routes should be here)
 router.post('/register', async (req, res) => {
-    // ... your existing register code
+    const { companyName, email, password } = req.body;
+    if (!companyName || !email || !password) {
+        return res.status(400).json({ message: 'Company name, email, and password are required.' });
+    }
+    try {
+        await User.sequelize.transaction(async (t) => {
+            const company = await Company.create({ name: companyName }, { transaction: t });
+            await User.create({
+                email,
+                password,
+                companyId: company.id,
+                role: 'Administrator',
+            }, { transaction: t });
+        });
+        res.status(201).json({ message: 'Company and Admin user registered successfully' });
+    } catch (err) {
+        if (err.name === 'SequelizeUniqueConstraintError') {
+             return res.status(409).json({ message: 'Email already exists.' });
+        }
+        res.status(500).json({ message: 'Server Error' });
+    }
 });
 
 router.post('/login', async (req, res) => {
-    // ... your existing login code
+    const { email, password } = req.body;
+    try {
+        const user = await User.findOne({ where: { email } });
+
+        // Add this check to prevent a crash if the user is not found
+        if (!user) {
+            return res.status(401).json({ message: 'Invalid email or password' });
+        }
+
+        if (await user.matchPassword(password)) {
+            sendTokenResponse(user, 200, res);
+        } else {
+            res.status(401).json({ message: 'Invalid email or password' });
+        }
+    } catch (err) {
+        res.status(500).json({ message: 'Server Error' });
+    }
 });
 
 router.get('/me', protect, (req, res) => {
-    // ... your existing me code
+    // The 'protect' middleware has already fetched the user and attached it to req.user
+    if (req.user) {
+      res.status(200).json(req.user);
+    } else {
+      res.status(404).json({ message: 'User not found' });
+    }
 });
   
-module.exports = router;
+  module.exports = router;
