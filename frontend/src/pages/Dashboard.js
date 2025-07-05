@@ -1,12 +1,14 @@
 import React, { useState, useEffect, useContext } from 'react';
 import axios from 'axios';
+// FIX: Correctly import from react-grid-layout
 import { Responsive, WidthProvider } from 'react-grid-layout';
 import { AuthContext } from '../context/AuthContext';
 import SalesPipelineWidget from '../components/widgets/SalesPipelineWidget'; // Example widget
 import SaveViewModal from '../components/SaveViewModal';
 import { useNavigate } from 'react-router-dom';
 
-const ReactGridLayout = WidthProvider(RGL);
+// FIX: Use the imported components correctly
+const ResponsiveReactGridLayout = WidthProvider(Responsive);
 const API_URL = process.env.REACT_APP_API_URL;
 
 // This maps widget keys to their actual components
@@ -107,11 +109,11 @@ const Dashboard = () => {
             </header>
 
             <main className="p-4">
-                <ReactGridLayout
-                    layout={layout}
+                <ResponsiveReactGridLayout
+                    layouts={{ lg: layout }}
                     onLayoutChange={onLayoutChange}
                     className="layout"
-                    cols={12}
+                    cols={{ lg: 12, md: 10, sm: 6, xs: 4, xxs: 2 }}
                     rowHeight={100}
                 >
                     {layout.map(item => {
@@ -122,7 +124,7 @@ const Dashboard = () => {
                             </div>
                         );
                     })}
-                </ReactGridLayout>
+                </ResponsiveReactGridLayout>
             </main>
         </div>
     );
