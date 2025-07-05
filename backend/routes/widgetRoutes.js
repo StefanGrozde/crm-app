@@ -9,21 +9,24 @@ const upload = require('../middleware/uploadMiddleware'); // Import the upload m
 // @access  Private (Admin only, assuming you have an authorize middleware)
 router.post('/upload', upload.single('widget'), (req, res) => {
   if (!req.file) {
-    return res.status(400).send('No file uploaded.');
+    return res.status(400).json({ error: 'No file uploaded.' });
   }
-  res.status(201).send({
+  
+  console.log('Widget uploaded:', req.file.filename);
+  
+  res.status(201).json({
     message: 'Widget uploaded successfully',
     fileName: req.file.filename,
+    path: `/api/widgets/uploaded/${req.file.filename}`,
   });
 });
-
 
 // @desc    Get the combined widget manifest
 // @route   GET /api/widgets/manifest
 // @access  Private
 router.get('/manifest', (req, res) => {
-    const builtInWidgetsDir = path.join(__dirname, '..', '..', 'frontend', 'src', 'components', 'widgets');
-    const uploadedWidgetsDir = path.join(__dirname, '..', 'widgets');
+    const builtInWidgetsDir = path.join(__dirname, '..', 'widgets', 'builtin');
+    const uploadedWidgetsDir = path.join(__dirname, '..', 'widgets', 'uploaded');
 
     const readWidgetsFromDirectory = (dir, type, urlPrefix = '') => {
         if (!fs.existsSync(dir)) {
@@ -39,16 +42,15 @@ router.get('/manifest', (req, res) => {
                 return {
                     key: componentName,
                     name: displayName,
-                    // The path will be different for uploaded widgets
-                    path: type === 'uploaded' ? `${urlPrefix}/${file}` : `./widgets/${file}`,
+                    path: `${urlPrefix}/${file}`,
                     type: type
                 };
             });
     };
 
     try {
-        const builtInWidgets = readWidgetsFromDirectory(builtInWidgetsDir, 'builtin');
-        const uploadedWidgets = readWidgetsFromDirectory(uploadedWidgetsDir, 'uploaded', '/api/widgets/files');
+        const builtInWidgets = readWidgetsFromDirectory(builtInWidgetsDir, 'builtin', '/api/widgets/builtin');
+        const uploadedWidgets = readWidgetsFromDirectory(uploadedWidgetsDir, 'uploaded', '/api/widgets/uploaded');
 
         // Combine and return the lists
         res.json([...builtInWidgets, ...uploadedWidgets]);
@@ -58,5 +60,32 @@ router.get('/manifest', (req, res) => {
     }
 });
 
+// @desc    Serve built-in widgets
+// @route   GET /api/widgets/builtin/:filename
+// @access  Private
+router.get('/builtin/:filename', (req, res) => {
+    const filename = req.params.filename;
+    const filePath = path.join(__dirname, '..', 'widgets', 'builtin', filename);
+    
+    if (!fs.existsSync(filePath)) {
+        return res.status(404).json({ message: 'Widget not found' });
+    }
+    
+    res.sendFile(filePath);
+});
+
+// @desc    Serve uploaded widgets
+// @route   GET /api/widgets/uploaded/:filename
+// @access  Private
+router.get('/uploaded/:filename', (req, res) => {
+    const filename = req.params.filename;
+    const filePath = path.join(__dirname, '..', 'widgets', 'uploaded', filename);
+    
+    if (!fs.existsSync(filePath)) {
+        return res.status(404).json({ message: 'Widget not found' });
+    }
+    
+    res.sendFile(filePath);
+});
 
 module.exports = router;

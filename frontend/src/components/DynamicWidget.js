@@ -1,17 +1,12 @@
-import React, { Suspense } from 'react';
-
-// Lazy load for built-in widgets
-const lazyLoadBuiltIn = (widgetKey) => {
-    return React.lazy(() => import(`./widgets/${widgetKey}.js`));
-};
+import React, { Suspense, useState, useEffect } from 'react';
 
 // Component to load scripts from a URL
-class ScriptLoader extends React.Component {
-    state = { Component: null };
+const ScriptLoader = ({ widgetKey, widgetPath }) => {
+    const [Component, setComponent] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
 
-    componentDidMount() {
-        const { widgetKey, widgetPath } = this.props;
-
+    useEffect(() => {
         // Create a script tag
         const script = document.createElement('script');
         script.src = widgetPath;
@@ -21,37 +16,99 @@ class ScriptLoader extends React.Component {
             // This assumes the uploaded widget bundle exposes itself on a global object.
             // For example: window.UploadedWidgets['MyUploadedWidget']
             if (window.UploadedWidgets && window.UploadedWidgets[widgetKey]) {
-                this.setState({ Component: window.UploadedWidgets[widgetKey] });
+                setComponent(() => window.UploadedWidgets[widgetKey]);
+                setLoading(false);
+            } else {
+                setError(`Widget ${widgetKey} not found in global scope`);
+                setLoading(false);
             }
         };
 
+        script.onerror = () => {
+            setError(`Failed to load widget script: ${widgetPath}`);
+            setLoading(false);
+        };
+
         document.body.appendChild(script);
+
+        // Cleanup
+        return () => {
+            if (document.body.contains(script)) {
+                document.body.removeChild(script);
+            }
+        };
+    }, [widgetKey, widgetPath]);
+
+    if (loading) return <div className="p-4">Loading widget...</div>;
+    if (error) return <div className="p-4 text-red-500">Error: {error}</div>;
+    if (!Component) return <div className="p-4">Widget not found</div>;
+
+    return <Component />;
+};
+
+// Component to load widgets from backend
+const RemoteWidgetLoader = ({ widgetKey, widgetPath }) => {
+    const [Component, setComponent] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+
+    useEffect(() => {
+        const loadWidget = async () => {
+            try {
+                // Fetch the widget code from backend
+                const response = await fetch(widgetPath);
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch widget: ${response.status}`);
+                }
+                
+                const widgetCode = await response.text();
+                
+                // Create a blob URL for the widget code
+                const blob = new Blob([widgetCode], { type: 'application/javascript' });
+                const blobUrl = URL.createObjectURL(blob);
+                
+                // Load the widget as a module
+                const module = await import(blobUrl);
+                
+                // Cleanup blob URL
+                URL.revokeObjectURL(blobUrl);
+                
+                // Set the component (assuming default export)
+                setComponent(() => module.default);
+                setLoading(false);
+            } catch (err) {
+                console.error('Error loading widget:', err);
+                setError(err.message);
+                setLoading(false);
+            }
+        };
+
+        loadWidget();
+    }, [widgetKey, widgetPath]);
+
+    if (loading) return <div className="p-4">Loading widget...</div>;
+    if (error) return <div className="p-4 text-red-500">Error: {error}</div>;
+    if (!Component) return <div className="p-4">Widget not found</div>;
+
+    return <Component />;
+};
+
+const DynamicWidget = ({ widgetKey, widgetPath, type, ...props }) => {
+    // Initialize the global container if it doesn't exist
+    if (!window.UploadedWidgets) {
+        window.UploadedWidgets = {};
     }
 
-    render() {
-        const { Component } = this.state;
-        return Component ? <Component /> : <div>Loading...</div>;
-    }
-}
-
-
-const DynamicWidget = ({ widgetKey, widgetPath, type }) => {
     if (type === 'uploaded') {
-        // Initialize the global container if it doesn't exist
-        if (!window.UploadedWidgets) {
-            window.UploadedWidgets = {};
-        }
+        // For uploaded widgets, use script loader that expects global exposure
         return <ScriptLoader widgetKey={widgetKey} widgetPath={widgetPath} />;
+    } else if (type === 'builtin') {
+        // For built-in widgets served from backend
+        return <RemoteWidgetLoader widgetKey={widgetKey} widgetPath={widgetPath} />;
     }
 
-    // Default to lazy loading for built-in widgets
-    const WidgetComponent = lazyLoadBuiltIn(widgetKey);
-
-    return (
-        <Suspense fallback={<div className="p-4">Loading widget...</div>}>
-            <WidgetComponent />
-        </Suspense>
-    );
+    // Fallback
+    return <div className="p-4 text-yellow-500">Unknown widget type: {type}</div>;
 };
 
 export default DynamicWidget;
