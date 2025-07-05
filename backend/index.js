@@ -56,6 +56,9 @@ app.get('/', (req, res) => {
 app.use('/api/auth', authRoutes); // ADD THIS LINE
 app.use('/api/companies', companyRoutes);
 // Test Route to check DB connection
+app.get('/api/auth/test', (req, res) => {
+    res.status(200).send('Auth test route is working!');
+  });
 app.get('/api/test-db', async (req, res) => {
     let client;
     try {
