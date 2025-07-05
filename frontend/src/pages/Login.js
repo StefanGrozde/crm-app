@@ -14,10 +14,11 @@ const Login = () => {
     const [isRegistering, setIsRegistering] = useState(false);
     const [error, setError] = useState('');
     
-    // Form state
-    const [username, setUsername] = useState('');
-    const [password, setPassword] = useState('');
+    // --- UPDATED STATE ---
+    // Use separate state for each field to avoid confusion
     const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [companyName, setCompanyName] = useState(''); // Added for registration
 
     const handleMicrosoftLogin = () => {
         window.location.href = `${API_URL}/api/auth/microsoft/login`;
@@ -26,21 +27,25 @@ const Login = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
+        
+        // --- UPDATED PAYLOAD LOGIC ---
         const url = isRegistering ? `${API_URL}/api/auth/register` : `${API_URL}/api/auth/login`;
-        const payload = isRegistering ? { username, email, password } : { username, password };
+        const payload = isRegistering ? { companyName, email, password } : { email, password };
 
         try {
             const response = await axios.post(url, payload, { withCredentials: true });
             
             if (!isRegistering) {
-                // On successful login, fetch user data and navigate
-                const userResponse = await axios.get(`${API_URL}/api/auth/me`, { withCredentials: true });
-                setUser(userResponse.data);
+                // On successful login, use the data from the response directly
+                setUser(response.data); 
                 navigate('/dashboard');
             } else {
                 alert('Registration successful! Please log in.');
                 setIsRegistering(false);
+                // Clear all fields
+                setEmail('');
                 setPassword('');
+                setCompanyName('');
             }
         } catch (err) {
             setError(err.response?.data?.message || 'An unexpected error occurred.');
@@ -70,34 +75,39 @@ const Login = () => {
                 </div>
                 <form onSubmit={handleSubmit}>
                     {error && <p className="text-red-500 text-sm mb-4 text-center">{error}</p>}
-                    <div className="mb-4">
-                        <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="username">
-                            Username
-                        </label>
-                        <input
-                            id="username"
-                            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                            type="text"
-                            value={username}
-                            onChange={(e) => setUsername(e.target.value)}
-                            required
-                        />
-                    </div>
+
+                    {/* --- UPDATED REGISTRATION FIELD --- */}
                     {isRegistering && (
                         <div className="mb-4">
-                            <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="email">
-                                Email
+                            <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="companyName">
+                                Company Name
                             </label>
                             <input
-                                id="email"
+                                id="companyName"
                                 className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                                type="email"
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
+                                type="text"
+                                value={companyName}
+                                onChange={(e) => setCompanyName(e.target.value)}
                                 required
                             />
                         </div>
                     )}
+                    
+                    {/* --- UPDATED EMAIL FIELD --- */}
+                    <div className="mb-4">
+                        <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="email">
+                            Email
+                        </label>
+                        <input
+                            id="email"
+                            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                            type="email"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            required
+                        />
+                    </div>
+                    
                     <div className="mb-6">
                         <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="password">
                             Password
@@ -107,7 +117,7 @@ const Login = () => {
                             className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 mb-3 leading-tight focus:outline-none focus:shadow-outline"
                             type="password"
                             value={password}
-                            onChange={(e) => setPassword(e.target.value)}
+                            onChange={(e) => setPassword(e.targe.value)}
                             required
                         />
                     </div>

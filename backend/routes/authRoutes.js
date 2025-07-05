@@ -147,7 +147,13 @@ router.post('/login', async (req, res) => {
     const { email, password } = req.body;
     try {
         const user = await User.findOne({ where: { email } });
-        if (user && (await user.matchPassword(password))) {
+
+        // Add this check to prevent a crash if the user is not found
+        if (!user) {
+            return res.status(401).json({ message: 'Invalid email or password' });
+        }
+
+        if (await user.matchPassword(password)) {
             sendTokenResponse(user, 200, res);
         } else {
             res.status(401).json({ message: 'Invalid email or password' });
