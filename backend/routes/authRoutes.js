@@ -156,4 +156,13 @@ router.post('/login', async (req, res) => {
     }
 });
 
-module.exports = router;
+router.get('/me', protect, (req, res) => {
+    // The 'protect' middleware has already fetched the user and attached it to req.user
+    if (req.user) {
+      res.status(200).json(req.user);
+    } else {
+      res.status(404).json({ message: 'User not found' });
+    }
+  });
+  
+  module.exports = router;
