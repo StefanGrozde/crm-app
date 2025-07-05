@@ -1,39 +1,36 @@
+// frontend/src/pages/LoginSuccess.js
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 const LoginSuccess = () => {
   const navigate = useNavigate();
-  const { setUser } = useAuth();
+  // Get the checkUserLoggedIn function and the latest user state from the context
+  const { checkUserLoggedIn, user, loading } = useAuth();
 
   useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        // The browser will automatically send the HttpOnly cookie
-        const response = await fetch(`${process.env.REACT_APP_API_URL}/api/auth/me`);
-        
-        if (response.ok) {
-          const userData = await response.json();
-          setUser(userData); // Set the user in our global context
-          
-          // Redirect to dashboard or company creation page
-          if (userData.companyId) {
-            navigate('/dashboard');
-          } else {
-            navigate('/create-company');
-          }
-        } else {
-          // If fetching the user fails, redirect to login
-          navigate('/login');
-        }
-      } catch (error) {
-        console.error('Failed to fetch user:', error);
-        navigate('/login');
-      }
-    };
+    // When this page loads, it means the user has just returned from Microsoft.
+    // We tell our AuthContext to re-check the user's status, which will now
+    // hopefully find the new cookie.
+    checkUserLoggedIn();
+  }, [checkUserLoggedIn]);
+  
+  // This effect will run whenever the user or loading state changes.
+  useEffect(() => {
+    // Don't do anything until the auth check is complete
+    if (loading) return;
 
-    fetchUser();
-  }, [navigate, setUser]);
+    if (user) {
+      if (user.companyId) {
+        navigate('/dashboard');
+      } else {
+        navigate('/create-company');
+      }
+    } else {
+      // If after checking, the user is still not found, go to login.
+      navigate('/login');
+    }
+  }, [user, loading, navigate]);
 
   return (
     <div className="flex items-center justify-center min-h-screen">

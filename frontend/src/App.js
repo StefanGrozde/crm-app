@@ -1,24 +1,44 @@
+// frontend/src/App.js
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { AuthProvider } from './context/AuthContext';
-import Dashboard from './pages/Dashboard'; // We will create this next
-import Login from './pages/Login';         // We will create this next
+import { Routes, Route, Navigate } from 'react-router-dom';
+import { useAuth } from './context/AuthContext';
+import Dashboard from './pages/Dashboard';
+import Login from './pages/Login';
 import LoginSuccess from './pages/LoginSuccess';
-import CreateCompany from './pages/CreateCompany'; // We will create this next
+import CreateCompany from './pages/CreateCompany';
 
 function App() {
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <p>Loading application...</p>
+      </div>
+    );
+  }
+
   return (
-    <AuthProvider>
-      <Router>
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route path="/login/success" element={<LoginSuccess />} />
-          <Route path="/create-company" element={<CreateCompany />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/" element={<Login />} /> {/* Default route */}
-        </Routes>
-      </Router>
-    </AuthProvider>
+    <Routes>
+      <Route path="/login" element={<Login />} />
+      <Route path="/login/success" element={<LoginSuccess />} />
+
+      {/* Protected Routes */}
+      <Route 
+        path="/create-company" 
+        element={user ? <CreateCompany /> : <Navigate to="/login" />} 
+      />
+      <Route 
+        path="/dashboard" 
+        element={user ? <Dashboard /> : <Navigate to="/login" />} 
+      />
+      
+      {/* Default route */}
+      <Route 
+        path="/" 
+        element={<Navigate to={user ? "/dashboard" : "/login"} />} 
+      />
+    </Routes>
   );
 }
 
