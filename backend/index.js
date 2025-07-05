@@ -18,6 +18,7 @@ if (missingEnv.length > 0) {
 }
 
 const app = express();
+app.set('trust proxy', 1);
 
 // --- Middleware ---
 const allowedOrigins = [
