@@ -3,8 +3,7 @@
 const cors = require('cors');
 const express = require('express');
 // REMOVE: const { Pool } = require('pg');
-const pool = require('./config/db'); // IMPORT our new db helper
-const authRoutes = require('./auth'); // IMPORT our new auth routes
+const pool = require('./config/db');
 const { connectDB, sequelize } = require('./config/db');
 const cookieParser = require('cookie-parser');
 const authRoutes = require('./routes/authRoutes');
