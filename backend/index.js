@@ -10,6 +10,8 @@ const authRoutes = require('./routes/authRoutes');
 const companyRoutes = require('./routes/companyRoutes');
 const userRoutes = require('./routes/userRoutes');
 const dashboardRoutes = require('./routes/dashboardRoutes');
+const widgetRoutes = require('./routes/widgetRoutes');
+const path = require('path');
 
 console.log("Application starting...");
 
@@ -24,7 +26,7 @@ if (missingEnv.length > 0) {
 
 const app = express();
 app.set('trust proxy', 1);
-
+app.use('/api/widgets/files', express.static(path.join(__dirname, 'widgets')));
 // --- Middleware ---
 const allowedOrigins = [
     'https://main.dww6vb3yjjh85.amplifyapp.com',
@@ -62,6 +64,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/companies', companyRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/widgets', widgetRoutes);
 // Test Route to check DB connection
 app.get('/api/auth/test', (req, res) => {
     res.status(200).send('Auth test route is working!');
