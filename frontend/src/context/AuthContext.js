@@ -1,70 +1,71 @@
-import React, { createContext, useState, useEffect, useContext } from 'react';
+import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
 import axios from 'axios';
 
-// Changed to a named export
-export const AuthContext = createContext();
+const AuthContext = createContext(null);
 
-// Custom hook to use the auth context
-export const useAuth = () => {
-    return useContext(AuthContext);
-};
+export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        const fetchUser = async () => {
-            const token = localStorage.getItem('token');
-            if (token) {
-                try {
-                    // Set the auth token for all subsequent requests
-                    axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-                    const res = await axios.get('[https://backend.svnikolaturs.mk/api/auth/me](https://backend.svnikolaturs.mk/api/auth/me)');
-                    setUser(res.data);
-                } catch (err) {
-                    localStorage.removeItem('token');
-                    setUser(null);
-                    delete axios.defaults.headers.common['Authorization'];
-                }
+    // This function checks if a user session exists on the backend
+    const checkUserLoggedIn = useCallback(async () => {
+        setLoading(true);
+        try {
+            // We use axios here but ensure cookies are sent
+            const response = await axios.get('[https://backend.svnikolaturs.mk/api/auth/me](https://backend.svnikolaturs.mk/api/auth/me)', {
+                withCredentials: true, 
+            });
+            
+            if (response.status === 200) {
+                setUser(response.data);
+            } else {
+                setUser(null);
             }
+        } catch (error) {
+            console.error("User not logged in:", error);
+            setUser(null);
+        } finally {
             setLoading(false);
-        };
-
-        fetchUser();
+        }
     }, []);
 
+    // Check for a logged-in user when the app first loads
+    useEffect(() => {
+        checkUserLoggedIn();
+    }, [checkUserLoggedIn]);
+
+    // Standard login
     const login = async (email, password) => {
-        const res = await axios.post('[https://backend.svnikolaturs.mk/api/auth/login](https://backend.svnikolaturs.mk/api/auth/login)', { email, password });
-        localStorage.setItem('token', res.data.token);
-        axios.defaults.headers.common['Authorization'] = `Bearer ${res.data.token}`;
-        // The backend sends the user object in the response body on login
-        setUser(res.data); 
-    };
-    
-    const completeMicrosoftLogin = async (mscode) => {
-        try {
-            const res = await axios.post('[https://backend.svnikolaturs.mk/api/auth/microsoft/complete](https://backend.svnikolaturs.mk/api/auth/microsoft/complete)', { mscode });
-            // The backend sets a cookie, and we get user info back.
-            // We'll also set a local token to keep the session aligned.
-            localStorage.setItem('token', 'true'); // Using a simple flag as the real token is in an httpOnly cookie
-            axios.defaults.headers.common['Authorization'] = `Bearer true`; // Mimic session
-            setUser(res.data);
-            return res.data;
-        } catch (error) {
-            console.error('Error completing Microsoft login:', error);
-            throw error;
-        }
+        const response = await axios.post('[https://backend.svnikolaturs.mk/api/auth/login](https://backend.svnikolaturs.mk/api/auth/login)', { email, password }, {
+            withCredentials: true,
+        });
+        await checkUserLoggedIn(); // Re-check user status to get full user object
+        return response;
     };
 
-    const logout = () => {
-        localStorage.removeItem('token');
-        delete axios.defaults.headers.common['Authorization'];
-        setUser(null);
+    // Microsoft Login
+    const completeMicrosoftLogin = async (mscode) => {
+        const response = await axios.post('[https://backend.svnikolaturs.mk/api/auth/microsoft/complete](https://backend.svnikolaturs.mk/api/auth/microsoft/complete)', { mscode }, {
+            withCredentials: true,
+        });
+        await checkUserLoggedIn(); // Re-check user status
+        return response;
     };
+
+    // Logout
+    const logout = async () => {
+        // It's good practice to have a backend route for logout to invalidate the cookie/session
+        // but for now, we'll just clear the state on the client-side.
+        setUser(null);
+        // If you had a /api/auth/logout endpoint, you would call it here.
+    };
+
+    const value = { user, setUser, loading, login, logout, completeMicrosoftLogin, checkUserLoggedIn };
 
     return (
-        <AuthContext.Provider value={{ user, loading, login, logout, completeMicrosoftLogin }}>
+        <AuthContext.Provider value={value}>
             {!loading && children}
         </AuthContext.Provider>
     );
