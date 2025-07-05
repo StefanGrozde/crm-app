@@ -8,6 +8,7 @@ const { connectDB, sequelize } = require('./config/db');
 const cookieParser = require('cookie-parser');
 const authRoutes = require('./routes/authRoutes');
 const companyRoutes = require('./routes/companyRoutes');
+const userRoutes = require('./routes/userRoutes');
 
 console.log("Application starting...");
 
