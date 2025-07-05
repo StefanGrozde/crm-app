@@ -34,7 +34,7 @@ const FRONTEND_URI = "https://main.dww6vb3yjjh85.amplifyapp.com";
 // 1. Redirect to Microsoft's login page
 router.get('/microsoft/login', (req, res) => {
     const authCodeUrlParameters = {
-        scopes: ["user.read"],
+        scopes: ["openid", "email", "user.read"],
         redirectUri: REDIRECT_URI,
     };
     pca.getAuthCodeUrl(authCodeUrlParameters)
@@ -50,7 +50,7 @@ router.get('/microsoft/callback', async (req, res) => {
     try {
         const tokenRequest = {
             code: req.query.code,
-            scopes: ["user.read"],
+            scopes: ["openid", "email", "user.read"],
             redirectUri: REDIRECT_URI,
         };
 
