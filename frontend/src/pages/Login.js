@@ -15,7 +15,6 @@ const Login = () => {
     const [error, setError] = useState('');
     
     // --- UPDATED STATE ---
-    // Use separate state for each field to avoid confusion
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [companyName, setCompanyName] = useState(''); // Added for registration
@@ -117,7 +116,7 @@ const Login = () => {
                             className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 mb-3 leading-tight focus:outline-none focus:shadow-outline"
                             type="password"
                             value={password}
-                            onChange={(e) => setPassword(e.targe.value)}
+                            onChange={(e) => setPassword(e.target.value)}
                             required
                         />
                     </div>
