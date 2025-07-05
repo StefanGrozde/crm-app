@@ -28,22 +28,20 @@ const CreateCompany = () => {
     }
 
     try {
-      // Make the API call to the backend to create the company.
       // The `protect` middleware on your backend will use the cookie to identify the user.
+      // We MUST include `withCredentials: true` for the browser to send the cookie.
       const { data: company } = await axios.post(`${API_URL}/api/companies`, {
         name,
         industry,
         website,
         phone_number: phoneNumber,
-      }, { withCredentials: true });
+      }, { withCredentials: true }); // <--- FIX: Added withCredentials
 
-      // The backend has now associated the user with the new company
-      // and updated their role to 'Administrator'. We need to reflect
-      // that change in our frontend's auth context.
+      // Update the frontend's auth context with the new company info.
       const updatedUser = { ...user, companyId: company.id, role: 'Administrator' };
       setUser(updatedUser);
 
-      // Now that the user is part of a company, navigate to the dashboard.
+      // Navigate to the dashboard.
       navigate('/dashboard');
 
     } catch (err) {

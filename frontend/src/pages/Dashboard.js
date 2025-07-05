@@ -24,30 +24,27 @@ const UserIcon = () => (
 const Dashboard = () => {
     const navigate = useNavigate();
     const { user, setUser } = useAuth();
-    // --- NEW: State for company data ---
     const [company, setCompany] = useState(null);
     const [loading, setLoading] = useState(true);
 
-    // --- NEW: Effect to fetch company data ---
     useEffect(() => {
         const fetchCompanyData = async () => {
-            // Ensure we have a user and a companyId to fetch
             if (user && user.companyId) {
                 try {
+                    // We MUST include `withCredentials: true` for the browser to send the cookie.
                     const response = await axios.get(`${API_URL}/api/companies/${user.companyId}`, {
-                        withCredentials: true,
+                        withCredentials: true, // <--- FIX: Added withCredentials
                     });
                     setCompany(response.data);
                 } catch (error) {
                     console.error("Failed to fetch company details:", error);
-                    // Handle error, maybe show a notification
                 }
             }
             setLoading(false);
         };
 
         fetchCompanyData();
-    }, [user]); // Re-run if the user object changes
+    }, [user]);
 
     const handleLogout = async () => {
         setUser(null);
@@ -68,7 +65,6 @@ const Dashboard = () => {
                 <div className="container mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex items-center justify-between h-16">
                         <div className="flex-shrink-0">
-                            {/* --- UPDATED: Display company name --- */}
                             <h1 className="text-2xl font-bold text-gray-800">
                                 {company ? company.name : 'MyCRM'}
                             </h1>
@@ -105,7 +101,6 @@ const Dashboard = () => {
             </header>
             <main className="py-10">
                 <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-                    {/* --- UPDATED: Welcome message --- */}
                     <h2 className="text-3xl font-bold leading-tight text-gray-900">
                         Welcome, {user?.email || 'User'}!
                     </h2>
