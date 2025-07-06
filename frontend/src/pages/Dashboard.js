@@ -16,6 +16,7 @@ import EditUserPopup from '../components/EditUserPopup';
 import AddWidgetModal from '../components/AddWidgetModal';
 import UploadWidgetModal from '../components/UploadWidgetModal';
 import DynamicWidget from '../components/DynamicWidget';
+import SearchBar from '../components/SearchBar';
 
 const ResponsiveReactGridLayout = WidthProvider(Responsive);
 const API_URL = process.env.REACT_APP_API_URL;
@@ -74,6 +75,9 @@ const Dashboard = () => {
     // Track if a tab is being dragged
     const [isDraggingTab, setIsDraggingTab] = useState(false);
     const dragTimeoutRef = useRef(null);
+
+    // Track previous openTabs length
+    const prevTabsLengthRef = useRef(openTabs.length);
 
     // Debug: Log state changes
     useEffect(() => {
@@ -227,11 +231,15 @@ const Dashboard = () => {
     // Effect: When a new tab is added, switch to it automatically
     useEffect(() => {
         if (openTabs.length > 0) {
-            const lastTab = openTabs[openTabs.length - 1];
-            if (activeTabId !== lastTab.id) {
-                switchToTab(lastTab.id);
+            // Only auto-switch if a new tab was added
+            if (openTabs.length > prevTabsLengthRef.current) {
+                const lastTab = openTabs[openTabs.length - 1];
+                if (activeTabId !== lastTab.id) {
+                    switchToTab(lastTab.id);
+                }
             }
         }
+        prevTabsLengthRef.current = openTabs.length;
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [openTabs]);
 
@@ -527,6 +535,60 @@ const Dashboard = () => {
         setTabLayouts(prev => ({ ...prev, [currentViewId]: newLayout }));
     };
 
+    // Handle opening search results as new tabs
+    const handleOpenSearchResult = (result) => {
+        console.log('Opening search result as tab:', result);
+        
+        // Create a unique ID for the search result tab
+        const tabId = `search-${result.type}-${result.id}`;
+        
+        // Check if tab is already open
+        const isTabOpen = openTabs.find(tab => tab.id === tabId);
+        if (isTabOpen) {
+            // If already open, just switch to it
+            switchToTab(tabId);
+            return;
+        }
+        
+        // Create a new tab for the search result
+        const newTab = {
+            id: tabId,
+            name: `${result.title} (${result.type})`,
+            isDefault: false
+        };
+        
+        // Add the new tab
+        setOpenTabs(prev => [...prev, newTab]);
+        
+        // Create a simple layout for the search result
+        const resultLayout = [{
+            i: `search-result-${result.id}`,
+            x: 0,
+            y: 0,
+            w: 12,
+            h: 4,
+            resultData: result // Store the result data in the layout item
+        }];
+        
+        // Store the layout and edit mode for the new tab
+        setTabLayouts(prev => ({ ...prev, [tabId]: resultLayout }));
+        setTabEditModes(prev => ({ ...prev, [tabId]: false }));
+        
+        // Switch to the new tab
+        setTimeout(() => switchToTab(tabId), 100);
+    };
+
+    // Create sample data for testing
+    const createSampleData = async () => {
+        try {
+            const response = await axios.post(`${API_URL}/api/search/sample-data`, {}, { withCredentials: true });
+            alert(`Sample data created successfully! Created ${response.data.created.contacts} contacts, ${response.data.created.leads} leads, and ${response.data.created.opportunities} opportunities.`);
+        } catch (error) {
+            console.error('Failed to create sample data:', error);
+            alert('Failed to create sample data. Please check the console for details.');
+        }
+    };
+
     // Derived state
     const currentWidgetKeys = layout.map(item => item.i);
     const availableWidgets = widgetLibrary.filter(widget => !currentWidgetKeys.includes(widget.key));
@@ -598,12 +660,24 @@ const Dashboard = () => {
             <div className="min-h-screen bg-gray-100">
                 {/* Debug info - Remove in production */}
                 <div className="bg-yellow-100 p-2 text-xs">
-                    <strong>Debug:</strong> EditMode: {isEditMode ? 'ON' : 'OFF'} | 
-                    ViewID: {currentViewId || 'None'} | 
-                    Layout items: {layout.length} | 
-                    Widgets: {widgetLibrary.length} |
-                    Open tabs: {openTabs.length} |
-                    Active tab: {activeTabId || 'None'}
+                    <div className="flex justify-between items-center">
+                        <div>
+                            <strong>Debug:</strong> EditMode: {isEditMode ? 'ON' : 'OFF'} | 
+                            ViewID: {currentViewId || 'None'} | 
+                            Layout items: {layout.length} | 
+                            Widgets: {widgetLibrary.length} |
+                            Open tabs: {openTabs.length} |
+                            Active tab: {activeTabId || 'None'}
+                        </div>
+                        {user.role === 'Administrator' && (
+                            <button
+                                onClick={createSampleData}
+                                className="px-2 py-1 bg-blue-500 text-white text-xs rounded hover:bg-blue-600"
+                            >
+                                Create Sample Data
+                            </button>
+                        )}
+                    </div>
                 </div>
 
                 {/* Modals */}
@@ -616,6 +690,15 @@ const Dashboard = () => {
                     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                         <div className="flex justify-between items-center py-4">
                             <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
+                            
+                            {/* Search Bar - Centered */}
+                            <div className="flex-1 max-w-2xl mx-8">
+                                <SearchBar 
+                                    placeholder="Search contacts, leads, opportunities, companies..."
+                                    className="w-full"
+                                    onOpenResult={handleOpenSearchResult}
+                                />
+                            </div>
                             
                             {/* View selector and controls */}
                             <div className="flex items-center space-x-4">
@@ -842,7 +925,12 @@ const Dashboard = () => {
                                         {/* Widget content */}
                                         <div className={isEditMode ? 'pt-6' : ''}>
                                             {widget ? (
-                                                <DynamicWidget widgetKey={widget.key} widgetPath={widget.path} type={widget.type} />
+                                                <DynamicWidget 
+                                                    widgetKey={widget.key} 
+                                                    widgetPath={widget.path} 
+                                                    type={widget.type}
+                                                    resultData={item.i.startsWith('search-result-') ? item.resultData : undefined}
+                                                />
                                             ) : (
                                                 <div className="text-center p-4">
                                                     <div className="text-gray-600 text-sm">

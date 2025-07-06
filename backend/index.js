@@ -11,6 +11,7 @@ const companyRoutes = require('./routes/companyRoutes');
 const userRoutes = require('./routes/userRoutes');
 const dashboardRoutes = require('./routes/dashboardRoutes');
 const widgetRoutes = require('./routes/widgetRoutes');
+const searchRoutes = require('./routes/searchRoutes');
 const path = require('path');
 
 console.log("Application starting...");
@@ -65,6 +66,7 @@ app.use('/api/companies', companyRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/widgets', widgetRoutes);
+app.use('/api/search', searchRoutes);
 app.use('/api/widgets/buildin', express.static(path.join(__dirname, 'widgets', 'buildin')));
 app.use('/api/widgets/custom', express.static(path.join(__dirname, 'widgets', 'custom')));
 // Test Route to check DB connection

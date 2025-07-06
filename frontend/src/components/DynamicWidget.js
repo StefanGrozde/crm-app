@@ -1,4 +1,5 @@
 import React, { Suspense, useState, useEffect } from 'react';
+import SearchResultWidget from './SearchResultWidget';
 
 // Component to load scripts from a URL
 const ScriptLoader = ({ widgetKey, widgetPath }) => {
@@ -93,10 +94,15 @@ const RemoteWidgetLoader = ({ widgetKey, widgetPath }) => {
     return <Component />;
 };
 
-const DynamicWidget = ({ widgetKey, widgetPath, type, ...props }) => {
+const DynamicWidget = ({ widgetKey, widgetPath, type, resultData, ...props }) => {
     // Initialize the global container if it doesn't exist
     if (!window.UploadedWidgets) {
         window.UploadedWidgets = {};
+    }
+
+    // Handle search result widgets
+    if (widgetKey.startsWith('search-result-')) {
+        return <SearchResultWidget resultData={resultData} />;
     }
 
     if (type === 'uploaded') {
