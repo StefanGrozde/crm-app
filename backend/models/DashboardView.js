@@ -72,4 +72,29 @@ const DashboardWidget = sequelize.define('DashboardWidget', {
 DashboardView.hasMany(DashboardWidget, { as: 'widgets', foreignKey: 'viewId', onDelete: 'CASCADE' });
 DashboardWidget.belongsTo(DashboardView, { foreignKey: 'viewId' });
 
+// Static methods for DashboardView
+DashboardView.setDefaultForUser = async function(viewId, userId) {
+    // First, remove default from all user's views
+    await this.update(
+        { is_default: false },
+        { where: { userId: userId } }
+    );
+    
+    // Then set the specified view as default
+    await this.update(
+        { is_default: true },
+        { where: { id: viewId, userId: userId } }
+    );
+};
+
+DashboardView.findDefaultForUser = async function(userId) {
+    return await this.findOne({
+        where: { 
+            userId: userId,
+            is_default: true 
+        },
+        include: [{ model: DashboardWidget, as: 'widgets' }]
+    });
+};
+
 module.exports = { DashboardView, DashboardWidget };

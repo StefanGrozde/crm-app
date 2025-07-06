@@ -3,6 +3,8 @@ import React, { useState, useEffect, useContext, useRef, Suspense } from 'react'
 import axios from 'axios';
 import { Responsive, WidthProvider } from 'react-grid-layout';
 import { Link, useNavigate } from 'react-router-dom';
+import 'react-grid-layout/css/styles.css';
+import 'react-resizable/css/styles.css';
 
 // Component Imports
 import { AuthContext } from '../context/AuthContext';
@@ -360,8 +362,19 @@ const Dashboard = () => {
         setLayout(newLayout);
     };
 
+    // Debug function to test remove functionality
+    const debugRemoveWidget = (widgetKey) => {
+        console.log('Debug: Attempting to remove widget:', widgetKey);
+        console.log('Current layout before removal:', layout);
+        const newLayout = layout.filter(item => item.i !== widgetKey);
+        console.log('New layout after removal:', newLayout);
+        setLayout(newLayout);
+    };
+
     // Handle widget removal
-    const handleRemoveWidget = (widgetKey) => {
+    const handleRemoveWidget = (widgetKey, event) => {
+        event.preventDefault();
+        event.stopPropagation();
         console.log('Removing widget:', widgetKey);
         const newLayout = layout.filter(item => item.i !== widgetKey);
         setLayout(newLayout);
@@ -375,6 +388,29 @@ const Dashboard = () => {
 
     return (
         <>
+            <style>
+                {`
+                    .react-grid-item.react-grid-placeholder {
+                        background: #cbd5e0 !important;
+                        border: 2px dashed #718096 !important;
+                        border-radius: 8px !important;
+                    }
+                    .react-resizable-handle {
+                        background-image: none !important;
+                        background-color: #3b82f6 !important;
+                        border-radius: 2px !important;
+                        width: 8px !important;
+                        height: 8px !important;
+                    }
+                    .react-resizable-handle:hover {
+                        background-color: #2563eb !important;
+                    }
+                    .react-resizable-handle.react-resizable-handle-se {
+                        bottom: 2px !important;
+                        right: 2px !important;
+                    }
+                `}
+            </style>
             <div className="min-h-screen bg-gray-100">
                 {/* Debug info - Remove in production */}
                 <div className="bg-yellow-100 p-2 text-xs">
@@ -509,6 +545,14 @@ const Dashboard = () => {
                             <p className="text-blue-800 font-medium">
                                 🎯 Edit Mode Active - You can now drag, resize, and remove widgets. Click the red X to remove widgets.
                             </p>
+                            {layout.length > 0 && (
+                                <button 
+                                    onClick={() => debugRemoveWidget(layout[0].i)}
+                                    className="mt-2 px-3 py-1 bg-red-500 text-white text-sm rounded hover:bg-red-600"
+                                >
+                                    Debug: Remove First Widget
+                                </button>
+                            )}
                         </div>
                     )}
 
@@ -522,6 +566,7 @@ const Dashboard = () => {
                         isResizable={isEditMode}
                         margin={[10, 10]}
                         containerPadding={[10, 10]}
+                        style={{ minHeight: '400px' }}
                     >
                         {layout.map(item => {
                             const widget = widgetLibrary.find(w => w.key === item.i);
@@ -535,9 +580,10 @@ const Dashboard = () => {
                                     {/* Remove button - only shown in edit mode */}
                                     {isEditMode && (
                                         <button
-                                            onClick={() => handleRemoveWidget(item.i)}
-                                            className="absolute top-2 right-2 z-20 bg-red-500 hover:bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center transition-colors duration-200 shadow-lg"
+                                            onClick={(e) => handleRemoveWidget(item.i, e)}
+                                            className="absolute top-2 right-2 z-50 bg-red-500 hover:bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center transition-colors duration-200 shadow-lg pointer-events-auto"
                                             title="Remove widget"
+                                            style={{ zIndex: 9999 }}
                                         >
                                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
