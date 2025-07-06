@@ -67,7 +67,6 @@ class EmailService {
               },
             },
           ],
-          saveToSentItems: 'true',
         },
       };
 
