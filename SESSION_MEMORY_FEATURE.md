@@ -20,6 +20,7 @@ The Session Memory feature automatically saves and restores your open dashboard 
 - **Session Info**: View detailed information about your current session
 - **Clear Session**: Manually clear your saved session
 - **Debug Panel**: Real-time status indicators in the debug panel
+- **Seamless Restoration**: No loading messages - sessions restore silently in the background
 
 ## How It Works
 
@@ -79,7 +80,7 @@ For administrators and debugging:
 
 #### Debug Panel Indicators
 - **Session**: Shows "Saved" if a session exists, "None" if not
-- **Restoring**: Shows "Yes" when restoring a session, "No" when not
+- **Active Tab**: Shows the currently active tab ID
 
 ## Technical Implementation
 

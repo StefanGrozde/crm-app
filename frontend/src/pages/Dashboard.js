@@ -91,8 +91,7 @@ const Dashboard = () => {
     // Track previous openTabs length
     const prevTabsLengthRef = useRef(openTabs.length);
 
-    // Session restoration state
-    const [isRestoringSession, setIsRestoringSession] = useState(false);
+
 
     // Debug: Log state changes
     useEffect(() => {
@@ -132,7 +131,6 @@ const Dashboard = () => {
                 if (sessionExists) {
                     // Load the session data
                     console.log('Loading saved session...');
-                    setIsRestoringSession(true);
                     loadSession();
                     
                     // Give the session time to load, then validate and restore
@@ -172,7 +170,6 @@ const Dashboard = () => {
                                 console.log('No valid tabs in session, creating default view');
                                 await createDefaultView();
                             }
-                            setIsRestoringSession(false);
                         }
                     }, 200);
                 } else {
@@ -756,8 +753,7 @@ const Dashboard = () => {
                             Widgets: {widgetLibrary.length} |
                             Open tabs: {openTabs.length} |
                             Active tab: {activeTabId || 'None'} |
-                            Session: {openTabs.length > 0 ? 'Saved' : 'None'} |
-                            Restoring: {isRestoringSession ? 'Yes' : 'No'}
+                            Session: {openTabs.length > 0 ? 'Saved' : 'None'}
                         </div>
                         {user.role === 'Administrator' && (
                             <>
@@ -987,17 +983,10 @@ const Dashboard = () => {
                         </div>
                     )}
 
-                    {/* Session restoration indicator */}
-                    {isRestoringSession && (
-                        <div className="text-center py-12">
-                            <div className="text-blue-600 text-lg">
-                                🔄 Restoring your previous session...
-                            </div>
-                        </div>
-                    )}
+
 
                     {/* No active tab message */}
-                    {!activeTabId && !isRestoringSession && (
+                    {!activeTabId && (
                         <div className="text-center py-12">
                             <div className="text-gray-500 text-lg">
                                 No views open. Use the dropdown above to open a view.

@@ -67,10 +67,10 @@ export const useTabSession = (userId) => {
         try {
             const sessionKey = `${SESSION_STORAGE_KEY}_${userId}`;
             const sessionData = {
-                openTabs: tabs,
+                openTabs: tabs || [],
                 activeTabId: activeTab,
-                tabLayouts: layouts,
-                tabEditModes: editModes,
+                tabLayouts: layouts || {},
+                tabEditModes: editModes || {},
                 timestamp: Date.now()
             };
             
@@ -122,7 +122,7 @@ export const useTabSession = (userId) => {
 
     // Update session when tab state changes
     useEffect(() => {
-        if (userId && openTabs.length > 0) {
+        if (userId && (openTabs.length > 0 || activeTabId)) {
             saveSession(openTabs, activeTabId, tabLayouts, tabEditModes);
         }
     }, [openTabs, activeTabId, tabLayouts, tabEditModes, saveSession, userId]);
