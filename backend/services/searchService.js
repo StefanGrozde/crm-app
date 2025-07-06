@@ -112,7 +112,7 @@ class SearchService {
   }
 
   /**
-   * Search contacts with full-text search
+   * Search contacts with simple search
    */
   static async searchContacts(query, options = {}) {
     console.log('🔍 SearchService: searchContacts called with query:', query);
@@ -122,22 +122,15 @@ class SearchService {
 
     const whereClause = {
       [Op.or]: [
-        // Full-text search on name fields
-        literal(`to_tsvector('english', COALESCE(first_name, '') || ' ' || COALESCE(last_name, '')) @@ plainto_tsquery('english', '${query}')`),
+        // Simple name search
+        { firstName: { [Op.iLike]: `%${query}%` } },
+        { lastName: { [Op.iLike]: `%${query}%` } },
         // Email search
         { email: { [Op.iLike]: `%${query}%` } },
         // Phone search
         { phone: { [Op.iLike]: `%${query}%` } },
         // Job title search
-        { jobTitle: { [Op.iLike]: `%${query}%` } },
-        // Company name search (through association)
-        literal(`EXISTS (
-          SELECT 1 FROM companies c 
-          WHERE c.id = contacts.company_id 
-          AND c.name ILIKE '%${query}%'
-        )`),
-        // Notes search
-        { notes: { [Op.iLike]: `%${query}%` } }
+        { jobTitle: { [Op.iLike]: `%${query}%` } }
       ]
     };
 
@@ -151,46 +144,28 @@ class SearchService {
     try {
       const contacts = await Contact.findAll({
         where: whereClause,
-        include: [
-          {
-            model: Company,
-            as: 'company',
-            attributes: ['id', 'name', 'industry']
-          },
-          {
-            model: User,
-            as: 'assignedUser',
-            attributes: ['id', 'email']
-          }
-        ],
         order: [
-          // Order by relevance (full-text search rank)
-          literal(`ts_rank(to_tsvector('english', COALESCE(first_name, '') || ' ' || COALESCE(last_name, '')), plainto_tsquery('english', '${query}')) DESC`),
           ['lastName', 'ASC'],
           ['firstName', 'ASC']
         ],
         limit,
-        offset
+        offset,
+        raw: true
       });
 
       console.log('🔍 SearchService: Raw contacts from database:', contacts.length);
-      console.log('🔍 SearchService: First contact sample:', contacts[0] ? {
-        id: contacts[0].id,
-        firstName: contacts[0].firstName,
-        lastName: contacts[0].lastName,
-        email: contacts[0].email
-      } : 'No contacts found');
+      console.log('🔍 SearchService: First contact sample:', contacts[0] || 'No contacts found');
 
       const mappedContacts = contacts.map(contact => ({
         id: contact.id,
         type: 'contact',
-        title: contact.getFullName(),
-        subtitle: contact.jobTitle || contact.company?.name || 'No company',
+        title: `${contact.firstName} ${contact.lastName}`,
+        subtitle: contact.jobTitle || 'No job title',
         email: contact.email,
         phone: contact.phone,
-        company: contact.company?.name,
+        company: 'Company name not available', // We'll add this back later
         status: contact.status,
-        relevance: contact.dataValues.relevance || 0
+        relevance: 0
       }));
 
       console.log('🔍 SearchService: Mapped contacts:', mappedContacts);
@@ -203,7 +178,7 @@ class SearchService {
   }
 
   /**
-   * Search leads with full-text search
+   * Search leads with simple search
    */
   static async searchLeads(query, options = {}) {
     const { userId, companyId, limit = 10, offset = 0 } = options;
@@ -213,21 +188,7 @@ class SearchService {
         // Title search
         { title: { [Op.iLike]: `%${query}%` } },
         // Description search
-        { description: { [Op.iLike]: `%${query}%` } },
-        // Contact name search (through association)
-        literal(`EXISTS (
-          SELECT 1 FROM contacts c 
-          WHERE c.id = leads.contact_id 
-          AND (c.first_name ILIKE '%${query}%' OR c.last_name ILIKE '%${query}%')
-        )`),
-        // Company name search (through association)
-        literal(`EXISTS (
-          SELECT 1 FROM companies c 
-          WHERE c.id = leads.company_id 
-          AND c.name ILIKE '%${query}%'
-        )`),
-        // Notes search
-        { notes: { [Op.iLike]: `%${query}%` } }
+        { description: { [Op.iLike]: `%${query}%` } }
       ]
     };
 
@@ -235,49 +196,39 @@ class SearchService {
       whereClause.companyId = companyId;
     }
 
-    const leads = await Lead.findAll({
-      where: whereClause,
-      include: [
-        {
-          model: Company,
-          as: 'company',
-          attributes: ['id', 'name', 'industry']
-        },
-        {
-          model: Contact,
-          as: 'contact',
-          attributes: ['id', 'firstName', 'lastName', 'email']
-        },
-        {
-          model: User,
-          as: 'assignedUser',
-          attributes: ['id', 'email']
-        }
-      ],
-      order: [
-        ['priority', 'DESC'],
-        ['createdAt', 'DESC']
-      ],
-      limit,
-      offset
-    });
+    try {
+      const leads = await Lead.findAll({
+        where: whereClause,
+        order: [
+          ['priority', 'DESC'],
+          ['createdAt', 'DESC']
+        ],
+        limit,
+        offset,
+        raw: true
+      });
 
-    return leads.map(lead => ({
-      id: lead.id,
-      type: 'lead',
-      title: lead.title,
-      subtitle: lead.contact ? `${lead.contact.firstName} ${lead.contact.lastName}` : lead.company?.name || 'No contact',
-      status: lead.status,
-      priority: lead.priority,
-      estimatedValue: lead.estimatedValue,
-      currency: lead.currency,
-      company: lead.company?.name,
-      relevance: lead.dataValues.relevance || 0
-    }));
+      return leads.map(lead => ({
+        id: lead.id,
+        type: 'lead',
+        title: lead.title,
+        subtitle: 'Contact info not available', // We'll add this back later
+        status: lead.status,
+        priority: lead.priority,
+        estimatedValue: lead.estimatedValue,
+        currency: lead.currency,
+        company: 'Company info not available', // We'll add this back later
+        relevance: 0
+      }));
+    } catch (error) {
+      console.error('🔍 SearchService: Error in searchLeads:', error);
+      console.error('🔍 SearchService: Error stack:', error.stack);
+      return [];
+    }
   }
 
   /**
-   * Search opportunities with full-text search
+   * Search opportunities with simple search
    */
   static async searchOpportunities(query, options = {}) {
     const { userId, companyId, limit = 10, offset = 0 } = options;
@@ -287,21 +238,7 @@ class SearchService {
         // Name search
         { name: { [Op.iLike]: `%${query}%` } },
         // Description search
-        { description: { [Op.iLike]: `%${query}%` } },
-        // Contact name search (through association)
-        literal(`EXISTS (
-          SELECT 1 FROM contacts c 
-          WHERE c.id = opportunities.contact_id 
-          AND (c.first_name ILIKE '%${query}%' OR c.last_name ILIKE '%${query}%')
-        )`),
-        // Company name search (through association)
-        literal(`EXISTS (
-          SELECT 1 FROM companies c 
-          WHERE c.id = opportunities.company_id 
-          AND c.name ILIKE '%${query}%'
-        )`),
-        // Notes search
-        { notes: { [Op.iLike]: `%${query}%` } }
+        { description: { [Op.iLike]: `%${query}%` } }
       ]
     };
 
@@ -309,49 +246,39 @@ class SearchService {
       whereClause.companyId = companyId;
     }
 
-    const opportunities = await Opportunity.findAll({
-      where: whereClause,
-      include: [
-        {
-          model: Company,
-          as: 'company',
-          attributes: ['id', 'name', 'industry']
-        },
-        {
-          model: Contact,
-          as: 'contact',
-          attributes: ['id', 'firstName', 'lastName', 'email']
-        },
-        {
-          model: User,
-          as: 'assignedUser',
-          attributes: ['id', 'email']
-        }
-      ],
-      order: [
-        ['amount', 'DESC'],
-        ['expectedCloseDate', 'ASC']
-      ],
-      limit,
-      offset
-    });
+    try {
+      const opportunities = await Opportunity.findAll({
+        where: whereClause,
+        order: [
+          ['amount', 'DESC'],
+          ['expectedCloseDate', 'ASC']
+        ],
+        limit,
+        offset,
+        raw: true
+      });
 
-    return opportunities.map(opportunity => ({
-      id: opportunity.id,
-      type: 'opportunity',
-      title: opportunity.name,
-      subtitle: opportunity.contact ? `${opportunity.contact.firstName} ${opportunity.contact.lastName}` : opportunity.company?.name || 'No contact',
-      stage: opportunity.stage,
-      probability: opportunity.probability,
-      amount: opportunity.amount,
-      currency: opportunity.currency,
-      company: opportunity.company?.name,
-      relevance: opportunity.dataValues.relevance || 0
-    }));
+      return opportunities.map(opportunity => ({
+        id: opportunity.id,
+        type: 'opportunity',
+        title: opportunity.name,
+        subtitle: 'Contact info not available', // We'll add this back later
+        stage: opportunity.stage,
+        probability: opportunity.probability,
+        amount: opportunity.amount,
+        currency: opportunity.currency,
+        company: 'Company info not available', // We'll add this back later
+        relevance: 0
+      }));
+    } catch (error) {
+      console.error('🔍 SearchService: Error in searchOpportunities:', error);
+      console.error('🔍 SearchService: Error stack:', error.stack);
+      return [];
+    }
   }
 
   /**
-   * Search companies with full-text search
+   * Search companies with simple search
    */
   static async searchCompanies(query, options = {}) {
     const { userId, companyId, limit = 10, offset = 0 } = options;
@@ -374,35 +301,36 @@ class SearchService {
       whereClause.id = companyId;
     }
 
-    const companies = await Company.findAll({
-      where: whereClause,
-      include: [
-        {
-          model: User,
-          attributes: ['id', 'email', 'role']
-        }
-      ],
-      order: [
-        ['name', 'ASC']
-      ],
-      limit,
-      offset
-    });
+    try {
+      const companies = await Company.findAll({
+        where: whereClause,
+        order: [
+          ['name', 'ASC']
+        ],
+        limit,
+        offset,
+        raw: true
+      });
 
-    return companies.map(company => ({
-      id: company.id,
-      type: 'company',
-      title: company.name,
-      subtitle: company.industry || 'No industry specified',
-      website: company.website,
-      phone: company.phone_number,
-      userCount: company.Users?.length || 0,
-      relevance: company.dataValues.relevance || 0
-    }));
+      return companies.map(company => ({
+        id: company.id,
+        type: 'company',
+        title: company.name,
+        subtitle: company.industry || 'No industry specified',
+        website: company.website,
+        phone: company.phone_number,
+        userCount: 0, // We'll add this back later
+        relevance: 0
+      }));
+    } catch (error) {
+      console.error('🔍 SearchService: Error in searchCompanies:', error);
+      console.error('🔍 SearchService: Error stack:', error.stack);
+      return [];
+    }
   }
 
   /**
-   * Search users with full-text search
+   * Search users with simple search
    */
   static async searchUsers(query, options = {}) {
     const { userId, companyId, limit = 10, offset = 0 } = options;
@@ -421,30 +349,31 @@ class SearchService {
       whereClause.companyId = companyId;
     }
 
-    const users = await User.findAll({
-      where: whereClause,
-      include: [
-        {
-          model: Company,
-          attributes: ['id', 'name', 'industry']
-        }
-      ],
-      order: [
-        ['email', 'ASC']
-      ],
-      limit,
-      offset
-    });
+    try {
+      const users = await User.findAll({
+        where: whereClause,
+        order: [
+          ['email', 'ASC']
+        ],
+        limit,
+        offset,
+        raw: true
+      });
 
-    return users.map(user => ({
-      id: user.id,
-      type: 'user',
-      title: user.email,
-      subtitle: user.role,
-      company: user.Company?.name || 'No company',
-      role: user.role,
-      relevance: user.dataValues.relevance || 0
-    }));
+      return users.map(user => ({
+        id: user.id,
+        type: 'user',
+        title: user.email,
+        subtitle: user.role,
+        company: 'Company info not available', // We'll add this back later
+        role: user.role,
+        relevance: 0
+      }));
+    } catch (error) {
+      console.error('🔍 SearchService: Error in searchUsers:', error);
+      console.error('🔍 SearchService: Error stack:', error.stack);
+      return [];
+    }
   }
 
   /**
