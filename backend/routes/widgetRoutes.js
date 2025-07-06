@@ -48,10 +48,13 @@ router.get('/manifest', authenticate, async (req, res) => {
     }
 });
 
-// Serve widget files (handles both single files and nested paths)
-router.get('/:type/:directory/:filename(*)', authenticate, async (req, res) => {
+// Serve widget files with flexible path matching using regex
+router.get(/^\/([^\/]+)\/([^\/]+)\/(.+)$/, authenticate, async (req, res) => {
     try {
-        const { type, directory, filename } = req.params;
+        const type = req.params[0];
+        const directory = req.params[1];
+        const filename = req.params[2];
+        
         const { content, mimeType } = await widgetService.getWidgetFile(type, directory, filename);
         
         res.set('Content-Type', mimeType);
