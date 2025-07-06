@@ -61,7 +61,6 @@ const ContactsWidget = () => {
     // Load contacts
     const loadContacts = async (page = 1) => {
         try {
-            console.log('ContactsWidget: Loading contacts, page:', page);
             setLoading(true);
             const params = new URLSearchParams({
                 page,
@@ -73,7 +72,6 @@ const ContactsWidget = () => {
                 withCredentials: true
             });
             
-            console.log('ContactsWidget: Contacts loaded:', response.data.contacts.length);
             setContacts(response.data.contacts);
             setPagination(response.data.pagination);
         } catch (error) {
@@ -100,23 +98,15 @@ const ContactsWidget = () => {
     };
 
     useEffect(() => {
-        console.log('ContactsWidget: Component mounted');
         loadContacts();
         loadDropdownData();
-        
-        return () => {
-            console.log('ContactsWidget: Component unmounted');
-        };
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     // Handle filter changes
     const handleFilterChange = (key, value) => {
         setFilters(prev => ({ ...prev, [key]: value }));
-        // Reload contacts with new filters after a short delay
-        setTimeout(() => {
-            loadContacts(1);
-        }, 300);
+        loadContacts(1);
     };
 
     // Handle form input changes

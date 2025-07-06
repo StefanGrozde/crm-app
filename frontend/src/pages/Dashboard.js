@@ -300,18 +300,9 @@ const Dashboard = () => {
         }
     };
 
-    // Effect: When a new tab is added, switch to it automatically
+    // Effect: Track tab count for debugging (removed auto-switching to prevent double-switch)
     useEffect(() => {
-        if (openTabs.length > 0) {
-            // Only auto-switch if a new tab was added
-            if (openTabs.length > prevTabsLengthRef.current) {
-                const lastTab = openTabs[openTabs.length - 1];
-                console.log('Auto-switching to new tab:', lastTab.id, 'Current activeTabId:', activeTabId);
-                if (String(activeTabId) !== String(lastTab.id)) {
-                    switchToTab(lastTab.id);
-                }
-            }
-        }
+        console.log('Tab count changed:', openTabs.length, 'Previous:', prevTabsLengthRef.current);
         prevTabsLengthRef.current = openTabs.length;
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [openTabs]);
