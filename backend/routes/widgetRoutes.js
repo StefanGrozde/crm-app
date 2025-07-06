@@ -48,26 +48,10 @@ router.get('/manifest', authenticate, async (req, res) => {
     }
 });
 
-// Serve widget files
-router.get('/:type/:directory/:filename', authenticate, async (req, res) => {
+// Serve widget files (handles both single files and nested paths)
+router.get('/:type/:directory/:filename(*)', authenticate, async (req, res) => {
     try {
         const { type, directory, filename } = req.params;
-        const { content, mimeType } = await widgetService.getWidgetFile(type, directory, filename);
-        
-        res.set('Content-Type', mimeType);
-        res.send(content);
-    } catch (error) {
-        console.error('Error serving widget file:', error);
-        res.status(404).json({ error: error.message });
-    }
-});
-
-// Serve widget files with nested paths
-router.get('/:type/:directory/*', authenticate, async (req, res) => {
-    try {
-        const { type, directory } = req.params;
-        const filename = req.params[0]; // This captures the rest of the path
-        
         const { content, mimeType } = await widgetService.getWidgetFile(type, directory, filename);
         
         res.set('Content-Type', mimeType);
