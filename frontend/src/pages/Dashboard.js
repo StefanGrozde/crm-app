@@ -30,6 +30,12 @@ const Dashboard = () => {
     const [currentViewId, setCurrentViewId] = useState(null);
     const [isEditMode, setIsEditMode] = useState(false);
     
+    // Tab management state
+    const [openTabs, setOpenTabs] = useState([]);
+    const [activeTabId, setActiveTabId] = useState(null);
+    const [tabLayouts, setTabLayouts] = useState({}); // Store layouts for each tab
+    const [tabEditModes, setTabEditModes] = useState({}); // Store edit mode for each tab
+    
     // Modal states
     const [isSaveModalOpen, setSaveModalOpen] = useState(false);
     const [isEditPopupOpen, setEditPopupOpen] = useState(false);
@@ -45,7 +51,9 @@ const Dashboard = () => {
         console.log('Edit mode changed:', isEditMode);
         console.log('Current layout:', layout);
         console.log('Original layout:', originalLayout);
-    }, [isEditMode, layout, originalLayout]);
+        console.log('Open tabs:', openTabs);
+        console.log('Active tab:', activeTabId);
+    }, [isEditMode, layout, originalLayout, openTabs, activeTabId]);
 
     // Load initial data
     useEffect(() => {
@@ -74,10 +82,10 @@ const Dashboard = () => {
                     console.log('No views found, creating default view...');
                     await createDefaultView();
                 } else {
-                    // Load the first view (or a view marked as default)
+                    // Load the first view (or a view marked as default) as the first tab
                     const defaultView = viewsResponse.data.find(v => v.isDefault) || viewsResponse.data[0];
-                    console.log('Loading default view:', defaultView);
-                    await loadViewData(defaultView);
+                    console.log('Loading default view as first tab:', defaultView);
+                    await openViewAsTab(defaultView);
                 }
             } catch (error) {
                 console.error("Failed to load initial data", error);
@@ -128,8 +136,8 @@ const Dashboard = () => {
             const newViews = [response.data];
             setViews(newViews);
             
-            // Load the newly created default view
-            await loadViewData(response.data);
+            // Open the newly created default view as a tab
+            await openViewAsTab(response.data);
             
         } catch (error) {
             console.error('Failed to create default view:', error);
@@ -144,38 +152,103 @@ const Dashboard = () => {
             
             const fallbackLayout = [];
             setViews([fallbackView]);
-            setLayout(fallbackLayout);
-            setOriginalLayout([...fallbackLayout]);
-            setCurrentViewId(fallbackView.id);
+            await openViewAsTab(fallbackView, fallbackLayout);
         }
     };
 
-    // Load view data into the layout
-    const loadViewData = async (view) => {
+    // Open a view as a new tab
+    const openViewAsTab = async (view, customLayout = null) => {
         try {
-            console.log('Loading view data:', view);
+            console.log('Opening view as tab:', view);
             
-            if (view.widgets && view.widgets.length > 0) {
-                const newLayout = view.widgets.map(w => ({ 
+            let tabLayout = [];
+            if (customLayout) {
+                tabLayout = customLayout;
+            } else if (view.widgets && view.widgets.length > 0) {
+                tabLayout = view.widgets.map(w => ({ 
                     i: w.widgetKey, 
                     x: w.x || 0, 
                     y: w.y || 0, 
                     w: w.w || 6, 
                     h: w.h || 2 
                 }));
-                console.log('Setting layout from view:', newLayout);
-                setLayout(newLayout);
-                setOriginalLayout([...newLayout]);
-            } else {
-                console.log('View has no widgets, setting empty layout');
-                setLayout([]);
-                setOriginalLayout([]);
             }
             
-            setCurrentViewId(view.id);
+            // Add the view to open tabs if not already open
+            const isTabOpen = openTabs.find(tab => tab.id === view.id);
+            if (!isTabOpen) {
+                const newTab = {
+                    id: view.id,
+                    name: view.name,
+                    isDefault: view.isDefault
+                };
+                
+                setOpenTabs(prev => [...prev, newTab]);
+                setTabLayouts(prev => ({ ...prev, [view.id]: tabLayout }));
+                setTabEditModes(prev => ({ ...prev, [view.id]: false }));
+            }
+            
+            // Switch to this tab
+            await switchToTab(view.id);
+            
         } catch (error) {
-            console.error('Failed to load view data:', error);
+            console.error('Failed to open view as tab:', error);
         }
+    };
+
+    // Switch to a specific tab
+    const switchToTab = async (tabId) => {
+        console.log('Switching to tab:', tabId);
+        
+        // Update active tab
+        setActiveTabId(tabId);
+        setCurrentViewId(tabId);
+        
+        // Load the tab's layout
+        const tabLayout = tabLayouts[tabId] || [];
+        setLayout(tabLayout);
+        setOriginalLayout([...tabLayout]);
+        
+        // Load the tab's edit mode
+        const tabEditMode = tabEditModes[tabId] || false;
+        setIsEditMode(tabEditMode);
+        
+        console.log('Switched to tab:', tabId, 'with layout:', tabLayout, 'edit mode:', tabEditMode);
+    };
+
+    // Close a tab
+    const closeTab = async (tabId) => {
+        console.log('Closing tab:', tabId);
+        
+        // Don't close if it's the only tab
+        if (openTabs.length <= 1) {
+            alert('Cannot close the last tab. Please open another view first.');
+            return;
+        }
+        
+        // Remove tab from open tabs
+        const newOpenTabs = openTabs.filter(tab => tab.id !== tabId);
+        setOpenTabs(newOpenTabs);
+        
+        // Remove tab's layout and edit mode data
+        const newTabLayouts = { ...tabLayouts };
+        const newTabEditModes = { ...tabEditModes };
+        delete newTabLayouts[tabId];
+        delete newTabEditModes[tabId];
+        setTabLayouts(newTabLayouts);
+        setTabEditModes(newTabEditModes);
+        
+        // If we're closing the active tab, switch to another tab
+        if (activeTabId === tabId) {
+            const remainingTabs = newOpenTabs;
+            const newActiveTab = remainingTabs[0]; // Switch to first remaining tab
+            await switchToTab(newActiveTab.id);
+        }
+    };
+
+    // Load view data into the layout (legacy function - now handled by switchToTab)
+    const loadViewData = async (view) => {
+        await openViewAsTab(view);
     };
 
     // Handle clicks outside menu and widget removal
@@ -207,17 +280,12 @@ const Dashboard = () => {
         };
     }, [isEditMode]);
 
-    // Load specific view
+    // Load specific view (now opens as tab)
     const loadView = async (viewId) => {
         try {
             console.log('Loading view:', viewId);
             const { data } = await axios.get(`${API_URL}/api/dashboard/views/${viewId}`, { withCredentials: true });
-            await loadViewData(data);
-            
-            // If we were in edit mode, exit it when switching views
-            if (isEditMode) {
-                setIsEditMode(false);
-            }
+            await openViewAsTab(data);
         } catch (error) { 
             console.error("Failed to load view", error); 
         }
@@ -250,6 +318,9 @@ const Dashboard = () => {
         setOriginalLayout(layoutCopy);
         setIsEditMode(true);
         
+        // Update the tab's edit mode
+        setTabEditModes(prev => ({ ...prev, [currentViewId]: true }));
+        
         console.log('Edit mode should now be active');
     };
 
@@ -276,10 +347,8 @@ const Dashboard = () => {
             const { data } = await axios.get(`${API_URL}/api/dashboard/views`, { withCredentials: true });
             setViews(data);
             
-            // Optionally set the new view as current
-            if (response.data && response.data.id) {
-                setCurrentViewId(response.data.id);
-            }
+            // Open the new view as a tab
+            await openViewAsTab(response.data);
             
         } catch (error) { 
             console.error("Failed to save new view", error);
@@ -316,6 +385,10 @@ const Dashboard = () => {
             setIsEditMode(false);
             setOriginalLayout([...layout]); // Update original layout to current
             
+            // Update the tab's edit mode and layout
+            setTabEditModes(prev => ({ ...prev, [currentViewId]: false }));
+            setTabLayouts(prev => ({ ...prev, [currentViewId]: [...layout] }));
+            
             // Refresh the views list to reflect any changes
             const { data } = await axios.get(`${API_URL}/api/dashboard/views`, { withCredentials: true });
             setViews(data);
@@ -344,7 +417,12 @@ const Dashboard = () => {
         };
 
         console.log('Adding new layout item:', newLayoutItem);
-        setLayout([...layout, newLayoutItem]);
+        const newLayout = [...layout, newLayoutItem];
+        setLayout(newLayout);
+        
+        // Update the tab's layout
+        setTabLayouts(prev => ({ ...prev, [currentViewId]: newLayout }));
+        
         setAddModalOpen(false);
     };
 
@@ -353,6 +431,9 @@ const Dashboard = () => {
         console.log('Original layout:', originalLayout);
         setLayout([...originalLayout]); // Restore original layout
         setIsEditMode(false);
+        
+        // Update the tab's edit mode
+        setTabEditModes(prev => ({ ...prev, [currentViewId]: false }));
     };
 
     const handleWidgetUpload = async (uploadResult) => {
@@ -378,6 +459,9 @@ const Dashboard = () => {
     const handleLayoutChange = (newLayout) => {
         console.log('Layout changed:', newLayout);
         setLayout(newLayout);
+        
+        // Update the tab's layout
+        setTabLayouts(prev => ({ ...prev, [currentViewId]: newLayout }));
     };
 
     // Debug function to test remove functionality
@@ -387,6 +471,9 @@ const Dashboard = () => {
         const newLayout = layout.filter(item => item.i !== widgetKey);
         console.log('New layout after removal:', newLayout);
         setLayout(newLayout);
+        
+        // Update the tab's layout
+        setTabLayouts(prev => ({ ...prev, [currentViewId]: newLayout }));
     };
 
     // Handle widget removal
@@ -396,6 +483,9 @@ const Dashboard = () => {
         console.log('Removing widget:', widgetKey);
         const newLayout = layout.filter(item => item.i !== widgetKey);
         setLayout(newLayout);
+        
+        // Update the tab's layout
+        setTabLayouts(prev => ({ ...prev, [currentViewId]: newLayout }));
     };
 
     // Derived state
@@ -427,6 +517,13 @@ const Dashboard = () => {
                         bottom: 2px !important;
                         right: 2px !important;
                     }
+                    .tab-close-button {
+                        opacity: 0;
+                        transition: opacity 0.2s;
+                    }
+                    .tab:hover .tab-close-button {
+                        opacity: 1;
+                    }
                 `}
             </style>
             <div className="min-h-screen bg-gray-100">
@@ -435,7 +532,9 @@ const Dashboard = () => {
                     <strong>Debug:</strong> EditMode: {isEditMode ? 'ON' : 'OFF'} | 
                     ViewID: {currentViewId || 'None'} | 
                     Layout items: {layout.length} | 
-                    Widgets: {widgetLibrary.length}
+                    Widgets: {widgetLibrary.length} |
+                    Open tabs: {openTabs.length} |
+                    Active tab: {activeTabId || 'None'}
                 </div>
 
                 {/* Modals */}
@@ -449,14 +548,19 @@ const Dashboard = () => {
                         <div className="flex justify-between items-center py-4">
                             <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
                             
-                            {/* View selector */}
+                            {/* View selector and controls */}
                             <div className="flex items-center space-x-4">
+                                {/* View selector dropdown */}
                                 <select 
-                                    value={currentViewId || ''} 
-                                    onChange={(e) => loadView(e.target.value)}
+                                    value="" 
+                                    onChange={(e) => {
+                                        if (e.target.value) {
+                                            loadView(e.target.value);
+                                        }
+                                    }}
                                     className="px-3 py-2 border border-gray-300 rounded-md"
                                 >
-                                    <option value="">Select a view</option>
+                                    <option value="">Open View...</option>
                                     {views.map(view => (
                                         <option key={view.id} value={view.id}>{view.name}</option>
                                     ))}
@@ -556,6 +660,46 @@ const Dashboard = () => {
                     </div>
                 </header>
 
+                {/* Tab bar */}
+                {openTabs.length > 0 && (
+                    <div className="bg-white border-b border-gray-200">
+                        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                            <div className="flex space-x-1 overflow-x-auto">
+                                {openTabs.map((tab) => (
+                                    <div
+                                        key={tab.id}
+                                        className={`tab flex items-center space-x-2 px-4 py-2 border-b-2 cursor-pointer whitespace-nowrap ${
+                                            activeTabId === tab.id
+                                                ? 'border-blue-500 bg-blue-50 text-blue-700'
+                                                : 'border-transparent hover:border-gray-300 hover:bg-gray-50'
+                                        }`}
+                                        onClick={() => switchToTab(tab.id)}
+                                    >
+                                        <span className="text-sm font-medium">{tab.name}</span>
+                                        {tab.isDefault && (
+                                            <svg className="w-3 h-3 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                            </svg>
+                                        )}
+                                        <button
+                                            className="tab-close-button ml-1 text-gray-400 hover:text-gray-600"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                closeTab(tab.id);
+                                            }}
+                                            title="Close tab"
+                                        >
+                                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                            </svg>
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 <main className="p-4">
                     {/* Edit mode indicator */}
                     {isEditMode && (
@@ -574,70 +718,82 @@ const Dashboard = () => {
                         </div>
                     )}
 
-                    <ResponsiveReactGridLayout
-                        layouts={{ lg: layout }}
-                        onLayoutChange={handleLayoutChange}
-                        className="layout"
-                        cols={{ lg: 12, md: 10, sm: 6, xs: 4, xxs: 2 }}
-                        rowHeight={100}
-                        isDraggable={isEditMode}
-                        isResizable={isEditMode}
-                        margin={[10, 10]}
-                        containerPadding={[10, 10]}
-                        style={{ minHeight: '400px' }}
-                    >
-                        {layout.map(item => {
-                            const widget = widgetLibrary.find(w => w.key === item.i);
-                            return (
-                                <div 
-                                    key={item.i} 
-                                    className={`bg-white rounded-lg shadow-lg p-2 overflow-hidden transition-all duration-200 relative ${
-                                        isEditMode ? 'ring-2 ring-blue-500 ring-offset-2 cursor-move' : ''
-                                    }`}
-                                    data-widget-key={item.i}
-                                >
-                                    {/* Remove button - only shown in edit mode */}
-                                    {isEditMode && (
-                                        <button
-                                            data-remove-widget={item.i}
-                                            className="absolute top-2 right-2 z-50 bg-red-500 hover:bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center transition-colors duration-200 shadow-lg"
-                                            style={{ zIndex: 9999 }}
-                                            title="Remove widget"
-                                        >
-                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                            </svg>
-                                        </button>
-                                    )}
-                                    
-                                    {/* Widget content */}
-                                    <div className={isEditMode ? 'pt-6' : ''}>
-                                        {widget ? (
-                                            <DynamicWidget widgetKey={widget.key} widgetPath={widget.path} type={widget.type} />
-                                        ) : (
-                                            <div className="text-center p-4">
-                                                <div className="text-gray-600 text-sm">
-                                                    Demo Widget: {item.i}
+                    {/* No active tab message */}
+                    {!activeTabId && (
+                        <div className="text-center py-12">
+                            <div className="text-gray-500 text-lg">
+                                No views open. Use the dropdown above to open a view.
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Grid layout - only show if there's an active tab */}
+                    {activeTabId && (
+                        <ResponsiveReactGridLayout
+                            layouts={{ lg: layout }}
+                            onLayoutChange={handleLayoutChange}
+                            className="layout"
+                            cols={{ lg: 12, md: 10, sm: 6, xs: 4, xxs: 2 }}
+                            rowHeight={100}
+                            isDraggable={isEditMode}
+                            isResizable={isEditMode}
+                            margin={[10, 10]}
+                            containerPadding={[10, 10]}
+                            style={{ minHeight: '400px' }}
+                        >
+                            {layout.map(item => {
+                                const widget = widgetLibrary.find(w => w.key === item.i);
+                                return (
+                                    <div 
+                                        key={item.i} 
+                                        className={`bg-white rounded-lg shadow-lg p-2 overflow-hidden transition-all duration-200 relative ${
+                                            isEditMode ? 'ring-2 ring-blue-500 ring-offset-2 cursor-move' : ''
+                                        }`}
+                                        data-widget-key={item.i}
+                                    >
+                                        {/* Remove button - only shown in edit mode */}
+                                        {isEditMode && (
+                                            <button
+                                                data-remove-widget={item.i}
+                                                className="absolute top-2 right-2 z-50 bg-red-500 hover:bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center transition-colors duration-200 shadow-lg"
+                                                style={{ zIndex: 9999 }}
+                                                title="Remove widget"
+                                            >
+                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                                </svg>
+                                            </button>
+                                        )}
+                                        
+                                        {/* Widget content */}
+                                        <div className={isEditMode ? 'pt-6' : ''}>
+                                            {widget ? (
+                                                <DynamicWidget widgetKey={widget.key} widgetPath={widget.path} type={widget.type} />
+                                            ) : (
+                                                <div className="text-center p-4">
+                                                    <div className="text-gray-600 text-sm">
+                                                        Demo Widget: {item.i}
+                                                    </div>
+                                                    <div className="text-xs text-gray-400 mt-1">
+                                                        Size: {item.w}x{item.h} | Position: ({item.x}, {item.y})
+                                                    </div>
                                                 </div>
-                                                <div className="text-xs text-gray-400 mt-1">
-                                                    Size: {item.w}x{item.h} | Position: ({item.x}, {item.y})
-                                                </div>
+                                            )}
+                                        </div>
+                                        
+                                        {/* Widget info overlay in edit mode */}
+                                        {isEditMode && (
+                                            <div className="absolute bottom-1 left-1 z-10">
+                                                <span className="bg-blue-500 text-white text-xs px-2 py-1 rounded opacity-75">
+                                                    {item.w}×{item.h}
+                                                </span>
                                             </div>
                                         )}
                                     </div>
-                                    
-                                    {/* Widget info overlay in edit mode */}
-                                    {isEditMode && (
-                                        <div className="absolute bottom-1 left-1 z-10">
-                                            <span className="bg-blue-500 text-white text-xs px-2 py-1 rounded opacity-75">
-                                                {item.w}×{item.h}
-                                            </span>
-                                        </div>
-                                    )}
-                                </div>
-                            );
-                        })}
-                    </ResponsiveReactGridLayout>
+                                );
+                            })}
+                        </ResponsiveReactGridLayout>
+                    )}
                 </main>
             </div>
         </>
