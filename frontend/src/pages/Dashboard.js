@@ -5,6 +5,9 @@ import { Responsive, WidthProvider } from 'react-grid-layout';
 import { Link, useNavigate } from 'react-router-dom';
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
+import { DndContext, closestCenter, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
+import { arrayMove, SortableContext, horizontalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 // Component Imports
 import { AuthContext } from '../context/AuthContext';
@@ -16,6 +19,23 @@ import DynamicWidget from '../components/DynamicWidget';
 
 const ResponsiveReactGridLayout = WidthProvider(Responsive);
 const API_URL = process.env.REACT_APP_API_URL;
+
+// SortableTab component for draggable tabs
+function SortableTab({ id, children, ...props }) {
+    const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
+    const style = {
+        transform: CSS.Transform.toString(transform),
+        transition,
+        opacity: isDragging ? 0.5 : 1,
+        cursor: 'grab',
+        zIndex: isDragging ? 100 : 'auto',
+    };
+    return (
+        <div ref={setNodeRef} style={style} {...attributes} {...listeners} {...props}>
+            {children}
+        </div>
+    );
+}
 
 const Dashboard = () => {
     // Auth context
@@ -45,6 +65,11 @@ const Dashboard = () => {
     // Menu state
     const [menuOpen, setMenuOpen] = useState(false);
     const menuRef = useRef(null);
+
+    // DnD-kit sensors
+    const sensors = useSensors(
+        useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
+    );
 
     // Debug: Log state changes
     useEffect(() => {
@@ -502,6 +527,19 @@ const Dashboard = () => {
     const currentWidgetKeys = layout.map(item => item.i);
     const availableWidgets = widgetLibrary.filter(widget => !currentWidgetKeys.includes(widget.key));
 
+    // Handle tab drag end
+    const handleTabDragEnd = (event) => {
+        const { active, over } = event;
+        if (active && over && active.id !== over.id) {
+            const oldIndex = openTabs.findIndex(tab => tab.id === active.id);
+            const newIndex = openTabs.findIndex(tab => tab.id === over.id);
+            if (oldIndex !== -1 && newIndex !== -1) {
+                const newTabs = arrayMove(openTabs, oldIndex, newIndex);
+                setOpenTabs(newTabs);
+            }
+        }
+    };
+
     if (!user) return <div>Loading...</div>;
 
     return (
@@ -674,38 +712,43 @@ const Dashboard = () => {
                 {openTabs.length > 0 && (
                     <div className="bg-white border-b border-gray-200">
                         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                            <div className="flex space-x-1 overflow-x-auto justify-start">
-                                {openTabs.map((tab) => (
-                                    <div
-                                        key={tab.id}
-                                        className={`tab flex items-center space-x-2 px-4 py-2 border-b-2 cursor-pointer whitespace-nowrap ${
-                                            activeTabId === tab.id
-                                                ? 'border-blue-500 bg-blue-50 text-blue-700'
-                                                : 'border-transparent hover:border-gray-300 hover:bg-gray-50'
-                                        }`}
-                                        onClick={() => switchToTab(tab.id)}
-                                    >
-                                        <span className="text-sm font-medium">{tab.name}</span>
-                                        {tab.isDefault && (
-                                            <svg className="w-3 h-3 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
-                                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                                            </svg>
-                                        )}
-                                        <button
-                                            className="tab-close-button ml-1 text-gray-400 hover:text-gray-600"
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                closeTab(tab.id);
-                                            }}
-                                            title="Close tab"
-                                        >
-                                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                            </svg>
-                                        </button>
+                            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleTabDragEnd}>
+                                <SortableContext items={openTabs.map(tab => tab.id)} strategy={horizontalListSortingStrategy}>
+                                    <div className="flex space-x-1 overflow-x-auto justify-start">
+                                        {openTabs.map((tab) => (
+                                            <SortableTab key={tab.id} id={tab.id}>
+                                                <div
+                                                    className={`tab flex items-center space-x-2 px-4 py-2 border-b-2 cursor-pointer whitespace-nowrap ${
+                                                        activeTabId === tab.id
+                                                            ? 'border-blue-500 bg-blue-50 text-blue-700'
+                                                            : 'border-transparent hover:border-gray-300 hover:bg-gray-50'
+                                                    }`}
+                                                    onClick={() => switchToTab(tab.id)}
+                                                >
+                                                    <span className="text-sm font-medium">{tab.name}</span>
+                                                    {tab.isDefault && (
+                                                        <svg className="w-3 h-3 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                                                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                                        </svg>
+                                                    )}
+                                                    <button
+                                                        className="tab-close-button ml-1 text-gray-400 hover:text-gray-600"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            closeTab(tab.id);
+                                                        }}
+                                                        title="Close tab"
+                                                    >
+                                                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                                        </svg>
+                                                    </button>
+                                                </div>
+                                            </SortableTab>
+                                        ))}
                                     </div>
-                                ))}
-                            </div>
+                                </SortableContext>
+                            </DndContext>
                         </div>
                     </div>
                 )}
