@@ -1001,47 +1001,49 @@ const Dashboard = () => {
                                     ))}
                                 </select>
 
-                                {/* Edit mode toggle */}
-                                {!isEditMode ? (
-                                    <button
-                                        onClick={handleEditLayoutClick}
-                                        className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-                                        disabled={!currentViewId}
-                                        title={!currentViewId ? "No view selected - a default view should be created automatically" : "Enter edit mode"}
-                                    >
-                                        Edit Layout
-                                    </button>
-                                ) : (
-                                    <div className="flex space-x-2">
+                                {/* Edit mode toggle - only show for dashboard views, not main pages */}
+                                {!currentViewId?.includes('-page') && (
+                                    !isEditMode ? (
                                         <button
-                                            onClick={() => setAddModalOpen(true)}
-                                            className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 flex items-center space-x-2"
-                                        >
-                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                                            </svg>
-                                            <span>Add Widget</span>
-                                        </button>
-                                        <button
-                                            onClick={handleUpdateView}
-                                            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                                            onClick={handleEditLayoutClick}
+                                            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
                                             disabled={!currentViewId}
+                                            title={!currentViewId ? "No view selected - a default view should be created automatically" : "Enter edit mode"}
                                         >
-                                            Save Changes
+                                            Edit Layout
                                         </button>
-                                        <button
-                                            onClick={handleCancelEdit}
-                                            className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700"
-                                        >
-                                            Cancel
-                                        </button>
-                                        <button
-                                            onClick={() => setSaveModalOpen(true)}
-                                            className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700"
-                                        >
-                                            Save as New View
-                                        </button>
-                                    </div>
+                                    ) : (
+                                        <div className="flex space-x-2">
+                                            <button
+                                                onClick={() => setAddModalOpen(true)}
+                                                className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 flex items-center space-x-2"
+                                            >
+                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                                </svg>
+                                                <span>Add Widget</span>
+                                            </button>
+                                            <button
+                                                onClick={handleUpdateView}
+                                                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                                                disabled={!currentViewId}
+                                            >
+                                                Save Changes
+                                            </button>
+                                            <button
+                                                onClick={handleCancelEdit}
+                                                className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700"
+                                            >
+                                                Cancel
+                                            </button>
+                                            <button
+                                                onClick={() => setSaveModalOpen(true)}
+                                                className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700"
+                                            >
+                                                Save as New View
+                                            </button>
+                                        </div>
+                                    )
                                 )}
 
                                 {/* User menu */}
