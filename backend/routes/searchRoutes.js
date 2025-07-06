@@ -165,6 +165,10 @@ router.post('/sample-data', protect, async (req, res) => {
  */
 router.get('/', protect, async (req, res) => {
   try {
+    console.log('🔍 Backend: Search request received');
+    console.log('🔍 Backend: Query params:', req.query);
+    console.log('🔍 Backend: User:', { id: req.user.id, companyId: req.user.companyId });
+    
     const { 
       q: query, 
       types, 
@@ -173,12 +177,14 @@ router.get('/', protect, async (req, res) => {
     } = req.query;
 
     if (!query || query.trim().length < 2) {
+      console.log('🔍 Backend: Query too short or empty');
       return res.status(400).json({ 
         message: 'Search query must be at least 2 characters long' 
       });
     }
 
     const searchTypes = types ? types.split(',') : ['contacts', 'leads', 'opportunities', 'companies', 'users'];
+    console.log('🔍 Backend: Search types:', searchTypes);
     
     const results = await SearchService.searchAll(query.trim(), {
       userId: req.user.id,
@@ -188,9 +194,11 @@ router.get('/', protect, async (req, res) => {
       offset: parseInt(offset)
     });
 
+    console.log('🔍 Backend: Search results:', results);
     res.json(results);
   } catch (error) {
-    console.error('Search error:', error);
+    console.error('🔍 Backend: Search error:', error);
+    console.error('🔍 Backend: Error stack:', error.stack);
     res.status(500).json({ 
       message: 'Search failed. Please try again.',
       error: process.env.NODE_ENV === 'development' ? error.message : undefined
@@ -385,12 +393,16 @@ router.get('/companies', protect, async (req, res) => {
  */
 router.get('/suggestions', protect, async (req, res) => {
   try {
+    console.log('🔍 Backend: Suggestions request received');
+    console.log('🔍 Backend: Suggestions query params:', req.query);
+    
     const { 
       q: query, 
       limit = 5 
     } = req.query;
 
     if (!query || query.trim().length < 2) {
+      console.log('🔍 Backend: Suggestions query too short');
       return res.json([]);
     }
 
@@ -400,9 +412,11 @@ router.get('/suggestions', protect, async (req, res) => {
       limit: parseInt(limit)
     });
 
+    console.log('🔍 Backend: Suggestions response:', suggestions);
     res.json(suggestions);
   } catch (error) {
-    console.error('Search suggestions error:', error);
+    console.error('🔍 Backend: Search suggestions error:', error);
+    console.error('🔍 Backend: Suggestions error stack:', error.stack);
     res.status(500).json({ 
       message: 'Failed to get search suggestions.',
       error: process.env.NODE_ENV === 'development' ? error.message : undefined

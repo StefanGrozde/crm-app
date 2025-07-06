@@ -18,6 +18,9 @@ class SearchService {
    * @returns {Object} Search results grouped by entity type
    */
   static async searchAll(query, options = {}) {
+    console.log('🔍 SearchService: searchAll called with query:', query);
+    console.log('🔍 SearchService: options:', options);
+    
     const {
       userId,
       companyId,
@@ -31,41 +34,61 @@ class SearchService {
 
     // Search contacts
     if (types.includes('contacts')) {
+      console.log('🔍 SearchService: Searching contacts...');
       searchPromises.push(
         this.searchContacts(query, { userId, companyId, limit, offset })
-          .then(contacts => { results.contacts = contacts; })
+          .then(contacts => { 
+            console.log('🔍 SearchService: Contacts results:', contacts);
+            results.contacts = contacts; 
+          })
       );
     }
 
     // Search leads
     if (types.includes('leads')) {
+      console.log('🔍 SearchService: Searching leads...');
       searchPromises.push(
         this.searchLeads(query, { userId, companyId, limit, offset })
-          .then(leads => { results.leads = leads; })
+          .then(leads => { 
+            console.log('🔍 SearchService: Leads results:', leads);
+            results.leads = leads; 
+          })
       );
     }
 
     // Search opportunities
     if (types.includes('opportunities')) {
+      console.log('🔍 SearchService: Searching opportunities...');
       searchPromises.push(
         this.searchOpportunities(query, { userId, companyId, limit, offset })
-          .then(opportunities => { results.opportunities = opportunities; })
+          .then(opportunities => { 
+            console.log('🔍 SearchService: Opportunities results:', opportunities);
+            results.opportunities = opportunities; 
+          })
       );
     }
 
     // Search companies
     if (types.includes('companies')) {
+      console.log('🔍 SearchService: Searching companies...');
       searchPromises.push(
         this.searchCompanies(query, { userId, companyId, limit, offset })
-          .then(companies => { results.companies = companies; })
+          .then(companies => { 
+            console.log('🔍 SearchService: Companies results:', companies);
+            results.companies = companies; 
+          })
       );
     }
 
     // Search users
     if (types.includes('users')) {
+      console.log('🔍 SearchService: Searching users...');
       searchPromises.push(
         this.searchUsers(query, { userId, companyId, limit, offset })
-          .then(users => { results.users = users; })
+          .then(users => { 
+            console.log('🔍 SearchService: Users results:', users);
+            results.users = users; 
+          })
       );
     }
 
@@ -73,6 +96,8 @@ class SearchService {
 
     // Calculate total results
     const totalResults = Object.values(results).reduce((sum, arr) => sum + arr.length, 0);
+    console.log('🔍 SearchService: Total results:', totalResults);
+    console.log('🔍 SearchService: Final results object:', results);
 
     return {
       query,
@@ -90,6 +115,9 @@ class SearchService {
    * Search contacts with full-text search
    */
   static async searchContacts(query, options = {}) {
+    console.log('🔍 SearchService: searchContacts called with query:', query);
+    console.log('🔍 SearchService: searchContacts options:', options);
+    
     const { userId, companyId, limit = 10, offset = 0 } = options;
 
     const whereClause = {
@@ -118,41 +146,60 @@ class SearchService {
       whereClause.companyId = companyId;
     }
 
-    const contacts = await Contact.findAll({
-      where: whereClause,
-      include: [
-        {
-          model: Company,
-          as: 'company',
-          attributes: ['id', 'name', 'industry']
-        },
-        {
-          model: User,
-          as: 'assignedUser',
-          attributes: ['id', 'email']
-        }
-      ],
-      order: [
-        // Order by relevance (full-text search rank)
-        literal(`ts_rank(to_tsvector('english', COALESCE(first_name, '') || ' ' || COALESCE(last_name, '')), plainto_tsquery('english', '${query}')) DESC`),
-        ['lastName', 'ASC'],
-        ['firstName', 'ASC']
-      ],
-      limit,
-      offset
-    });
+    console.log('🔍 SearchService: Contact whereClause:', JSON.stringify(whereClause, null, 2));
 
-    return contacts.map(contact => ({
-      id: contact.id,
-      type: 'contact',
-      title: contact.getFullName(),
-      subtitle: contact.jobTitle || contact.company?.name || 'No company',
-      email: contact.email,
-      phone: contact.phone,
-      company: contact.company?.name,
-      status: contact.status,
-      relevance: contact.dataValues.relevance || 0
-    }));
+    try {
+      const contacts = await Contact.findAll({
+        where: whereClause,
+        include: [
+          {
+            model: Company,
+            as: 'company',
+            attributes: ['id', 'name', 'industry']
+          },
+          {
+            model: User,
+            as: 'assignedUser',
+            attributes: ['id', 'email']
+          }
+        ],
+        order: [
+          // Order by relevance (full-text search rank)
+          literal(`ts_rank(to_tsvector('english', COALESCE(first_name, '') || ' ' || COALESCE(last_name, '')), plainto_tsquery('english', '${query}')) DESC`),
+          ['lastName', 'ASC'],
+          ['firstName', 'ASC']
+        ],
+        limit,
+        offset
+      });
+
+      console.log('🔍 SearchService: Raw contacts from database:', contacts.length);
+      console.log('🔍 SearchService: First contact sample:', contacts[0] ? {
+        id: contacts[0].id,
+        firstName: contacts[0].firstName,
+        lastName: contacts[0].lastName,
+        email: contacts[0].email
+      } : 'No contacts found');
+
+      const mappedContacts = contacts.map(contact => ({
+        id: contact.id,
+        type: 'contact',
+        title: contact.getFullName(),
+        subtitle: contact.jobTitle || contact.company?.name || 'No company',
+        email: contact.email,
+        phone: contact.phone,
+        company: contact.company?.name,
+        status: contact.status,
+        relevance: contact.dataValues.relevance || 0
+      }));
+
+      console.log('🔍 SearchService: Mapped contacts:', mappedContacts);
+      return mappedContacts;
+    } catch (error) {
+      console.error('🔍 SearchService: Error in searchContacts:', error);
+      console.error('🔍 SearchService: Error stack:', error.stack);
+      return [];
+    }
   }
 
   /**

@@ -22,32 +22,42 @@ const SearchBar = ({ className = '', placeholder = "Search contacts, leads, oppo
 
   // Debounced search function
   const debouncedSearch = useCallback((searchQuery) => {
+    console.log('🔍 SearchBar: debouncedSearch called with query:', searchQuery);
+    
     if (searchTimeout) {
       clearTimeout(searchTimeout);
     }
 
     if (searchQuery.length < 2) {
+      console.log('🔍 SearchBar: Query too short, clearing results');
       setResults(null);
       setSuggestions([]);
       return;
     }
 
     const timeout = setTimeout(async () => {
+      console.log('🔍 SearchBar: Executing search for:', searchQuery);
       setIsLoading(true);
       try {
         // Get suggestions
+        console.log('🔍 SearchBar: Fetching suggestions...');
         const suggestionsResponse = await axios.get(`${API_URL}/api/search/suggestions?q=${encodeURIComponent(searchQuery)}`, {
           withCredentials: true
         });
+        console.log('🔍 SearchBar: Suggestions response:', suggestionsResponse.data);
         setSuggestions(suggestionsResponse.data);
 
         // Get search results
+        console.log('🔍 SearchBar: Fetching search results...');
         const resultsResponse = await axios.get(`${API_URL}/api/search?q=${encodeURIComponent(searchQuery)}&limit=5`, {
           withCredentials: true
         });
+        console.log('🔍 SearchBar: Search results response:', resultsResponse.data);
         setResults(resultsResponse.data);
       } catch (error) {
-        console.error('Search error:', error);
+        console.error('🔍 SearchBar: Search error:', error);
+        console.error('🔍 SearchBar: Error response:', error.response?.data);
+        console.error('🔍 SearchBar: Error status:', error.response?.status);
         setResults(null);
         setSuggestions([]);
       } finally {
@@ -75,6 +85,7 @@ const SearchBar = ({ className = '', placeholder = "Search contacts, leads, oppo
 
   // Handle query changes
   useEffect(() => {
+    console.log('🔍 SearchBar: useEffect triggered with query:', query);
     debouncedSearch(query);
   }, [query, debouncedSearch]);
 
@@ -279,7 +290,9 @@ const SearchBar = ({ className = '', placeholder = "Search contacts, leads, oppo
           type="text"
           value={query}
           onChange={(e) => {
-            setQuery(e.target.value);
+            const value = e.target.value;
+            console.log('🔍 SearchBar: Input changed to:', value);
+            setQuery(value);
             setShowResults(true);
             setSelectedIndex(-1);
           }}
