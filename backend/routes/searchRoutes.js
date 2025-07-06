@@ -449,4 +449,75 @@ router.get('/analytics', protect, async (req, res) => {
   }
 });
 
+/**
+ * @route   GET /api/search/test-tables
+ * @desc    Test if CRM tables exist and are accessible
+ * @access  Private
+ */
+router.get('/test-tables', protect, async (req, res) => {
+  try {
+    console.log('🔍 Testing table accessibility...');
+    
+    const results = {};
+    
+    // Test Contact table
+    try {
+      const contactCount = await Contact.count();
+      results.contacts = { exists: true, count: contactCount };
+      console.log('🔍 Contact table accessible, count:', contactCount);
+    } catch (error) {
+      results.contacts = { exists: false, error: error.message };
+      console.error('🔍 Contact table error:', error.message);
+    }
+    
+    // Test Lead table
+    try {
+      const leadCount = await Lead.count();
+      results.leads = { exists: true, count: leadCount };
+      console.log('🔍 Lead table accessible, count:', leadCount);
+    } catch (error) {
+      results.leads = { exists: false, error: error.message };
+      console.error('🔍 Lead table error:', error.message);
+    }
+    
+    // Test Opportunity table
+    try {
+      const opportunityCount = await Opportunity.count();
+      results.opportunities = { exists: true, count: opportunityCount };
+      console.log('🔍 Opportunity table accessible, count:', opportunityCount);
+    } catch (error) {
+      results.opportunities = { exists: false, error: error.message };
+      console.error('🔍 Opportunity table error:', error.message);
+    }
+    
+    // Test Company table
+    try {
+      const companyCount = await Company.count();
+      results.companies = { exists: true, count: companyCount };
+      console.log('🔍 Company table accessible, count:', companyCount);
+    } catch (error) {
+      results.companies = { exists: false, error: error.message };
+      console.error('🔍 Company table error:', error.message);
+    }
+    
+    // Test User table
+    try {
+      const userCount = await User.count();
+      results.users = { exists: true, count: userCount };
+      console.log('🔍 User table accessible, count:', userCount);
+    } catch (error) {
+      results.users = { exists: false, error: error.message };
+      console.error('🔍 User table error:', error.message);
+    }
+    
+    res.json(results);
+  } catch (error) {
+    console.error('🔍 Test tables error:', error);
+    res.status(500).json({
+      message: 'Failed to test tables',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+});
+
 module.exports = router; 

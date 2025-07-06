@@ -589,6 +589,18 @@ const Dashboard = () => {
         }
     };
 
+    // Test table accessibility
+    const testTables = async () => {
+        try {
+            const response = await axios.get(`${API_URL}/api/search/test-tables`, { withCredentials: true });
+            console.log('Table test results:', response.data);
+            alert(`Table test completed! Check console for details.`);
+        } catch (error) {
+            console.error('Failed to test tables:', error);
+            alert('Failed to test tables. Please check the console for details.');
+        }
+    };
+
     // Derived state
     const currentWidgetKeys = layout.map(item => item.i);
     const availableWidgets = widgetLibrary.filter(widget => !currentWidgetKeys.includes(widget.key));
@@ -670,12 +682,20 @@ const Dashboard = () => {
                             Active tab: {activeTabId || 'None'}
                         </div>
                         {user.role === 'Administrator' && (
-                            <button
-                                onClick={createSampleData}
-                                className="px-2 py-1 bg-blue-500 text-white text-xs rounded hover:bg-blue-600"
-                            >
-                                Create Sample Data
-                            </button>
+                            <>
+                                <button
+                                    onClick={createSampleData}
+                                    className="px-2 py-1 bg-blue-500 text-white text-xs rounded hover:bg-blue-600 mr-2"
+                                >
+                                    Create Sample Data
+                                </button>
+                                <button
+                                    onClick={testTables}
+                                    className="px-2 py-1 bg-green-500 text-white text-xs rounded hover:bg-green-600"
+                                >
+                                    Test Tables
+                                </button>
+                            </>
                         )}
                     </div>
                 </div>
