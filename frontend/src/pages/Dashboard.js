@@ -151,7 +151,7 @@ const Dashboard = () => {
                                 if (tab.id.startsWith('search-')) {
                                     return true; // Search result tabs are always valid
                                 }
-                                return viewsResponse.data.some(view => view.id === tab.id);
+                                return viewsResponse.data.some(view => String(view.id) === String(tab.id));
                             });
 
                             if (validTabs.length > 0) {
@@ -160,10 +160,15 @@ const Dashboard = () => {
                                 
                                 // Switch to the active tab if it's still valid
                                 const savedActiveTab = sessionData.activeTabId;
-                                if (savedActiveTab && validTabs.some(tab => tab.id === savedActiveTab)) {
+                                console.log('Saved active tab:', savedActiveTab, 'Type:', typeof savedActiveTab);
+                                console.log('Valid tab IDs:', validTabs.map(tab => ({ id: tab.id, type: typeof tab.id })));
+                                
+                                if (savedActiveTab && validTabs.some(tab => String(tab.id) === String(savedActiveTab))) {
+                                    console.log('Switching to saved active tab:', savedActiveTab);
                                     await switchToTab(savedActiveTab);
                                 } else {
                                     // Switch to the first valid tab
+                                    console.log('Saved active tab not found, switching to first valid tab:', validTabs[0].id);
                                     await switchToTab(validTabs[0].id);
                                 }
                             } else {
@@ -298,7 +303,8 @@ const Dashboard = () => {
             // Only auto-switch if a new tab was added
             if (openTabs.length > prevTabsLengthRef.current) {
                 const lastTab = openTabs[openTabs.length - 1];
-                if (activeTabId !== lastTab.id) {
+                console.log('Auto-switching to new tab:', lastTab.id, 'Current activeTabId:', activeTabId);
+                if (String(activeTabId) !== String(lastTab.id)) {
                     switchToTab(lastTab.id);
                 }
             }
@@ -309,7 +315,9 @@ const Dashboard = () => {
 
     // Switch to a specific tab
     const switchToTab = async (tabId) => {
-        console.log('Switching to tab:', tabId);
+        console.log('Switching to tab:', tabId, 'Type:', typeof tabId);
+        console.log('Available tab layouts:', Object.keys(tabLayouts));
+        console.log('Available tab edit modes:', Object.keys(tabEditModes));
         
         // Update active tab
         setActiveTabId(tabId);
@@ -671,7 +679,12 @@ const Dashboard = () => {
     const debugSessionInfo = () => {
         const sessionInfo = getSessionInfo();
         console.log('Session info:', sessionInfo);
-        alert(`Session Info:\nExists: ${sessionInfo.exists}\nTab Count: ${sessionInfo.tabCount || 0}\nActive Tab: ${sessionInfo.activeTab || 'None'}\nAge: ${sessionInfo.age ? Math.round(sessionInfo.age / 1000 / 60) + ' minutes' : 'N/A'}\nExpires In: ${sessionInfo.expiresIn ? Math.round(sessionInfo.expiresIn / 1000 / 60) + ' minutes' : 'N/A'}`);
+        console.log('Current state - openTabs:', openTabs);
+        console.log('Current state - activeTabId:', activeTabId, 'Type:', typeof activeTabId);
+        console.log('Current state - tabLayouts keys:', Object.keys(tabLayouts));
+        console.log('Current state - tabEditModes keys:', Object.keys(tabEditModes));
+        
+        alert(`Session Info:\nExists: ${sessionInfo.exists}\nTab Count: ${sessionInfo.tabCount || 0}\nActive Tab: ${sessionInfo.activeTab || 'None'} (${typeof sessionInfo.activeTab})\nCurrent Active Tab: ${activeTabId || 'None'} (${typeof activeTabId})\nAge: ${sessionInfo.age ? Math.round(sessionInfo.age / 1000 / 60) + ' minutes' : 'N/A'}\nExpires In: ${sessionInfo.expiresIn ? Math.round(sessionInfo.expiresIn / 1000 / 60) + ' minutes' : 'N/A'}`);
     };
 
     // Derived state

@@ -22,7 +22,10 @@ export const useTabSession = (userId) => {
                 // Validate session data structure
                 if (sessionData.openTabs && Array.isArray(sessionData.openTabs)) {
                     setOpenTabs(sessionData.openTabs);
-                    setActiveTabId(sessionData.activeTabId || null);
+                    // Ensure activeTabId is properly handled (could be string or number)
+                    const activeTab = sessionData.activeTabId;
+                    console.log('Loading activeTabId:', activeTab, 'Type:', typeof activeTab);
+                    setActiveTabId(activeTab || null);
                     setTabLayouts(sessionData.tabLayouts || {});
                     setTabEditModes(sessionData.tabEditModes || {});
                     return true;
@@ -76,6 +79,7 @@ export const useTabSession = (userId) => {
             
             localStorage.setItem(sessionKey, JSON.stringify(sessionData));
             console.log('Saved session data:', sessionData);
+            console.log('Active tab being saved:', activeTab, 'Type:', typeof activeTab);
         } catch (error) {
             console.error('Failed to save session data:', error);
         }
