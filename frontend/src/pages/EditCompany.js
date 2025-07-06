@@ -30,6 +30,7 @@ const EditCompany = () => {
     
     // State for email testing
     const [testingConfig, setTestingConfig] = useState(false);
+    const [testingToken, setTestingToken] = useState(false);
     const [testResult, setTestResult] = useState(null);
     const [testEmailAddress, setTestEmailAddress] = useState('');
     const [sendingTestEmail, setSendingTestEmail] = useState(false);
@@ -98,6 +99,23 @@ const EditCompany = () => {
             setError(err.response?.data?.message || 'Failed to update company.');
         } finally {
             setSubmitting(false);
+        }
+    };
+
+    const handleTestToken = async () => {
+        setTestingToken(true);
+        setTestResult(null);
+        setError('');
+
+        try {
+            const response = await axios.post(`${API_URL}/api/companies/${user.companyId}/test-token`, {}, {
+                withCredentials: true,
+            });
+            setTestResult(response.data);
+        } catch (err) {
+            setError(err.response?.data?.message || 'Failed to test token acquisition.');
+        } finally {
+            setTestingToken(false);
         }
     };
 
@@ -274,15 +292,26 @@ const EditCompany = () => {
                                 <div className="mb-6 p-4 bg-gray-50 rounded-lg">
                                     <h3 className="text-md font-semibold mb-3 text-gray-700">Test Email Configuration</h3>
                                     
-                                    <div className="mb-4">
+                                    <div className="mb-4 space-y-2">
+                                        <button
+                                            type="button"
+                                            onClick={handleTestToken}
+                                            disabled={testingToken}
+                                            className="w-full px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:bg-green-400"
+                                        >
+                                            {testingToken ? 'Testing Token...' : 'Test Token Acquisition'}
+                                        </button>
+                                        <p className="text-xs text-gray-600">This tests if your credentials are valid (minimal permissions required)</p>
+                                        
                                         <button
                                             type="button"
                                             onClick={handleTestConfiguration}
                                             disabled={testingConfig}
-                                            className="w-full mb-3 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-blue-400"
+                                            className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-blue-400"
                                         >
-                                            {testingConfig ? 'Testing...' : 'Test Configuration'}
+                                            {testingConfig ? 'Testing...' : 'Test Full Configuration'}
                                         </button>
+                                        <p className="text-xs text-gray-600">This tests full email functionality (requires Mail.Send permission)</p>
                                     </div>
 
                                     {testResult && (

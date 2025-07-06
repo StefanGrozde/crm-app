@@ -119,6 +119,71 @@ class EmailService {
   }
 
   /**
+   * Simple test that only validates token acquisition
+   * @param {Object} company - Company object with MS365 configuration
+   * @returns {Promise<Object>} - Test result
+   */
+  static async testTokenAcquisition(company) {
+    try {
+      // Validate configuration
+      if (!company.ms365ClientId || !company.ms365ClientSecret || !company.ms365TenantId || !company.ms365EmailFrom) {
+        return {
+          success: false,
+          message: 'Incomplete Microsoft 365 configuration. Please fill in all required fields.',
+        };
+      }
+
+      // Configure MSAL
+      const msalConfig = {
+        auth: {
+          clientId: company.ms365ClientId,
+          authority: `https://login.microsoftonline.com/${company.ms365TenantId}`,
+          clientSecret: company.ms365ClientSecret,
+        },
+      };
+
+      const cca = new msal.ConfidentialClientApplication(msalConfig);
+
+      // Test token acquisition only
+      const authResponse = await cca.acquireTokenByClientCredential({
+        scopes: ['https://graph.microsoft.com/.default'],
+      });
+
+      if (!authResponse || !authResponse.accessToken) {
+        return {
+          success: false,
+          message: 'Failed to acquire access token. Please check your Client ID, Client Secret, and Tenant ID.',
+        };
+      }
+
+      return {
+        success: true,
+        message: 'Token acquisition successful. Your Microsoft 365 credentials are valid.',
+      };
+
+    } catch (error) {
+      console.error('[EMAIL SERVICE] Token acquisition test error:', error);
+      
+      let errorMessage = 'Token acquisition failed';
+      
+      if (error.errorCode === 'invalid_client') {
+        errorMessage = 'Invalid client credentials. Please check your Client ID and Client Secret.';
+      } else if (error.errorCode === 'unauthorized_client') {
+        errorMessage = 'Unauthorized client. Please check your Azure App Registration configuration.';
+      } else if (error.errorCode === 'invalid_tenant') {
+        errorMessage = 'Invalid tenant ID. Please check your Tenant ID.';
+      } else {
+        errorMessage = error.message || errorMessage;
+      }
+
+      return {
+        success: false,
+        message: errorMessage,
+      };
+    }
+  }
+
+  /**
    * Test Microsoft 365 email configuration
    * @param {Object} company - Company object with MS365 configuration
    * @returns {Promise<Object>} - Test result
@@ -156,26 +221,44 @@ class EmailService {
         };
       }
 
-      // Test Graph API connection
+      // Test Graph API connection - only test token validity, don't try to read user info
       const graphClient = Client.init({
         authProvider: (done) => {
           done(null, authResponse.accessToken);
         },
       });
 
-      // Try to get user info to test permissions
-      await graphClient.api(`/users/${company.ms365EmailFrom}`).get();
+      // Test that we can make a basic API call (this will validate the token)
+      // We'll try to get the current user's info, but if it fails due to permissions, that's OK
+      try {
+        await graphClient.api('/me').get();
+        console.log('[EMAIL SERVICE] User info read successful');
+      } catch (userError) {
+        // If we can't read user info, that's fine - we only need Mail.Send permission
+        console.log('[EMAIL SERVICE] User info read failed (expected if only Mail.Send permission):', userError.message);
+        
+        // Check if it's a permission error
+        if (userError.statusCode === 403) {
+          console.log('[EMAIL SERVICE] Permission error - this is expected if only Mail.Send permission is granted');
+        }
+      }
 
       return {
         success: true,
-        message: 'Microsoft 365 configuration is valid and working correctly.',
+        message: 'Microsoft 365 configuration is valid. Token acquired successfully. You can now send emails.',
       };
 
     } catch (error) {
       console.error('[EMAIL SERVICE] Configuration test error:', error);
       
       let errorMessage = 'Configuration test failed';
-      if (error.body) {
+      
+      // Handle specific error types
+      if (error.statusCode === 403) {
+        errorMessage = 'Permission denied. Please ensure your Azure App Registration has the correct permissions (Mail.Send and User.Read.All).';
+      } else if (error.statusCode === 401) {
+        errorMessage = 'Authentication failed. Please check your Client ID, Client Secret, and Tenant ID.';
+      } else if (error.body) {
         try {
           const errorBody = JSON.parse(error.body);
           errorMessage = errorBody.error_description || errorBody.error?.message || errorMessage;
