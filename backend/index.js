@@ -64,8 +64,9 @@ app.use('/api/auth', authRoutes);
 app.use('/api/companies', companyRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/dashboard', dashboardRoutes);
-app.use('/api/widgets/builtin', express.static(path.join(__dirname, 'widgets', 'builtin')));
-app.use('/api/widgets/uploaded', express.static(path.join(__dirname, 'widgets', 'uploaded')));
+app.use('/api/widgets', widgetRoutes);
+app.use('/api/widgets/buildin', express.static(path.join(__dirname, 'widgets', 'buildin')));
+app.use('/api/widgets/custom', express.static(path.join(__dirname, 'widgets', 'custom')));
 // Test Route to check DB connection
 app.get('/api/auth/test', (req, res) => {
     res.status(200).send('Auth test route is working!');
