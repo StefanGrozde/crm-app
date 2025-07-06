@@ -664,13 +664,13 @@ const Dashboard = () => {
         setTimeout(() => switchToTab(tabId), 300);
     };
 
-    // Handle opening contacts as a new tab
-    const handleOpenContactsTab = () => {
-        console.log('Opening contacts tab');
+    // Generic function to open any page as a new tab
+    const handleOpenPageTab = (pageType, pageName, widgetKey) => {
+        console.log(`Opening ${pageName} tab`);
         
-        const tabId = 'contacts-page';
+        const tabId = `${pageType}-page`;
         
-        // Check if contacts tab is already open
+        // Check if tab is already open
         const isTabOpen = openTabs.find(tab => tab.id === tabId);
         if (isTabOpen) {
             // If already open, just switch to it
@@ -678,19 +678,19 @@ const Dashboard = () => {
             return;
         }
         
-        // Create a new tab for contacts
+        // Create a new tab
         const newTab = {
             id: tabId,
-            name: 'Contacts',
+            name: pageName,
             isDefault: false
         };
         
         // Add the new tab
         setOpenTabs(prev => [...prev, newTab]);
         
-        // Create a layout for the contacts widget
-        const contactsLayout = [{
-            i: 'contacts-widget',
+        // Create a layout for the widget
+        const pageLayout = [{
+            i: widgetKey,
             x: 0,
             y: 0,
             w: 12,
@@ -698,176 +698,19 @@ const Dashboard = () => {
         }];
         
         // Store the layout and edit mode for the new tab
-        setTabLayouts(prev => ({ ...prev, [tabId]: contactsLayout }));
+        setTabLayouts(prev => ({ ...prev, [tabId]: pageLayout }));
         setTabEditModes(prev => ({ ...prev, [tabId]: false }));
         
         // Switch to the new tab with timeout to ensure React has time to render
         setTimeout(() => switchToTab(tabId), 300);
     };
 
-    // Handle opening leads as a new tab
-    const handleOpenLeadsTab = () => {
-        console.log('Opening leads tab');
-        
-        const tabId = 'leads-page';
-        
-        // Check if leads tab is already open
-        const isTabOpen = openTabs.find(tab => tab.id === tabId);
-        if (isTabOpen) {
-            // If already open, just switch to it
-            switchToTab(tabId);
-            return;
-        }
-        
-        // Create a new tab for leads
-        const newTab = {
-            id: tabId,
-            name: 'Leads',
-            isDefault: false
-        };
-        
-        // Add the new tab
-        setOpenTabs(prev => [...prev, newTab]);
-        
-        // Create a layout for the leads widget
-        const leadsLayout = [{
-            i: 'leads-widget',
-            x: 0,
-            y: 0,
-            w: 12,
-            h: 8
-        }];
-        
-        // Store the layout and edit mode for the new tab
-        setTabLayouts(prev => ({ ...prev, [tabId]: leadsLayout }));
-        setTabEditModes(prev => ({ ...prev, [tabId]: false }));
-        
-        // Switch to the new tab with timeout to ensure React has time to render
-        setTimeout(() => switchToTab(tabId), 300);
-    };
-
-    // Handle opening opportunities as a new tab
-    const handleOpenOpportunitiesTab = () => {
-        console.log('Opening opportunities tab');
-        
-        const tabId = 'opportunities-page';
-        
-        // Check if opportunities tab is already open
-        const isTabOpen = openTabs.find(tab => tab.id === tabId);
-        if (isTabOpen) {
-            // If already open, just switch to it
-            switchToTab(tabId);
-            return;
-        }
-        
-        // Create a new tab for opportunities
-        const newTab = {
-            id: tabId,
-            name: 'Opportunities',
-            isDefault: false
-        };
-        
-        // Add the new tab
-        setOpenTabs(prev => [...prev, newTab]);
-        
-        // Create a layout for the opportunities widget
-        const opportunitiesLayout = [{
-            i: 'opportunities-widget',
-            x: 0,
-            y: 0,
-            w: 12,
-            h: 8
-        }];
-        
-        // Store the layout and edit mode for the new tab
-        setTabLayouts(prev => ({ ...prev, [tabId]: opportunitiesLayout }));
-        setTabEditModes(prev => ({ ...prev, [tabId]: false }));
-        
-        // Switch to the new tab with timeout to ensure React has time to render
-        setTimeout(() => switchToTab(tabId), 300);
-    };
-
-    // Handle opening companies as a new tab
-    const handleOpenCompaniesTab = () => {
-        console.log('Opening companies tab');
-        
-        const tabId = 'companies-page';
-        
-        // Check if companies tab is already open
-        const isTabOpen = openTabs.find(tab => tab.id === tabId);
-        if (isTabOpen) {
-            // If already open, just switch to it
-            switchToTab(tabId);
-            return;
-        }
-        
-        // Create a new tab for companies
-        const newTab = {
-            id: tabId,
-            name: 'Companies',
-            isDefault: false
-        };
-        
-        // Add the new tab
-        setOpenTabs(prev => [...prev, newTab]);
-        
-        // Create a layout for the companies widget
-        const companiesLayout = [{
-            i: 'companies-widget',
-            x: 0,
-            y: 0,
-            w: 12,
-            h: 8
-        }];
-        
-        // Store the layout and edit mode for the new tab
-        setTabLayouts(prev => ({ ...prev, [tabId]: companiesLayout }));
-        setTabEditModes(prev => ({ ...prev, [tabId]: false }));
-        
-        // Switch to the new tab with timeout to ensure React has time to render
-        setTimeout(() => switchToTab(tabId), 300);
-    };
-
-    // Handle opening users as a new tab
-    const handleOpenUsersTab = () => {
-        console.log('Opening users tab');
-        
-        const tabId = 'users-page';
-        
-        // Check if users tab is already open
-        const isTabOpen = openTabs.find(tab => tab.id === tabId);
-        if (isTabOpen) {
-            // If already open, just switch to it
-            switchToTab(tabId);
-            return;
-        }
-        
-        // Create a new tab for users
-        const newTab = {
-            id: tabId,
-            name: 'Users',
-            isDefault: false
-        };
-        
-        // Add the new tab
-        setOpenTabs(prev => [...prev, newTab]);
-        
-        // Create a layout for the users widget
-        const usersLayout = [{
-            i: 'users-widget',
-            x: 0,
-            y: 0,
-            w: 12,
-            h: 8
-        }];
-        
-        // Store the layout and edit mode for the new tab
-        setTabLayouts(prev => ({ ...prev, [tabId]: usersLayout }));
-        setTabEditModes(prev => ({ ...prev, [tabId]: false }));
-        
-        // Switch to the new tab with longer timeout to ensure React has time to render
-        setTimeout(() => switchToTab(tabId), 300);
-    };
+    // Convenience functions for specific pages
+    const handleOpenContactsTab = () => handleOpenPageTab('contacts', 'Contacts', 'contacts-widget');
+    const handleOpenLeadsTab = () => handleOpenPageTab('leads', 'Leads', 'leads-widget');
+    const handleOpenOpportunitiesTab = () => handleOpenPageTab('opportunities', 'Opportunities', 'opportunities-widget');
+    const handleOpenCompaniesTab = () => handleOpenPageTab('companies', 'Companies', 'companies-widget');
+    const handleOpenUsersTab = () => handleOpenPageTab('users', 'Users', 'users-widget');
 
     // Create sample data for testing
     const createSampleData = async () => {
