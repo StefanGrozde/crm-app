@@ -444,6 +444,14 @@ const Dashboard = () => {
             return;
         }
 
+        // Check if current tab is a main page (not a dashboard view)
+        const isMainPage = currentViewId.includes('-page');
+        if (isMainPage) {
+            console.log('Cannot edit main page tabs');
+            alert('Layout editing is not available for main pages (Contacts, Leads, Opportunities, etc.). Please open a dashboard view to edit the layout.');
+            return;
+        }
+
         // Create a proper deep copy of the layout
         const layoutCopy = layout.map(item => ({ ...item }));
         console.log('Creating layout copy:', layoutCopy);
@@ -985,9 +993,15 @@ const Dashboard = () => {
                                 {!isEditMode ? (
                                     <button
                                         onClick={handleEditLayoutClick}
-                                        className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-                                        disabled={!currentViewId}
-                                        title={!currentViewId ? "No view selected - a default view should be created automatically" : "Enter edit mode"}
+                                        className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+                                        disabled={!currentViewId || currentViewId?.includes('-page')}
+                                        title={
+                                            !currentViewId 
+                                                ? "No view selected - a default view should be created automatically" 
+                                                : currentViewId?.includes('-page')
+                                                    ? "Layout editing is not available for main pages"
+                                                    : "Enter edit mode"
+                                        }
                                     >
                                         Edit Layout
                                     </button>
