@@ -652,6 +652,47 @@ const Dashboard = () => {
         setTimeout(() => switchToTab(tabId), 100);
     };
 
+    // Handle opening contacts as a new tab
+    const handleOpenContactsTab = () => {
+        console.log('Opening contacts tab');
+        
+        const tabId = 'contacts-page';
+        
+        // Check if contacts tab is already open
+        const isTabOpen = openTabs.find(tab => tab.id === tabId);
+        if (isTabOpen) {
+            // If already open, just switch to it
+            switchToTab(tabId);
+            return;
+        }
+        
+        // Create a new tab for contacts
+        const newTab = {
+            id: tabId,
+            name: 'Contacts',
+            isDefault: false
+        };
+        
+        // Add the new tab
+        setOpenTabs(prev => [...prev, newTab]);
+        
+        // Create a layout for the contacts widget
+        const contactsLayout = [{
+            i: 'contacts-widget',
+            x: 0,
+            y: 0,
+            w: 12,
+            h: 8
+        }];
+        
+        // Store the layout and edit mode for the new tab
+        setTabLayouts(prev => ({ ...prev, [tabId]: contactsLayout }));
+        setTabEditModes(prev => ({ ...prev, [tabId]: false }));
+        
+        // Switch to the new tab
+        setTimeout(() => switchToTab(tabId), 100);
+    };
+
     // Create sample data for testing
     const createSampleData = async () => {
         try {
@@ -823,6 +864,17 @@ const Dashboard = () => {
                             
                             {/* View selector and controls */}
                             <div className="flex items-center space-x-4">
+                                {/* Quick access buttons */}
+                                <button
+                                    onClick={() => handleOpenContactsTab()}
+                                    className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors flex items-center space-x-2"
+                                >
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                                    </svg>
+                                    <span>Contacts</span>
+                                </button>
+
                                 {/* View selector dropdown */}
                                 <select 
                                     value="" 

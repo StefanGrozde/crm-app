@@ -6,6 +6,7 @@ import LoginSuccess from './pages/LoginSuccess';
 import Dashboard from './pages/Dashboard';
 import CreateCompany from './pages/CreateCompany';
 import EditCompany from './pages/EditCompany';
+import Contacts from './pages/Contacts';
 import PrivateRoute from './components/PrivateRoute';
 import AdminRoute from './components/AdminRoute';
 
@@ -20,6 +21,7 @@ function App() {
           {/* Protected Routes */}
           <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
           <Route path="/create-company" element={<PrivateRoute><CreateCompany /></PrivateRoute>} />
+          <Route path="/contacts" element={<PrivateRoute><Contacts /></PrivateRoute>} />
 
           {/* Admin Only Route */}
           <Route element={<AdminRoute />}>

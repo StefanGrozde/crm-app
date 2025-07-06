@@ -1,5 +1,6 @@
 import React, { Suspense, useState, useEffect } from 'react';
 import SearchResultWidget from './SearchResultWidget';
+import ContactsWidget from './ContactsWidget';
 
 // Component to load scripts from a URL
 const ScriptLoader = ({ widgetKey, widgetPath }) => {
@@ -103,6 +104,11 @@ const DynamicWidget = ({ widgetKey, widgetPath, type, resultData, ...props }) =>
     // Handle search result widgets
     if (widgetKey.startsWith('search-result-')) {
         return <SearchResultWidget resultData={resultData} />;
+    }
+
+    // Handle contacts widget
+    if (widgetKey === 'contacts-widget') {
+        return <ContactsWidget />;
     }
 
     if (type === 'uploaded') {
