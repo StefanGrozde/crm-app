@@ -1,11 +1,11 @@
 const express = require('express');
-const { authenticate } = require('../middleware/authMiddleware');
+const { protect } = require('../middleware/authMiddleware');
 const { DashboardView, DashboardWidget } = require('../models/DashboardView');
 
 const router = express.Router();
 
 // Get all views for the authenticated user
-router.get('/views', authenticate, async (req, res) => {
+router.get('/views', protect, async (req, res) => {
     try {
         const views = await DashboardView.findAll({
             where: { userId: req.user.id },
@@ -21,7 +21,7 @@ router.get('/views', authenticate, async (req, res) => {
 });
 
 // Get a specific view by ID
-router.get('/views/:id', authenticate, async (req, res) => {
+router.get('/views/:id', protect, async (req, res) => {
     try {
         const view = await DashboardView.findOne({
             where: { 
@@ -43,7 +43,7 @@ router.get('/views/:id', authenticate, async (req, res) => {
 });
 
 // Create a new view
-router.post('/views', authenticate, async (req, res) => {
+router.post('/views', protect, async (req, res) => {
     try {
         const { name, widgets = [], isDefault = false } = req.body;
         
@@ -86,7 +86,7 @@ router.post('/views', authenticate, async (req, res) => {
 });
 
 // Update a view
-router.put('/views/:id', authenticate, async (req, res) => {
+router.put('/views/:id', protect, async (req, res) => {
     try {
         const { name, widgets = [], isDefault } = req.body;
         
@@ -147,7 +147,7 @@ router.put('/views/:id', authenticate, async (req, res) => {
 });
 
 // Delete a view
-router.delete('/views/:id', authenticate, async (req, res) => {
+router.delete('/views/:id', protect, async (req, res) => {
     try {
         const view = await DashboardView.findOne({
             where: { 
@@ -170,7 +170,7 @@ router.delete('/views/:id', authenticate, async (req, res) => {
 });
 
 // Set a view as default
-router.post('/views/:id/set-default', authenticate, async (req, res) => {
+router.post('/views/:id/set-default', protect, async (req, res) => {
     try {
         const view = await DashboardView.findOne({
             where: { 
@@ -193,7 +193,7 @@ router.post('/views/:id/set-default', authenticate, async (req, res) => {
 });
 
 // Get default view for user
-router.get('/default', authenticate, async (req, res) => {
+router.get('/default', protect, async (req, res) => {
     try {
         const defaultView = await DashboardView.findDefaultForUser(req.user.id);
         
