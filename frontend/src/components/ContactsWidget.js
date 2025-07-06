@@ -21,7 +21,6 @@ const ContactsWidget = () => {
     const [filters, setFilters] = useState({
         search: '',
         status: '',
-        companyId: '',
         assignedTo: ''
     });
     
@@ -46,7 +45,6 @@ const ContactsWidget = () => {
         status: 'active',
         source: '',
         tags: [],
-        companyId: '',
         assignedTo: ''
     });
     
@@ -55,7 +53,6 @@ const ContactsWidget = () => {
     const [showUndoNotification, setShowUndoNotification] = useState(false);
     
     // Additional data for dropdowns
-    const [companies, setCompanies] = useState([]);
     const [users, setUsers] = useState([]);
 
     // Load contacts
@@ -82,15 +79,10 @@ const ContactsWidget = () => {
         }
     };
 
-    // Load companies and users for dropdowns
+    // Load users for dropdown
     const loadDropdownData = async () => {
         try {
-            const [companiesResponse, usersResponse] = await Promise.all([
-                axios.get(`${API_URL}/api/companies`, { withCredentials: true }),
-                axios.get(`${API_URL}/api/users`, { withCredentials: true })
-            ]);
-            
-            setCompanies(companiesResponse.data);
+            const usersResponse = await axios.get(`${API_URL}/api/users`, { withCredentials: true });
             setUsers(usersResponse.data);
         } catch (error) {
             console.error('Error loading dropdown data:', error);
@@ -186,7 +178,6 @@ const ContactsWidget = () => {
             status: contact.status || 'active',
             source: contact.source || '',
             tags: contact.tags || [],
-            companyId: contact.companyId || '',
             assignedTo: contact.assignedTo || ''
         });
         setShowEditModal(true);
@@ -465,23 +456,6 @@ const ContactsWidget = () => {
                                         className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                                     />
                                 </div>
-                                
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700">Company</label>
-                                    <select
-                                        name="companyId"
-                                        value={formData.companyId}
-                                        onChange={handleInputChange}
-                                        className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                                    >
-                                        <option value="">Select Company</option>
-                                        {companies.map(company => (
-                                            <option key={company.id} value={company.id}>
-                                                {company.name}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
                             </div>
                             
                             <div>
@@ -613,7 +587,7 @@ const ContactsWidget = () => {
                     onChange={(e) => handleFilterChange('search', e.target.value)}
                     className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                 />
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 gap-2">
                     <select
                         value={filters.status}
                         onChange={(e) => handleFilterChange('status', e.target.value)}
@@ -623,18 +597,6 @@ const ContactsWidget = () => {
                         <option value="active">Active</option>
                         <option value="inactive">Inactive</option>
                         <option value="prospect">Prospect</option>
-                    </select>
-                    <select
-                        value={filters.companyId}
-                        onChange={(e) => handleFilterChange('companyId', e.target.value)}
-                        className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                    >
-                        <option value="">All Companies</option>
-                        {companies.map(company => (
-                            <option key={company.id} value={company.id}>
-                                {company.name}
-                            </option>
-                        ))}
                     </select>
                 </div>
             </div>
@@ -657,7 +619,7 @@ const ContactsWidget = () => {
                                                 {contact.firstName} {contact.lastName}
                                             </div>
                                             <div className="text-xs text-gray-500">
-                                                {contact.jobTitle} {contact.company?.name && `• ${contact.company.name}`}
+                                                {contact.jobTitle}
                                             </div>
                                         </div>
                                     </div>

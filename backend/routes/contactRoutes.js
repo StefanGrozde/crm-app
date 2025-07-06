@@ -14,7 +14,6 @@ router.get('/', protect, async (req, res) => {
             limit = 20,
             search,
             status,
-            companyId,
             assignedTo,
             sortBy = 'created_at',
             sortOrder = 'DESC'
@@ -39,10 +38,8 @@ router.get('/', protect, async (req, res) => {
             whereClause.status = status;
         }
 
-        // Filter by company
-        if (companyId) {
-            whereClause.companyId = companyId;
-        }
+        // Filter by company - only show contacts from user's company
+        whereClause.companyId = req.user.companyId;
 
         // Filter by assigned user
         if (assignedTo) {
@@ -177,7 +174,7 @@ router.post('/', protect, async (req, res) => {
             status,
             source: source || null,
             tags: tags || [],
-            companyId: companyId && companyId !== '' ? parseInt(companyId) : null,
+            companyId: req.user.companyId, // Automatically set to user's company
             assignedTo: assignedTo && assignedTo !== '' ? parseInt(assignedTo) : null,
             createdBy: req.user.id
         };
@@ -275,7 +272,7 @@ router.put('/:id', protect, async (req, res) => {
             status,
             source: source || null,
             tags: tags || [],
-            companyId: companyId && companyId !== '' ? parseInt(companyId) : null,
+            companyId: contact.companyId, // Keep the original company ID
             assignedTo: assignedTo && assignedTo !== '' ? parseInt(assignedTo) : null
         };
 
