@@ -71,6 +71,9 @@ const Dashboard = () => {
         useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
     );
 
+    // Track if a tab is being dragged
+    const [isDraggingTab, setIsDraggingTab] = useState(false);
+
     // Debug: Log state changes
     useEffect(() => {
         console.log('Edit mode changed:', isEditMode);
@@ -530,6 +533,7 @@ const Dashboard = () => {
     // Handle tab drag end
     const handleTabDragEnd = (event) => {
         const { active, over } = event;
+        setIsDraggingTab(false);
         if (active && over && active.id !== over.id) {
             const oldIndex = openTabs.findIndex(tab => tab.id === active.id);
             const newIndex = openTabs.findIndex(tab => tab.id === over.id);
@@ -538,6 +542,11 @@ const Dashboard = () => {
                 setOpenTabs(newTabs);
             }
         }
+    };
+
+    // Handle tab drag start
+    const handleTabDragStart = () => {
+        setIsDraggingTab(true);
     };
 
     if (!user) return <div>Loading...</div>;
@@ -712,7 +721,7 @@ const Dashboard = () => {
                 {openTabs.length > 0 && (
                     <div className="bg-white border-b border-gray-200">
                         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleTabDragEnd}>
+                            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleTabDragEnd} onDragStart={handleTabDragStart}>
                                 <SortableContext items={openTabs.map(tab => tab.id)} strategy={horizontalListSortingStrategy}>
                                     <div className="flex space-x-1 overflow-x-auto justify-start">
                                         {openTabs.map((tab) => (
@@ -723,7 +732,7 @@ const Dashboard = () => {
                                                             ? 'border-blue-500 bg-blue-50 text-blue-700'
                                                             : 'border-transparent hover:border-gray-300 hover:bg-gray-50'
                                                     }`}
-                                                    onClick={() => switchToTab(tab.id)}
+                                                    onClick={() => { if (!isDraggingTab) switchToTab(tab.id); }}
                                                 >
                                                     <span className="text-sm font-medium">{tab.name}</span>
                                                     {tab.isDefault && (
