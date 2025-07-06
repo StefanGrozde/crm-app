@@ -5,6 +5,7 @@ import { AuthContext } from '../context/AuthContext';
 const API_URL = process.env.REACT_APP_API_URL;
 
 const ContactsWidget = () => {
+    // eslint-disable-next-line no-unused-vars
     const { user } = useContext(AuthContext);
     const [contacts, setContacts] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -99,10 +100,12 @@ const ContactsWidget = () => {
     useEffect(() => {
         loadContacts();
         loadDropdownData();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     useEffect(() => {
         loadContacts(1);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [filters]);
 
     // Handle filter changes

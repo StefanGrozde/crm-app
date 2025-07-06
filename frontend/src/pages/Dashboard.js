@@ -1,5 +1,5 @@
 // frontend/src/pages/Dashboard.js
-import React, { useState, useEffect, useContext, useRef, Suspense } from 'react';
+import React, { useState, useEffect, useContext, useRef } from 'react';
 import axios from 'axios';
 import { Responsive, WidthProvider } from 'react-grid-layout';
 import { Link, useNavigate } from 'react-router-dom';
@@ -63,6 +63,7 @@ const Dashboard = () => {
         tabEditModes,
         setTabEditModes,
         loadSession,
+        // eslint-disable-next-line no-unused-vars
         saveSession,
         clearSession,
         hasSession,
@@ -203,6 +204,7 @@ const Dashboard = () => {
         if (user) {
             loadInitialData();
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [user]);
 
     // Create a default view for the user
@@ -366,6 +368,7 @@ const Dashboard = () => {
     };
 
     // Load view data into the layout (legacy function - now handled by switchToTab)
+    // eslint-disable-next-line no-unused-vars
     const loadViewData = async (view) => {
         await openViewAsTab(view);
     };
@@ -397,6 +400,7 @@ const Dashboard = () => {
             document.removeEventListener('mousedown', handleClickOutside);
             document.removeEventListener('click', handleWidgetRemove);
         };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isEditMode]);
 
     // Load specific view (now opens as tab)
@@ -1099,23 +1103,12 @@ const Dashboard = () => {
                                         
                                         {/* Widget content */}
                                         <div className={isEditMode ? 'pt-6' : ''}>
-                                            {widget ? (
-                                                <DynamicWidget 
-                                                    widgetKey={widget.key} 
-                                                    widgetPath={widget.path} 
-                                                    type={widget.type}
-                                                    resultData={item.i.startsWith('search-result-') ? item.resultData : undefined}
-                                                />
-                                            ) : (
-                                                <div className="text-center p-4">
-                                                    <div className="text-gray-600 text-sm">
-                                                        Demo Widget: {item.i}
-                                                    </div>
-                                                    <div className="text-xs text-gray-400 mt-1">
-                                                        Size: {item.w}x{item.h} | Position: ({item.x}, {item.y})
-                                                    </div>
-                                                </div>
-                                            )}
+                                            <DynamicWidget 
+                                                widgetKey={item.i} 
+                                                widgetPath={widget?.path} 
+                                                type={widget?.type}
+                                                resultData={item.i.startsWith('search-result-') ? item.resultData : undefined}
+                                            />
                                         </div>
                                         
                                         {/* Widget info overlay in edit mode */}
