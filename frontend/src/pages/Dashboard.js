@@ -178,16 +178,34 @@ const Dashboard = () => {
         }
     };
 
-    // Handle clicks outside menu
+    // Handle clicks outside menu and widget removal
     useEffect(() => {
         const handleClickOutside = (event) => {
             if (menuRef.current && !menuRef.current.contains(event.target)) {
                 setMenuOpen(false);
             }
         };
+
+        const handleWidgetRemove = (event) => {
+            // Check if the clicked element is a remove button or its child
+            const removeButton = event.target.closest('[data-remove-widget]');
+            if (removeButton && isEditMode) {
+                event.preventDefault();
+                event.stopPropagation();
+                const widgetKey = removeButton.getAttribute('data-remove-widget');
+                console.log('Remove button clicked for widget:', widgetKey);
+                handleRemoveWidget(widgetKey, event);
+            }
+        };
+
         document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
+        document.addEventListener('click', handleWidgetRemove);
+        
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+            document.removeEventListener('click', handleWidgetRemove);
+        };
+    }, [isEditMode]);
 
     // Load specific view
     const loadView = async (viewId) => {
@@ -576,14 +594,15 @@ const Dashboard = () => {
                                     className={`bg-white rounded-lg shadow-lg p-2 overflow-hidden transition-all duration-200 relative ${
                                         isEditMode ? 'ring-2 ring-blue-500 ring-offset-2 cursor-move' : ''
                                     }`}
+                                    data-widget-key={item.i}
                                 >
                                     {/* Remove button - only shown in edit mode */}
                                     {isEditMode && (
                                         <button
-                                            onClick={(e) => handleRemoveWidget(item.i, e)}
-                                            className="absolute top-2 right-2 z-50 bg-red-500 hover:bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center transition-colors duration-200 shadow-lg pointer-events-auto"
-                                            title="Remove widget"
+                                            data-remove-widget={item.i}
+                                            className="absolute top-2 right-2 z-50 bg-red-500 hover:bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center transition-colors duration-200 shadow-lg"
                                             style={{ zIndex: 9999 }}
+                                            title="Remove widget"
                                         >
                                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
