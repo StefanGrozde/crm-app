@@ -159,27 +159,30 @@ router.post('/', protect, async (req, res) => {
             }
         }
 
-        const contact = await Contact.create({
+        // Sanitize data - convert empty strings to null for integer fields
+        const sanitizedData = {
             firstName,
             lastName,
-            email,
-            phone,
-            mobile,
-            jobTitle,
-            department,
-            address,
-            city,
-            state,
-            zipCode,
-            country,
-            notes,
+            email: email || null,
+            phone: phone || null,
+            mobile: mobile || null,
+            jobTitle: jobTitle || null,
+            department: department || null,
+            address: address || null,
+            city: city || null,
+            state: state || null,
+            zipCode: zipCode || null,
+            country: country || null,
+            notes: notes || null,
             status,
-            source,
-            tags,
-            companyId,
-            assignedTo,
+            source: source || null,
+            tags: tags || [],
+            companyId: companyId && companyId !== '' ? parseInt(companyId) : null,
+            assignedTo: assignedTo && assignedTo !== '' ? parseInt(assignedTo) : null,
             createdBy: req.user.id
-        });
+        };
+
+        const contact = await Contact.create(sanitizedData);
 
         // Fetch the created contact with associations
         const createdContact = await Contact.findByPk(contact.id, {
@@ -254,26 +257,29 @@ router.put('/:id', protect, async (req, res) => {
             }
         }
 
-        await contact.update({
+        // Sanitize data - convert empty strings to null for integer fields
+        const sanitizedData = {
             firstName,
             lastName,
-            email,
-            phone,
-            mobile,
-            jobTitle,
-            department,
-            address,
-            city,
-            state,
-            zipCode,
-            country,
-            notes,
+            email: email || null,
+            phone: phone || null,
+            mobile: mobile || null,
+            jobTitle: jobTitle || null,
+            department: department || null,
+            address: address || null,
+            city: city || null,
+            state: state || null,
+            zipCode: zipCode || null,
+            country: country || null,
+            notes: notes || null,
             status,
-            source,
-            tags,
-            companyId,
-            assignedTo
-        });
+            source: source || null,
+            tags: tags || [],
+            companyId: companyId && companyId !== '' ? parseInt(companyId) : null,
+            assignedTo: assignedTo && assignedTo !== '' ? parseInt(assignedTo) : null
+        };
+
+        await contact.update(sanitizedData);
 
         // Fetch the updated contact with associations
         const updatedContact = await Contact.findByPk(contact.id, {
