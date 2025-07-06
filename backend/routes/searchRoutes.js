@@ -5,6 +5,8 @@ const SearchService = require('../services/searchService');
 const Contact = require('../models/Contact');
 const Lead = require('../models/Lead');
 const Opportunity = require('../models/Opportunity');
+const Company = require('../models/Company');
+const User = require('../models/User');
 
 /**
  * @route   POST /api/search/sample-data
