@@ -60,12 +60,12 @@ router.get('/', protect, async (req, res) => {
                 {
                     model: User,
                     as: 'assignedUser',
-                    attributes: ['id', 'username', 'firstName', 'lastName']
+                    attributes: ['id', 'username', 'email']
                 },
                 {
                     model: User,
                     as: 'creator',
-                    attributes: ['id', 'username', 'firstName', 'lastName']
+                    attributes: ['id', 'username', 'email']
                 }
             ],
             order: [[sortBy, sortOrder.toUpperCase()]],
@@ -101,12 +101,12 @@ router.get('/:id', protect, async (req, res) => {
                 {
                     model: User,
                     as: 'assignedUser',
-                    attributes: ['id', 'username', 'firstName', 'lastName']
+                    attributes: ['id', 'username', 'email']
                 },
                 {
                     model: User,
                     as: 'creator',
-                    attributes: ['id', 'username', 'firstName', 'lastName']
+                    attributes: ['id', 'username', 'email']
                 }
             ]
         });
@@ -192,12 +192,12 @@ router.post('/', protect, async (req, res) => {
                 {
                     model: User,
                     as: 'assignedUser',
-                    attributes: ['id', 'username', 'firstName', 'lastName']
+                    attributes: ['id', 'username', 'email']
                 },
                 {
                     model: User,
                     as: 'creator',
-                    attributes: ['id', 'username', 'firstName', 'lastName']
+                    attributes: ['id', 'username', 'email']
                 }
             ]
         });
@@ -286,12 +286,12 @@ router.put('/:id', protect, async (req, res) => {
                 {
                     model: User,
                     as: 'assignedUser',
-                    attributes: ['id', 'username', 'firstName', 'lastName']
+                    attributes: ['id', 'username', 'email']
                 },
                 {
                     model: User,
                     as: 'creator',
-                    attributes: ['id', 'username', 'firstName', 'lastName']
+                    attributes: ['id', 'username', 'email']
                 }
             ]
         });
@@ -362,12 +362,12 @@ router.post('/:id/undo', protect, async (req, res) => {
                 {
                     model: User,
                     as: 'assignedUser',
-                    attributes: ['id', 'username', 'firstName', 'lastName']
+                    attributes: ['id', 'username', 'email']
                 },
                 {
                     model: User,
                     as: 'creator',
-                    attributes: ['id', 'username', 'firstName', 'lastName']
+                    attributes: ['id', 'username', 'email']
                 }
             ]
         });
