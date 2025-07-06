@@ -507,7 +507,7 @@ const Dashboard = () => {
                     {isEditMode && (
                         <div className="mb-4 p-3 bg-blue-100 border border-blue-300 rounded-lg">
                             <p className="text-blue-800 font-medium">
-                                🎯 Edit Mode Active - You can now drag and resize widgets
+                                🎯 Edit Mode Active - You can now drag, resize, and remove widgets. Click the red X to remove widgets.
                             </p>
                         </div>
                     )}
@@ -528,27 +528,45 @@ const Dashboard = () => {
                             return (
                                 <div 
                                     key={item.i} 
-                                    className={`bg-white rounded-lg shadow-lg p-2 overflow-hidden transition-all duration-200 ${
+                                    className={`bg-white rounded-lg shadow-lg p-2 overflow-hidden transition-all duration-200 relative ${
                                         isEditMode ? 'ring-2 ring-blue-500 ring-offset-2 cursor-move' : ''
                                     }`}
                                 >
+                                    {/* Remove button - only shown in edit mode */}
                                     {isEditMode && (
-                                        <div className="absolute top-1 right-1 z-10">
-                                            <span className="bg-blue-500 text-white text-xs px-2 py-1 rounded">
-                                                Edit Mode
-                                            </span>
-                                        </div>
+                                        <button
+                                            onClick={() => handleRemoveWidget(item.i)}
+                                            className="absolute top-2 right-2 z-20 bg-red-500 hover:bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center transition-colors duration-200 shadow-lg"
+                                            title="Remove widget"
+                                        >
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                            </svg>
+                                        </button>
                                     )}
-                                    {widget ? (
-                                        <DynamicWidget widgetKey={widget.key} widgetPath={widget.path} type={widget.type} />
-                                    ) : (
-                                        <div className="text-center p-4">
-                                            <div className="text-gray-600 text-sm">
-                                                Demo Widget: {item.i}
+                                    
+                                    {/* Widget content */}
+                                    <div className={isEditMode ? 'pt-6' : ''}>
+                                        {widget ? (
+                                            <DynamicWidget widgetKey={widget.key} widgetPath={widget.path} type={widget.type} />
+                                        ) : (
+                                            <div className="text-center p-4">
+                                                <div className="text-gray-600 text-sm">
+                                                    Demo Widget: {item.i}
+                                                </div>
+                                                <div className="text-xs text-gray-400 mt-1">
+                                                    Size: {item.w}x{item.h} | Position: ({item.x}, {item.y})
+                                                </div>
                                             </div>
-                                            <div className="text-xs text-gray-400 mt-1">
-                                                Size: {item.w}x{item.h} | Position: ({item.x}, {item.y})
-                                            </div>
+                                        )}
+                                    </div>
+                                    
+                                    {/* Widget info overlay in edit mode */}
+                                    {isEditMode && (
+                                        <div className="absolute bottom-1 left-1 z-10">
+                                            <span className="bg-blue-500 text-white text-xs px-2 py-1 rounded opacity-75">
+                                                {item.w}×{item.h}
+                                            </span>
                                         </div>
                                     )}
                                 </div>
