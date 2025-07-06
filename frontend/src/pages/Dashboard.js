@@ -17,6 +17,7 @@ import AddWidgetModal from '../components/AddWidgetModal';
 import UploadWidgetModal from '../components/UploadWidgetModal';
 import DynamicWidget from '../components/DynamicWidget';
 import SearchBar from '../components/SearchBar';
+import { useTabSession } from '../hooks/useTabSession';
 
 const ResponsiveReactGridLayout = WidthProvider(Responsive);
 const API_URL = process.env.REACT_APP_API_URL;
@@ -51,11 +52,22 @@ const Dashboard = () => {
     const [currentViewId, setCurrentViewId] = useState(null);
     const [isEditMode, setIsEditMode] = useState(false);
     
-    // Tab management state
-    const [openTabs, setOpenTabs] = useState([]);
-    const [activeTabId, setActiveTabId] = useState(null);
-    const [tabLayouts, setTabLayouts] = useState({}); // Store layouts for each tab
-    const [tabEditModes, setTabEditModes] = useState({}); // Store edit mode for each tab
+    // Tab management state with session persistence
+    const {
+        openTabs,
+        setOpenTabs,
+        activeTabId,
+        setActiveTabId,
+        tabLayouts,
+        setTabLayouts,
+        tabEditModes,
+        setTabEditModes,
+        loadSession,
+        saveSession,
+        clearSession,
+        hasSession,
+        getSessionInfo
+    } = useTabSession(user?.id);
     
     // Modal states
     const [isSaveModalOpen, setSaveModalOpen] = useState(false);
@@ -78,6 +90,9 @@ const Dashboard = () => {
 
     // Track previous openTabs length
     const prevTabsLengthRef = useRef(openTabs.length);
+
+    // Session restoration state
+    const [isRestoringSession, setIsRestoringSession] = useState(false);
 
     // Debug: Log state changes
     useEffect(() => {
@@ -110,15 +125,67 @@ const Dashboard = () => {
                 setViews(viewsResponse.data);
                 console.log('Views loaded:', viewsResponse.data);
 
-                // Check if user has any views, if not create a default one
-                if (!viewsResponse.data || viewsResponse.data.length === 0) {
-                    console.log('No views found, creating default view...');
-                    await createDefaultView();
+                // Check if we have a saved session
+                const sessionExists = hasSession();
+                console.log('Has saved session:', sessionExists);
+
+                if (sessionExists) {
+                    // Load the session data
+                    console.log('Loading saved session...');
+                    setIsRestoringSession(true);
+                    loadSession();
+                    
+                    // Give the session time to load, then validate and restore
+                    setTimeout(async () => {
+                        console.log('Session loaded, validating tabs...');
+                        
+                        // Get the current session data after loading
+                        const sessionKey = `dashboard_tab_session_${user.id}`;
+                        const savedSession = localStorage.getItem(sessionKey);
+                        
+                        if (savedSession) {
+                            const sessionData = JSON.parse(savedSession);
+                            const savedTabs = sessionData.openTabs || [];
+                            
+                            // Validate that all saved tabs correspond to existing views
+                            const validTabs = savedTabs.filter(tab => {
+                                // Check if it's a search result tab or a regular view tab
+                                if (tab.id.startsWith('search-')) {
+                                    return true; // Search result tabs are always valid
+                                }
+                                return viewsResponse.data.some(view => view.id === tab.id);
+                            });
+
+                            if (validTabs.length > 0) {
+                                console.log('Valid tabs found:', validTabs);
+                                setOpenTabs(validTabs);
+                                
+                                // Switch to the active tab if it's still valid
+                                const savedActiveTab = sessionData.activeTabId;
+                                if (savedActiveTab && validTabs.some(tab => tab.id === savedActiveTab)) {
+                                    await switchToTab(savedActiveTab);
+                                } else {
+                                    // Switch to the first valid tab
+                                    await switchToTab(validTabs[0].id);
+                                }
+                            } else {
+                                console.log('No valid tabs in session, creating default view');
+                                await createDefaultView();
+                            }
+                            setIsRestoringSession(false);
+                        }
+                    }, 200);
                 } else {
-                    // Load the first view (or a view marked as default) as the first tab
-                    const defaultView = viewsResponse.data.find(v => v.isDefault) || viewsResponse.data[0];
-                    console.log('Loading default view as first tab:', defaultView);
-                    await openViewAsTab(defaultView);
+                    // No saved session, check if user has any views
+                    if (!viewsResponse.data || viewsResponse.data.length === 0) {
+                        console.log('No views found, creating default view...');
+                        await createDefaultView();
+                    } else {
+                        // Load the first view (or a view marked as default) as the first tab
+                        const defaultView = viewsResponse.data.find(v => v.isDefault) || viewsResponse.data[0];
+                        console.log('Loading default view as first tab:', defaultView);
+                        await openViewAsTab(defaultView);
+                    }
                 }
             } catch (error) {
                 console.error("Failed to load initial data", error);
@@ -340,6 +407,8 @@ const Dashboard = () => {
 
     // Handlers
     const handleLogout = () => {
+        // Clear session data on logout
+        clearSession();
         logout();
         navigate('/login');
     };
@@ -601,6 +670,13 @@ const Dashboard = () => {
         }
     };
 
+    // Debug session info
+    const debugSessionInfo = () => {
+        const sessionInfo = getSessionInfo();
+        console.log('Session info:', sessionInfo);
+        alert(`Session Info:\nExists: ${sessionInfo.exists}\nTab Count: ${sessionInfo.tabCount || 0}\nActive Tab: ${sessionInfo.activeTab || 'None'}\nAge: ${sessionInfo.age ? Math.round(sessionInfo.age / 1000 / 60) + ' minutes' : 'N/A'}\nExpires In: ${sessionInfo.expiresIn ? Math.round(sessionInfo.expiresIn / 1000 / 60) + ' minutes' : 'N/A'}`);
+    };
+
     // Derived state
     const currentWidgetKeys = layout.map(item => item.i);
     const availableWidgets = widgetLibrary.filter(widget => !currentWidgetKeys.includes(widget.key));
@@ -679,7 +755,9 @@ const Dashboard = () => {
                             Layout items: {layout.length} | 
                             Widgets: {widgetLibrary.length} |
                             Open tabs: {openTabs.length} |
-                            Active tab: {activeTabId || 'None'}
+                            Active tab: {activeTabId || 'None'} |
+                            Session: {openTabs.length > 0 ? 'Saved' : 'None'} |
+                            Restoring: {isRestoringSession ? 'Yes' : 'No'}
                         </div>
                         {user.role === 'Administrator' && (
                             <>
@@ -691,12 +769,26 @@ const Dashboard = () => {
                                 </button>
                                 <button
                                     onClick={testTables}
-                                    className="px-2 py-1 bg-green-500 text-white text-xs rounded hover:bg-green-600"
+                                    className="px-2 py-1 bg-green-500 text-white text-xs rounded hover:bg-green-600 mr-2"
                                 >
                                     Test Tables
                                 </button>
                             </>
                         )}
+                        <button
+                            onClick={clearSession}
+                            className="px-2 py-1 bg-red-500 text-white text-xs rounded hover:bg-red-600 mr-2"
+                            title="Clear saved tab session"
+                        >
+                            Clear Session
+                        </button>
+                        <button
+                            onClick={debugSessionInfo}
+                            className="px-2 py-1 bg-purple-500 text-white text-xs rounded hover:bg-purple-600"
+                            title="Show session debug info"
+                        >
+                            Session Info
+                        </button>
                     </div>
                 </div>
 
@@ -895,8 +987,17 @@ const Dashboard = () => {
                         </div>
                     )}
 
+                    {/* Session restoration indicator */}
+                    {isRestoringSession && (
+                        <div className="text-center py-12">
+                            <div className="text-blue-600 text-lg">
+                                🔄 Restoring your previous session...
+                            </div>
+                        </div>
+                    )}
+
                     {/* No active tab message */}
-                    {!activeTabId && (
+                    {!activeTabId && !isRestoringSession && (
                         <div className="text-center py-12">
                             <div className="text-gray-500 text-lg">
                                 No views open. Use the dropdown above to open a view.
