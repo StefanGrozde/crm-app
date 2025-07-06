@@ -1,6 +1,6 @@
 const express = require('express');
 const multer = require('multer');
-const { authenticate, authorize } = require('../middleware/authMiddleware');
+const { protect: authenticate, authorize } = require('../middleware/authMiddleware');
 const widgetService = require('../services/widgetService');
 
 const router = express.Router();
