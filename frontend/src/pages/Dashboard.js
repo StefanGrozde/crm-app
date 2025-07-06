@@ -148,7 +148,7 @@ const Dashboard = () => {
                             // Validate that all saved tabs correspond to existing views
                             const validTabs = savedTabs.filter(tab => {
                                 // Check if it's a search result tab or a regular view tab
-                                if (tab.id.startsWith('search-')) {
+                                if (String(tab.id).startsWith('search-')) {
                                     return true; // Search result tabs are always valid
                                 }
                                 return viewsResponse.data.some(view => String(view.id) === String(tab.id));
