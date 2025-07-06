@@ -23,6 +23,35 @@ const Company = sequelize.define('Company', {
     type: DataTypes.STRING,
     allowNull: true,
   },
+  // Microsoft 365 Email Configuration
+  ms365ClientId: {
+    type: DataTypes.STRING,
+    allowNull: true,
+    field: 'ms365_client_id',
+  },
+  ms365ClientSecret: {
+    type: DataTypes.TEXT,
+    allowNull: true,
+    field: 'ms365_client_secret',
+  },
+  ms365TenantId: {
+    type: DataTypes.STRING,
+    allowNull: true,
+    field: 'ms365_tenant_id',
+  },
+  ms365EmailFrom: {
+    type: DataTypes.STRING,
+    allowNull: true,
+    field: 'ms365_email_from',
+    validate: {
+      isEmail: true,
+    },
+  },
+  emailEnabled: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false,
+    field: 'email_enabled',
+  },
 }, {
     tableName: 'companies',
     timestamps: true,
