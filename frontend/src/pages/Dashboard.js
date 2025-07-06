@@ -344,13 +344,8 @@ const Dashboard = () => {
         const newOpenTabs = openTabs.filter(tab => tab.id !== tabId);
         setOpenTabs(newOpenTabs);
         
-        // Remove tab's layout and edit mode data
-        const newTabLayouts = { ...tabLayouts };
-        const newTabEditModes = { ...tabEditModes };
-        delete newTabLayouts[tabId];
-        delete newTabEditModes[tabId];
-        setTabLayouts(newTabLayouts);
-        setTabEditModes(newTabEditModes);
+        // Keep the layout and edit mode data in memory (don't delete it)
+        // This allows the tab to be reopened with the same layout
         
         // If we're closing the active tab, switch to another tab
         if (activeTabId === tabId) {
@@ -646,13 +641,11 @@ const Dashboard = () => {
         }];
         
         // Store the layout and edit mode for the new tab
-        setTabLayouts(prev => {
-            const newLayouts = { ...prev, [tabId]: resultLayout };
-            // Switch to the tab after the layout is set
-            setTimeout(() => switchToTab(tabId), 100);
-            return newLayouts;
-        });
+        setTabLayouts(prev => ({ ...prev, [tabId]: resultLayout }));
         setTabEditModes(prev => ({ ...prev, [tabId]: false }));
+        
+        // Switch to the new tab with longer timeout to ensure React has time to render
+        setTimeout(() => switchToTab(tabId), 300);
     };
 
     // Handle opening contacts as a new tab
@@ -689,13 +682,11 @@ const Dashboard = () => {
         }];
         
         // Store the layout and edit mode for the new tab
-        setTabLayouts(prev => {
-            const newLayouts = { ...prev, [tabId]: contactsLayout };
-            // Switch to the tab after the layout is set
-            setTimeout(() => switchToTab(tabId), 100);
-            return newLayouts;
-        });
+        setTabLayouts(prev => ({ ...prev, [tabId]: contactsLayout }));
         setTabEditModes(prev => ({ ...prev, [tabId]: false }));
+        
+        // Switch to the new tab with longer timeout to ensure React has time to render
+        setTimeout(() => switchToTab(tabId), 300);
     };
 
     // Handle opening leads as a new tab
@@ -732,13 +723,11 @@ const Dashboard = () => {
         }];
         
         // Store the layout and edit mode for the new tab
-        setTabLayouts(prev => {
-            const newLayouts = { ...prev, [tabId]: leadsLayout };
-            // Switch to the tab after the layout is set
-            setTimeout(() => switchToTab(tabId), 100);
-            return newLayouts;
-        });
+        setTabLayouts(prev => ({ ...prev, [tabId]: leadsLayout }));
         setTabEditModes(prev => ({ ...prev, [tabId]: false }));
+        
+        // Switch to the new tab with longer timeout to ensure React has time to render
+        setTimeout(() => switchToTab(tabId), 300);
     };
 
     // Handle opening opportunities as a new tab
@@ -775,13 +764,11 @@ const Dashboard = () => {
         }];
         
         // Store the layout and edit mode for the new tab
-        setTabLayouts(prev => {
-            const newLayouts = { ...prev, [tabId]: opportunitiesLayout };
-            // Switch to the tab after the layout is set
-            setTimeout(() => switchToTab(tabId), 100);
-            return newLayouts;
-        });
+        setTabLayouts(prev => ({ ...prev, [tabId]: opportunitiesLayout }));
         setTabEditModes(prev => ({ ...prev, [tabId]: false }));
+        
+        // Switch to the new tab with longer timeout to ensure React has time to render
+        setTimeout(() => switchToTab(tabId), 300);
     };
 
     // Handle opening companies as a new tab
@@ -818,13 +805,11 @@ const Dashboard = () => {
         }];
         
         // Store the layout and edit mode for the new tab
-        setTabLayouts(prev => {
-            const newLayouts = { ...prev, [tabId]: companiesLayout };
-            // Switch to the tab after the layout is set
-            setTimeout(() => switchToTab(tabId), 100);
-            return newLayouts;
-        });
+        setTabLayouts(prev => ({ ...prev, [tabId]: companiesLayout }));
         setTabEditModes(prev => ({ ...prev, [tabId]: false }));
+        
+        // Switch to the new tab with longer timeout to ensure React has time to render
+        setTimeout(() => switchToTab(tabId), 300);
     };
 
     // Handle opening users as a new tab
@@ -861,13 +846,11 @@ const Dashboard = () => {
         }];
         
         // Store the layout and edit mode for the new tab
-        setTabLayouts(prev => {
-            const newLayouts = { ...prev, [tabId]: usersLayout };
-            // Switch to the tab after the layout is set
-            setTimeout(() => switchToTab(tabId), 100);
-            return newLayouts;
-        });
+        setTabLayouts(prev => ({ ...prev, [tabId]: usersLayout }));
         setTabEditModes(prev => ({ ...prev, [tabId]: false }));
+        
+        // Switch to the new tab with longer timeout to ensure React has time to render
+        setTimeout(() => switchToTab(tabId), 300);
     };
 
     // Create sample data for testing
