@@ -8,14 +8,17 @@ const User = require('../models/User');
 const { protect } = require('../middleware/authMiddleware');
 
 // --- MSAL Configuration ---
-const msalConfig = {
-    auth: {
-        clientId: process.env.MS_CLIENT_ID,
-        authority: `https://login.microsoftonline.com/${process.env.MS_TENANT_ID}`,
-        clientSecret: process.env.MS_CLIENT_SECRET,
-    },
-};
-const pca = new msal.ConfidentialClientApplication(msalConfig);
+let pca = null;
+if (process.env.MS_CLIENT_ID && process.env.MS_TENANT_ID && process.env.MS_CLIENT_SECRET) {
+    const msalConfig = {
+        auth: {
+            clientId: process.env.MS_CLIENT_ID,
+            authority: `https://login.microsoftonline.com/${process.env.MS_TENANT_ID}`,
+            clientSecret: process.env.MS_CLIENT_SECRET,
+        },
+    };
+    pca = new msal.ConfidentialClientApplication(msalConfig);
+}
 const REDIRECT_URI = process.env.BACKEND_URL + "/api/auth/microsoft/callback";
 const FRONTEND_URI = process.env.FRONTEND_URL;
 
@@ -66,6 +69,10 @@ const sendTokenResponse = (user, statusCode, res) => {
 
 // STEP 1: Redirect to Microsoft's login page to get an auth code.
 router.get('/microsoft/login', (req, res) => {
+    if (!pca) {
+        return res.status(500).json({ message: 'Microsoft authentication not configured' });
+    }
+    
     pca
         .getAuthCodeUrl({
             scopes: ['openid', 'email', 'profile', 'User.Read'],
@@ -94,6 +101,10 @@ router.get('/microsoft/callback', (req, res) => {
 
 // STEP 3: Complete the login using the code from the frontend.
 router.post('/microsoft/complete', async (req, res) => {
+    if (!pca) {
+        return res.status(500).json({ message: 'Microsoft authentication not configured' });
+    }
+    
     const { mscode } = req.body;
 
     if (!mscode) {

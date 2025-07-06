@@ -3,6 +3,24 @@ const router = express.Router();
 const User = require('../models/User');
 const { protect } = require('../middleware/authMiddleware');
 
+// @desc    Get all users (for dropdowns)
+// @route   GET /api/users
+// @access  Private
+router.get('/', protect, async (req, res) => {
+    try {
+        // Return users from the same company
+        const users = await User.findAll({
+            where: { companyId: req.user.companyId },
+            attributes: ['id', 'email', 'username', 'role']
+        });
+        
+        res.json(users);
+    } catch (error) {
+        console.error('Error fetching users:', error);
+        res.status(500).json({ message: 'Server Error' });
+    }
+});
+
 // @desc    Get user profile
 // @route   GET /api/users/profile
 // @access  Private

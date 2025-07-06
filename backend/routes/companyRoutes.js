@@ -5,6 +5,25 @@ const User = require('../models/User');
 const EmailService = require('../services/emailService');
 const { protect, authorize } = require('../middleware/authMiddleware');
 
+// @desc    Get all companies (for dropdowns)
+// @route   GET /api/companies
+// @access  Private
+router.get('/', protect, async (req, res) => {
+    try {
+        // For now, just return the user's company
+        // In a multi-tenant system, this would return all companies the user has access to
+        const companies = await Company.findAll({
+            where: { id: req.user.companyId },
+            attributes: ['id', 'name']
+        });
+        
+        res.json(companies);
+    } catch (error) {
+        console.error('Error fetching companies:', error);
+        res.status(500).json({ message: 'Server Error' });
+    }
+});
+
 // @desc    Create a new company
 // @route   POST /api/companies
 // @access  Private (for users without a company)
