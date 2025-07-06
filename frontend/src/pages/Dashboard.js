@@ -73,6 +73,7 @@ const Dashboard = () => {
 
     // Track if a tab is being dragged
     const [isDraggingTab, setIsDraggingTab] = useState(false);
+    const dragTimeoutRef = useRef(null);
 
     // Debug: Log state changes
     useEffect(() => {
@@ -533,7 +534,11 @@ const Dashboard = () => {
     // Handle tab drag end
     const handleTabDragEnd = (event) => {
         const { active, over } = event;
-        setIsDraggingTab(false);
+        // Add a 100ms delay before allowing tab switching again
+        if (dragTimeoutRef.current) clearTimeout(dragTimeoutRef.current);
+        dragTimeoutRef.current = setTimeout(() => {
+            setIsDraggingTab(false);
+        }, 100);
         if (active && over && active.id !== over.id) {
             const oldIndex = openTabs.findIndex(tab => tab.id === active.id);
             const newIndex = openTabs.findIndex(tab => tab.id === over.id);
@@ -548,6 +553,13 @@ const Dashboard = () => {
     const handleTabDragStart = () => {
         setIsDraggingTab(true);
     };
+
+    // Cleanup timeout on unmount
+    useEffect(() => {
+        return () => {
+            if (dragTimeoutRef.current) clearTimeout(dragTimeoutRef.current);
+        };
+    }, []);
 
     if (!user) return <div>Loading...</div>;
 
