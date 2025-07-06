@@ -360,6 +360,13 @@ const Dashboard = () => {
         setLayout(newLayout);
     };
 
+    // Handle widget removal
+    const handleRemoveWidget = (widgetKey) => {
+        console.log('Removing widget:', widgetKey);
+        const newLayout = layout.filter(item => item.i !== widgetKey);
+        setLayout(newLayout);
+    };
+
     // Derived state
     const currentWidgetKeys = layout.map(item => item.i);
     const availableWidgets = widgetLibrary.filter(widget => !currentWidgetKeys.includes(widget.key));
