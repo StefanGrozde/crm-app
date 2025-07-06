@@ -76,8 +76,9 @@ const Dashboard = () => {
     const [isAddModalOpen, setAddModalOpen] = useState(false);
     const [isUploadModalOpen, setUploadModalOpen] = useState(false);
     
-    // Menu state
+    // Menu states
     const [menuOpen, setMenuOpen] = useState(false);
+    const [pagesMenuOpen, setPagesMenuOpen] = useState(false);
     const menuRef = useRef(null);
 
     // DnD-kit sensors
@@ -378,6 +379,10 @@ const Dashboard = () => {
         const handleClickOutside = (event) => {
             if (menuRef.current && !menuRef.current.contains(event.target)) {
                 setMenuOpen(false);
+            }
+            // Close pages menu when clicking outside
+            if (!event.target.closest('[data-pages-menu]')) {
+                setPagesMenuOpen(false);
             }
         };
 
@@ -697,6 +702,170 @@ const Dashboard = () => {
         setTimeout(() => switchToTab(tabId), 100);
     };
 
+    // Handle opening leads as a new tab
+    const handleOpenLeadsTab = () => {
+        console.log('Opening leads tab');
+        
+        const tabId = 'leads-page';
+        
+        // Check if leads tab is already open
+        const isTabOpen = openTabs.find(tab => tab.id === tabId);
+        if (isTabOpen) {
+            // If already open, just switch to it
+            switchToTab(tabId);
+            return;
+        }
+        
+        // Create a new tab for leads
+        const newTab = {
+            id: tabId,
+            name: 'Leads',
+            isDefault: false
+        };
+        
+        // Add the new tab
+        setOpenTabs(prev => [...prev, newTab]);
+        
+        // Create a layout for the leads widget
+        const leadsLayout = [{
+            i: 'leads-widget',
+            x: 0,
+            y: 0,
+            w: 12,
+            h: 8
+        }];
+        
+        // Store the layout and edit mode for the new tab
+        setTabLayouts(prev => ({ ...prev, [tabId]: leadsLayout }));
+        setTabEditModes(prev => ({ ...prev, [tabId]: false }));
+        
+        // Switch to the new tab
+        setTimeout(() => switchToTab(tabId), 100);
+    };
+
+    // Handle opening opportunities as a new tab
+    const handleOpenOpportunitiesTab = () => {
+        console.log('Opening opportunities tab');
+        
+        const tabId = 'opportunities-page';
+        
+        // Check if opportunities tab is already open
+        const isTabOpen = openTabs.find(tab => tab.id === tabId);
+        if (isTabOpen) {
+            // If already open, just switch to it
+            switchToTab(tabId);
+            return;
+        }
+        
+        // Create a new tab for opportunities
+        const newTab = {
+            id: tabId,
+            name: 'Opportunities',
+            isDefault: false
+        };
+        
+        // Add the new tab
+        setOpenTabs(prev => [...prev, newTab]);
+        
+        // Create a layout for the opportunities widget
+        const opportunitiesLayout = [{
+            i: 'opportunities-widget',
+            x: 0,
+            y: 0,
+            w: 12,
+            h: 8
+        }];
+        
+        // Store the layout and edit mode for the new tab
+        setTabLayouts(prev => ({ ...prev, [tabId]: opportunitiesLayout }));
+        setTabEditModes(prev => ({ ...prev, [tabId]: false }));
+        
+        // Switch to the new tab
+        setTimeout(() => switchToTab(tabId), 100);
+    };
+
+    // Handle opening companies as a new tab
+    const handleOpenCompaniesTab = () => {
+        console.log('Opening companies tab');
+        
+        const tabId = 'companies-page';
+        
+        // Check if companies tab is already open
+        const isTabOpen = openTabs.find(tab => tab.id === tabId);
+        if (isTabOpen) {
+            // If already open, just switch to it
+            switchToTab(tabId);
+            return;
+        }
+        
+        // Create a new tab for companies
+        const newTab = {
+            id: tabId,
+            name: 'Companies',
+            isDefault: false
+        };
+        
+        // Add the new tab
+        setOpenTabs(prev => [...prev, newTab]);
+        
+        // Create a layout for the companies widget
+        const companiesLayout = [{
+            i: 'companies-widget',
+            x: 0,
+            y: 0,
+            w: 12,
+            h: 8
+        }];
+        
+        // Store the layout and edit mode for the new tab
+        setTabLayouts(prev => ({ ...prev, [tabId]: companiesLayout }));
+        setTabEditModes(prev => ({ ...prev, [tabId]: false }));
+        
+        // Switch to the new tab
+        setTimeout(() => switchToTab(tabId), 100);
+    };
+
+    // Handle opening users as a new tab
+    const handleOpenUsersTab = () => {
+        console.log('Opening users tab');
+        
+        const tabId = 'users-page';
+        
+        // Check if users tab is already open
+        const isTabOpen = openTabs.find(tab => tab.id === tabId);
+        if (isTabOpen) {
+            // If already open, just switch to it
+            switchToTab(tabId);
+            return;
+        }
+        
+        // Create a new tab for users
+        const newTab = {
+            id: tabId,
+            name: 'Users',
+            isDefault: false
+        };
+        
+        // Add the new tab
+        setOpenTabs(prev => [...prev, newTab]);
+        
+        // Create a layout for the users widget
+        const usersLayout = [{
+            i: 'users-widget',
+            x: 0,
+            y: 0,
+            w: 12,
+            h: 8
+        }];
+        
+        // Store the layout and edit mode for the new tab
+        setTabLayouts(prev => ({ ...prev, [tabId]: usersLayout }));
+        setTabEditModes(prev => ({ ...prev, [tabId]: false }));
+        
+        // Switch to the new tab
+        setTimeout(() => switchToTab(tabId), 100);
+    };
+
     // Create sample data for testing
     const createSampleData = async () => {
         try {
@@ -868,16 +1037,87 @@ const Dashboard = () => {
                             
                             {/* View selector and controls */}
                             <div className="flex items-center space-x-4">
-                                {/* Quick access buttons */}
-                                <button
-                                    onClick={() => handleOpenContactsTab()}
-                                    className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors flex items-center space-x-2"
-                                >
-                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                                    </svg>
-                                    <span>Contacts</span>
-                                </button>
+                                {/* Pages dropdown */}
+                                <div className="relative" data-pages-menu>
+                                    <button
+                                        onClick={() => setPagesMenuOpen(!pagesMenuOpen)}
+                                        className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors flex items-center space-x-2"
+                                    >
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                                        </svg>
+                                        <span>Pages</span>
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                        </svg>
+                                    </button>
+
+                                    {pagesMenuOpen && (
+                                        <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10 border border-gray-200">
+                                            <button
+                                                onClick={() => {
+                                                    handleOpenContactsTab();
+                                                    setPagesMenuOpen(false);
+                                                }}
+                                                className="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
+                                            >
+                                                <svg className="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                                                </svg>
+                                                <span>Contacts</span>
+                                            </button>
+                                            <button
+                                                onClick={() => {
+                                                    handleOpenLeadsTab();
+                                                    setPagesMenuOpen(false);
+                                                }}
+                                                className="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
+                                            >
+                                                <svg className="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                                                </svg>
+                                                <span>Leads</span>
+                                            </button>
+                                            <button
+                                                onClick={() => {
+                                                    handleOpenOpportunitiesTab();
+                                                    setPagesMenuOpen(false);
+                                                }}
+                                                className="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
+                                            >
+                                                <svg className="w-4 h-4 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                                                </svg>
+                                                <span>Opportunities</span>
+                                            </button>
+                                            <button
+                                                onClick={() => {
+                                                    handleOpenCompaniesTab();
+                                                    setPagesMenuOpen(false);
+                                                }}
+                                                className="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
+                                            >
+                                                <svg className="w-4 h-4 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                                                </svg>
+                                                <span>Companies</span>
+                                            </button>
+                                            <div className="border-t border-gray-200 my-1"></div>
+                                            <button
+                                                onClick={() => {
+                                                    handleOpenUsersTab();
+                                                    setPagesMenuOpen(false);
+                                                }}
+                                                className="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
+                                            >
+                                                <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+                                                </svg>
+                                                <span>Users</span>
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
 
                                 {/* View selector dropdown */}
                                 <select 

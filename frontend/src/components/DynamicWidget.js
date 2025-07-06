@@ -106,10 +106,69 @@ const DynamicWidget = ({ widgetKey, widgetPath, type, resultData, ...props }) =>
         return <SearchResultWidget resultData={resultData} />;
     }
 
-    // Handle contacts widget
+    // Handle contacts widget (special case - not in widget library)
     if (widgetKey === 'contacts-widget') {
         return <ContactsWidget />;
     }
+
+    // Handle other page widgets (special cases - not in widget library)
+    if (widgetKey === 'leads-widget') {
+        return (
+            <div className="p-4 text-center">
+                <div className="text-gray-600 text-lg font-medium mb-2">Leads Management</div>
+                <div className="text-gray-500 text-sm">Leads functionality coming soon...</div>
+                <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+                    <div className="text-blue-800 text-sm">
+                        This will include: Lead capture, qualification, conversion tracking, and more.
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    if (widgetKey === 'opportunities-widget') {
+        return (
+            <div className="p-4 text-center">
+                <div className="text-gray-600 text-lg font-medium mb-2">Opportunities Management</div>
+                <div className="text-gray-500 text-sm">Opportunities functionality coming soon...</div>
+                <div className="mt-4 p-3 bg-purple-50 rounded-lg">
+                    <div className="text-purple-800 text-sm">
+                        This will include: Pipeline management, deal tracking, forecasting, and more.
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    if (widgetKey === 'companies-widget') {
+        return (
+            <div className="p-4 text-center">
+                <div className="text-gray-600 text-lg font-medium mb-2">Companies Management</div>
+                <div className="text-gray-500 text-sm">Companies functionality coming soon...</div>
+                <div className="mt-4 p-3 bg-orange-50 rounded-lg">
+                    <div className="text-orange-800 text-sm">
+                        This will include: Company profiles, relationships, hierarchy, and more.
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    if (widgetKey === 'users-widget') {
+        return (
+            <div className="p-4 text-center">
+                <div className="text-gray-600 text-lg font-medium mb-2">Users Management</div>
+                <div className="text-gray-500 text-sm">Users functionality coming soon...</div>
+                <div className="mt-4 p-3 bg-gray-50 rounded-lg">
+                    <div className="text-gray-800 text-sm">
+                        This will include: User profiles, roles, permissions, and more.
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+
 
     if (type === 'uploaded') {
         // For uploaded widgets, use script loader that expects global exposure
@@ -120,7 +179,13 @@ const DynamicWidget = ({ widgetKey, widgetPath, type, resultData, ...props }) =>
     }
 
     // Fallback
-    return <div className="p-4 text-yellow-500">Unknown widget type: {type}</div>;
+    return (
+        <div className="p-4 text-yellow-500">
+            <div>Unknown widget type: {type}</div>
+            <div>Widget key: {widgetKey}</div>
+            <div>Widget path: {widgetPath}</div>
+        </div>
+    );
 };
 
 export default DynamicWidget;
