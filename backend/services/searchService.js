@@ -459,37 +459,42 @@ class SearchService {
 
     const suggestions = [];
 
-    // Get contact name suggestions
-    const contactSuggestions = await Contact.findAll({
-      where: {
-        [Op.or]: [
-          { firstName: { [Op.iLike]: `${query}%` } },
-          { lastName: { [Op.iLike]: `${query}%` } }
-        ],
-        ...(companyId && { companyId })
-      },
-      attributes: [
-        [fn('DISTINCT', col('first_name')), 'firstName'],
-        [fn('DISTINCT', col('last_name')), 'lastName']
-      ],
-      limit: Math.ceil(limit / 2)
-    });
+    try {
+      // Get contact name suggestions
+      const contactSuggestions = await Contact.findAll({
+        where: {
+          [Op.or]: [
+            { firstName: { [Op.iLike]: `${query}%` } },
+            { lastName: { [Op.iLike]: `${query}%` } }
+          ],
+          ...(companyId && { companyId })
+        },
+        attributes: ['firstName', 'lastName'],
+        limit: Math.ceil(limit / 2),
+        raw: true
+      });
 
-    suggestions.push(...contactSuggestions.map(c => `${c.firstName} ${c.lastName}`));
+      suggestions.push(...contactSuggestions.map(c => `${c.firstName} ${c.lastName}`));
 
-    // Get company name suggestions
-    const companySuggestions = await Company.findAll({
-      where: {
-        name: { [Op.iLike]: `${query}%` },
-        ...(companyId && { id: companyId })
-      },
-      attributes: ['name'],
-      limit: Math.ceil(limit / 2)
-    });
+      // Get company name suggestions
+      const companySuggestions = await Company.findAll({
+        where: {
+          name: { [Op.iLike]: `${query}%` },
+          ...(companyId && { id: companyId })
+        },
+        attributes: ['name'],
+        limit: Math.ceil(limit / 2),
+        raw: true
+      });
 
-    suggestions.push(...companySuggestions.map(c => c.name));
+      suggestions.push(...companySuggestions.map(c => c.name));
 
-    return suggestions.slice(0, limit);
+      return suggestions.slice(0, limit);
+    } catch (error) {
+      console.error('🔍 SearchService: Error in getSearchSuggestions:', error);
+      console.error('🔍 SearchService: Error stack:', error.stack);
+      throw error;
+    }
   }
 
   /**

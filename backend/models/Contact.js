@@ -131,10 +131,7 @@ const Contact = sequelize.define('Contact', {
   ]
 });
 
-// Associations
-Contact.belongsTo(Company, { foreignKey: 'companyId', as: 'company' });
-Contact.belongsTo(User, { foreignKey: 'assignedTo', as: 'assignedUser' });
-Contact.belongsTo(User, { foreignKey: 'createdBy', as: 'creator' });
+// Associations will be defined in the main index.js file
 
 // Virtual field for full name
 Contact.prototype.getFullName = function() {

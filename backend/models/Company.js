@@ -26,8 +26,11 @@ const Company = sequelize.define('Company', {
 }, {
     tableName: 'companies',
     timestamps: true,
-    createdAt: 'created_at', // <--- ADD THIS LINE
-    updatedAt: 'updated_at', // <--- ADD THIS LINE
+    createdAt: 'created_at',
+    updatedAt: 'updated_at',
   });
+
+// Associations will be defined after all models are loaded
+// This is handled in the main index.js file
 
 module.exports = Company;

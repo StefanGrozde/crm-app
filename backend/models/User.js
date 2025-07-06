@@ -45,9 +45,7 @@ const User = sequelize.define('User', {
     updatedAt: 'updated_at', // Add this line
   });
 
-// Define Associations
-Company.hasMany(User, { foreignKey: 'companyId' });
-User.belongsTo(Company, { foreignKey: 'companyId' });
+// Associations will be defined in the main index.js file
 
 // Hook to hash password before saving
 User.beforeCreate(async (user, options) => {

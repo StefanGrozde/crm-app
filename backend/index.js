@@ -98,6 +98,45 @@ app.get('/api/test-db', async (req, res) => {
 const PORT = process.env.PORT || 8080;
 const startServer = async () => {
     await connectDB();
+    
+    // Import models to ensure they are loaded
+    const Contact = require('./models/Contact');
+    const Lead = require('./models/Lead');
+    const Opportunity = require('./models/Opportunity');
+    const Company = require('./models/Company');
+    const User = require('./models/User');
+    
+    // Define associations
+    // Company associations
+    Company.hasMany(User, { foreignKey: 'companyId' });
+    Company.hasMany(Contact, { foreignKey: 'companyId' });
+    Company.hasMany(Lead, { foreignKey: 'companyId' });
+    Company.hasMany(Opportunity, { foreignKey: 'companyId' });
+    
+    // User associations
+    User.belongsTo(Company, { foreignKey: 'companyId' });
+    User.hasMany(Contact, { foreignKey: 'assignedTo', as: 'assignedContacts' });
+    User.hasMany(Contact, { foreignKey: 'createdBy', as: 'createdContacts' });
+    User.hasMany(Lead, { foreignKey: 'createdBy', as: 'createdLeads' });
+    User.hasMany(Opportunity, { foreignKey: 'createdBy', as: 'createdOpportunities' });
+    
+    // Contact associations
+    Contact.belongsTo(Company, { foreignKey: 'companyId', as: 'company' });
+    Contact.belongsTo(User, { foreignKey: 'assignedTo', as: 'assignedUser' });
+    Contact.belongsTo(User, { foreignKey: 'createdBy', as: 'creator' });
+    Contact.hasMany(Lead, { foreignKey: 'contactId', as: 'leads' });
+    Contact.hasMany(Opportunity, { foreignKey: 'contactId', as: 'opportunities' });
+    
+    // Lead associations
+    Lead.belongsTo(Company, { foreignKey: 'companyId', as: 'company' });
+    Lead.belongsTo(Contact, { foreignKey: 'contactId', as: 'contact' });
+    Lead.belongsTo(User, { foreignKey: 'createdBy', as: 'creator' });
+    
+    // Opportunity associations
+    Opportunity.belongsTo(Company, { foreignKey: 'companyId', as: 'company' });
+    Opportunity.belongsTo(Contact, { foreignKey: 'contactId', as: 'contact' });
+    Opportunity.belongsTo(User, { foreignKey: 'createdBy', as: 'creator' });
+    
     // Sync all models
     // Use { force: true } only in development to drop and re-create tables
     // await sequelize.sync({ force: true });
