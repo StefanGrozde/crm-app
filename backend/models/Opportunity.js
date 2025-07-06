@@ -127,10 +127,6 @@ const Opportunity = sequelize.define('Opportunity', {
   ]
 });
 
-// Associations
-Opportunity.belongsTo(Company, { foreignKey: 'companyId', as: 'company' });
-Opportunity.belongsTo(Contact, { foreignKey: 'contactId', as: 'contact' });
-Opportunity.belongsTo(User, { foreignKey: 'assignedTo', as: 'assignedUser' });
-Opportunity.belongsTo(User, { foreignKey: 'createdBy', as: 'creator' });
+// Associations will be defined in the main index.js file
 
 module.exports = Opportunity; 

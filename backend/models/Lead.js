@@ -120,10 +120,6 @@ const Lead = sequelize.define('Lead', {
   ]
 });
 
-// Associations
-Lead.belongsTo(Company, { foreignKey: 'companyId', as: 'company' });
-Lead.belongsTo(Contact, { foreignKey: 'contactId', as: 'contact' });
-Lead.belongsTo(User, { foreignKey: 'assignedTo', as: 'assignedUser' });
-Lead.belongsTo(User, { foreignKey: 'createdBy', as: 'creator' });
+// Associations will be defined in the main index.js file
 
 module.exports = Lead; 

@@ -457,39 +457,43 @@ class SearchService {
       return [];
     }
 
-    const suggestions = [];
-
     try {
-      // Get contact name suggestions
+      console.log('🔍 SearchService: getSearchSuggestions called with query:', query);
+      console.log('🔍 SearchService: options:', options);
+      
+      const suggestions = [];
+
+      // Simple contact suggestions without complex filtering
+      console.log('🔍 SearchService: Fetching contact suggestions...');
       const contactSuggestions = await Contact.findAll({
         where: {
-          [Op.or]: [
-            { firstName: { [Op.iLike]: `${query}%` } },
-            { lastName: { [Op.iLike]: `${query}%` } }
-          ],
-          ...(companyId && { companyId })
+          firstName: { [Op.iLike]: `${query}%` }
         },
         attributes: ['firstName', 'lastName'],
         limit: Math.ceil(limit / 2),
         raw: true
       });
+      console.log('🔍 SearchService: Contact suggestions found:', contactSuggestions.length);
 
       suggestions.push(...contactSuggestions.map(c => `${c.firstName} ${c.lastName}`));
 
-      // Get company name suggestions
+      // Simple company suggestions
+      console.log('🔍 SearchService: Fetching company suggestions...');
       const companySuggestions = await Company.findAll({
         where: {
-          name: { [Op.iLike]: `${query}%` },
-          ...(companyId && { id: companyId })
+          name: { [Op.iLike]: `${query}%` }
         },
         attributes: ['name'],
         limit: Math.ceil(limit / 2),
         raw: true
       });
+      console.log('🔍 SearchService: Company suggestions found:', companySuggestions.length);
 
       suggestions.push(...companySuggestions.map(c => c.name));
 
-      return suggestions.slice(0, limit);
+      const result = suggestions.slice(0, limit);
+      console.log('🔍 SearchService: Final suggestions:', result);
+      return result;
     } catch (error) {
       console.error('🔍 SearchService: Error in getSearchSuggestions:', error);
       console.error('🔍 SearchService: Error stack:', error.stack);
