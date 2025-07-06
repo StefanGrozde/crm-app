@@ -16,7 +16,7 @@ router.get('/', protect, async (req, res) => {
             status,
             companyId,
             assignedTo,
-            sortBy = 'createdAt',
+            sortBy = 'created_at',
             sortOrder = 'DESC'
         } = req.query;
 
