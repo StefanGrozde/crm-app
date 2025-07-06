@@ -51,6 +51,7 @@ const Dashboard = () => {
     const [views, setViews] = useState([]);
     const [currentViewId, setCurrentViewId] = useState(null);
     const [isEditMode, setIsEditMode] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
     
     // Tab management state with session persistence
     const {
@@ -149,9 +150,9 @@ const Dashboard = () => {
                             
                             // Validate that all saved tabs correspond to existing views
                             const validTabs = savedTabs.filter(tab => {
-                                // Check if it's a search result tab or a regular view tab
-                                if (String(tab.id).startsWith('search-')) {
-                                    return true; // Search result tabs are always valid
+                                // Check if it's a search result tab, main page tab, or a regular view tab
+                                if (String(tab.id).startsWith('search-') || String(tab.id).includes('-page')) {
+                                    return true; // Search result tabs and main page tabs are always valid
                                 }
                                 return viewsResponse.data.some(view => String(view.id) === String(tab.id));
                             });
@@ -199,6 +200,8 @@ const Dashboard = () => {
                 // Create a fallback default view
                 console.log('Creating fallback default view due to error');
                 await createDefaultView();
+            } finally {
+                setIsLoading(false);
             }
         };
 
@@ -344,6 +347,22 @@ const Dashboard = () => {
         setIsEditMode(tabEditMode);
         
         console.log('Switched to tab:', tabId, 'with layout:', tabLayout, 'edit mode:', tabEditMode);
+        
+        // Safety check: if this is a main page tab and we don't have layout data, create it
+        if (tabId.includes('-page') && (!tabLayouts[tabId] || tabLayouts[tabId].length === 0)) {
+            console.log('Creating layout for main page tab:', tabId);
+            const pageWidgetKey = tabId.replace('-page', '-widget');
+            const pageLayout = [{
+                i: pageWidgetKey,
+                x: 0,
+                y: 0,
+                w: 12,
+                h: 8
+            }];
+            setTabLayouts(prev => ({ ...prev, [tabId]: pageLayout }));
+            setLayout(pageLayout);
+            setOriginalLayout([...pageLayout]);
+        }
     };
 
     // Close a tab
@@ -441,14 +460,6 @@ const Dashboard = () => {
         if (!currentViewId) {
             console.log('No view selected, cannot edit');
             alert('Please select a view first. If you have no views, a default view should be created automatically.');
-            return;
-        }
-
-        // Check if current tab is a main page (not a dashboard view)
-        const isMainPage = currentViewId.includes('-page');
-        if (isMainPage) {
-            console.log('Cannot edit main page tabs');
-            alert('Layout editing is not available for main pages (Contacts, Leads, Opportunities, etc.). Please open a dashboard view to edit the layout.');
             return;
         }
 
@@ -790,6 +801,7 @@ const Dashboard = () => {
     }, []);
 
     if (!user) return <div>Loading...</div>;
+    if (isLoading) return <div className="min-h-screen bg-gray-100 flex items-center justify-center">Loading dashboard...</div>;
 
     return (
         <>
@@ -993,15 +1005,9 @@ const Dashboard = () => {
                                 {!isEditMode ? (
                                     <button
                                         onClick={handleEditLayoutClick}
-                                        className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
-                                        disabled={!currentViewId || currentViewId?.includes('-page')}
-                                        title={
-                                            !currentViewId 
-                                                ? "No view selected - a default view should be created automatically" 
-                                                : currentViewId?.includes('-page')
-                                                    ? "Layout editing is not available for main pages"
-                                                    : "Enter edit mode"
-                                        }
+                                        className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                                        disabled={!currentViewId}
+                                        title={!currentViewId ? "No view selected - a default view should be created automatically" : "Enter edit mode"}
                                     >
                                         Edit Layout
                                     </button>
