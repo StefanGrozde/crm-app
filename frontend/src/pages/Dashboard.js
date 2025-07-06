@@ -182,19 +182,29 @@ const Dashboard = () => {
                     name: view.name,
                     isDefault: view.isDefault
                 };
-                
                 setOpenTabs(prev => [...prev, newTab]);
                 setTabLayouts(prev => ({ ...prev, [view.id]: tabLayout }));
                 setTabEditModes(prev => ({ ...prev, [view.id]: false }));
+                // Don't call switchToTab here; let useEffect handle it
+            } else {
+                // If already open, just switch
+                await switchToTab(view.id);
             }
-            
-            // Switch to this tab
-            await switchToTab(view.id);
-            
         } catch (error) {
             console.error('Failed to open view as tab:', error);
         }
     };
+
+    // Effect: When a new tab is added, switch to it automatically
+    useEffect(() => {
+        if (openTabs.length > 0) {
+            const lastTab = openTabs[openTabs.length - 1];
+            if (activeTabId !== lastTab.id) {
+                switchToTab(lastTab.id);
+            }
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [openTabs]);
 
     // Switch to a specific tab
     const switchToTab = async (tabId) => {
@@ -664,7 +674,7 @@ const Dashboard = () => {
                 {openTabs.length > 0 && (
                     <div className="bg-white border-b border-gray-200">
                         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                            <div className="flex space-x-1 overflow-x-auto">
+                            <div className="flex space-x-1 overflow-x-auto justify-start">
                                 {openTabs.map((tab) => (
                                     <div
                                         key={tab.id}
