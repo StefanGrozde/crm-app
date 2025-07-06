@@ -66,7 +66,7 @@ const SearchBar = ({ className = '', placeholder = "Search contacts, leads, oppo
     }, 300);
 
     setSearchTimeout(timeout);
-  }, [searchTimeout]);
+  }, []);
 
   // Load search analytics on mount
   useEffect(() => {
@@ -86,8 +86,13 @@ const SearchBar = ({ className = '', placeholder = "Search contacts, leads, oppo
   // Handle query changes
   useEffect(() => {
     console.log('🔍 SearchBar: useEffect triggered with query:', query);
-    debouncedSearch(query);
-  }, [query, debouncedSearch]);
+    if (query && query.length >= 2) {
+      debouncedSearch(query);
+    } else if (query.length === 0) {
+      setResults(null);
+      setSuggestions([]);
+    }
+  }, [query]);
 
   // Handle keyboard navigation
   const handleKeyDown = (e) => {
