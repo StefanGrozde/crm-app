@@ -2,47 +2,25 @@
 import React, { useState, useEffect, useContext, useRef } from 'react';
 import axios from 'axios';
 import { Responsive, WidthProvider } from 'react-grid-layout';
-import { Link, useNavigate } from 'react-router-dom';
+import { arrayMove } from '@dnd-kit/sortable';
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
-import { DndContext, closestCenter, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
-import { arrayMove, SortableContext, horizontalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
 
 // Component Imports
 import { AuthContext } from '../context/AuthContext';
 import SaveViewModal from '../components/SaveViewModal';
-import EditUserPopup from '../components/EditUserPopup';
-import AddWidgetModal from '../components/AddWidgetModal';
-import UploadWidgetModal from '../components/UploadWidgetModal';
+import Navbar from '../components/Navbar';
+import TabBar from '../components/TabBar';
+import EditLayoutControls from '../components/EditLayoutControls';
 import DynamicWidget from '../components/DynamicWidget';
-import SearchBar from '../components/SearchBar';
 import { useTabSession } from '../hooks/useTabSession';
 
 const ResponsiveReactGridLayout = WidthProvider(Responsive);
 const API_URL = process.env.REACT_APP_API_URL;
 
-// SortableTab component for draggable tabs
-function SortableTab({ id, children, ...props }) {
-    const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
-    const style = {
-        transform: CSS.Transform.toString(transform),
-        transition,
-        opacity: isDragging ? 0.5 : 1,
-        cursor: 'grab',
-        zIndex: isDragging ? 100 : 'auto',
-    };
-    return (
-        <div ref={setNodeRef} style={style} {...attributes} {...listeners} {...props}>
-            {children}
-        </div>
-    );
-}
-
 const Dashboard = () => {
     // Auth context
-    const { user, logout } = useContext(AuthContext);
-    const navigate = useNavigate();
+    const { user } = useContext(AuthContext);
 
     // State variables
     const [layout, setLayout] = useState([]);
@@ -74,19 +52,8 @@ const Dashboard = () => {
     
     // Modal states
     const [isSaveModalOpen, setSaveModalOpen] = useState(false);
-    const [isEditPopupOpen, setEditPopupOpen] = useState(false);
     const [isAddModalOpen, setAddModalOpen] = useState(false);
     const [isUploadModalOpen, setUploadModalOpen] = useState(false);
-    
-    // Menu states
-    const [menuOpen, setMenuOpen] = useState(false);
-    const [pagesMenuOpen, setPagesMenuOpen] = useState(false);
-    const menuRef = useRef(null);
-
-    // DnD-kit sensors
-    const sensors = useSensors(
-        useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
-    );
 
     // Track if a tab is being dragged
     const [isDraggingTab, setIsDraggingTab] = useState(false);
@@ -384,18 +351,8 @@ const Dashboard = () => {
         await openViewAsTab(view);
     };
 
-    // Handle clicks outside menu and widget removal
+    // Handle widget removal
     useEffect(() => {
-        const handleClickOutside = (event) => {
-            if (menuRef.current && !menuRef.current.contains(event.target)) {
-                setMenuOpen(false);
-            }
-            // Close pages menu when clicking outside
-            if (!event.target.closest('[data-pages-menu]')) {
-                setPagesMenuOpen(false);
-            }
-        };
-
         const handleWidgetRemove = (event) => {
             // Check if the clicked element is a remove button or its child
             const removeButton = event.target.closest('[data-remove-widget]');
@@ -408,11 +365,9 @@ const Dashboard = () => {
             }
         };
 
-        document.addEventListener('mousedown', handleClickOutside);
         document.addEventListener('click', handleWidgetRemove);
         
         return () => {
-            document.removeEventListener('mousedown', handleClickOutside);
             document.removeEventListener('click', handleWidgetRemove);
         };
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -430,12 +385,6 @@ const Dashboard = () => {
     };
 
     // Handlers
-    const handleLogout = () => {
-        // Clear session data on logout
-        clearSession();
-        logout();
-        navigate('/login');
-    };
 
     // Enhanced Edit Layout handler with debugging
     const handleEditLayoutClick = () => {
@@ -566,6 +515,22 @@ const Dashboard = () => {
         setAddModalOpen(false);
     };
 
+    const handleOpenAddModal = () => {
+        setAddModalOpen(true);
+    };
+
+    const handleCloseAddModal = () => {
+        setAddModalOpen(false);
+    };
+
+    const handleOpenUploadModal = () => {
+        setUploadModalOpen(true);
+    };
+
+    const handleCloseUploadModal = () => {
+        setUploadModalOpen(false);
+    };
+
     const handleCancelEdit = () => {
         console.log('Canceling edit, reverting to original layout');
         console.log('Original layout:', originalLayout);
@@ -588,12 +553,7 @@ const Dashboard = () => {
         }
     };
 
-    const toggleMenu = () => setMenuOpen(!menuOpen);
-    
-    const handleOpenEditPopup = () => {
-        setMenuOpen(false);
-        setEditPopupOpen(true);
-    };
+
 
     // Handle layout changes during edit mode
     const handleLayoutChange = (newLayout) => {
@@ -887,282 +847,50 @@ const Dashboard = () => {
 
                 {/* Modals */}
                 {isSaveModalOpen && <SaveViewModal onSave={handleSaveNewView} onClose={() => setSaveModalOpen(false)} />}
-                {isEditPopupOpen && <EditUserPopup onClose={() => setEditPopupOpen(false)} />}
-                {isAddModalOpen && <AddWidgetModal availableWidgets={availableWidgets} onAddWidget={handleAddWidget} onClose={() => setAddModalOpen(false)} />}
-                {isUploadModalOpen && <UploadWidgetModal onUpload={handleWidgetUpload} onClose={() => setUploadModalOpen(false)} />}
 
-                <header className="bg-white shadow-md">
-                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                        <div className="flex justify-between items-center py-4">
-                            <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-                            
-                            {/* Search Bar - Centered */}
-                            <div className="flex-1 max-w-2xl mx-8">
-                                <SearchBar 
-                                    placeholder="Search contacts, leads, opportunities, companies..."
-                                    className="w-full"
-                                    onOpenResult={handleOpenSearchResult}
-                                />
-                            </div>
-                            
-                            {/* View selector and controls */}
-                            <div className="flex items-center space-x-4">
-                                {/* Pages dropdown */}
-                                <div className="relative" data-pages-menu>
-                                    <button
-                                        onClick={() => setPagesMenuOpen(!pagesMenuOpen)}
-                                        className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors flex items-center space-x-2"
-                                    >
-                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                                        </svg>
-                                        <span>Pages</span>
-                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                        </svg>
-                                    </button>
+                <Navbar 
+                    views={views}
+                    onLoadView={loadView}
+                    onOpenSearchResult={handleOpenSearchResult}
+                    onOpenPageTab={handleOpenPageTab}
+                    isEditMode={isEditMode}
+                    onEditLayout={handleEditLayoutClick}
+                    onAddWidget={handleOpenAddModal}
+                    onUpdateView={handleUpdateView}
+                    onCancelEdit={handleCancelEdit}
+                    onSaveAsNewView={() => setSaveModalOpen(true)}
+                    currentViewId={currentViewId}
+                    availableWidgets={availableWidgets}
+                    onWidgetUpload={handleWidgetUpload}
+                    isSaveModalOpen={isSaveModalOpen}
+                    onSaveModalClose={() => setSaveModalOpen(false)}
+                    isAddModalOpen={isAddModalOpen}
+                    onAddModalClose={handleCloseAddModal}
+                    isUploadModalOpen={isUploadModalOpen}
+                    onUploadModalClose={handleCloseUploadModal}
+                />
 
-                                    {pagesMenuOpen && (
-                                        <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10 border border-gray-200">
-                                            <button
-                                                onClick={() => {
-                                                    handleOpenContactsTab();
-                                                    setPagesMenuOpen(false);
-                                                }}
-                                                className="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
-                                            >
-                                                <svg className="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                                                </svg>
-                                                <span>Contacts</span>
-                                            </button>
-                                            <button
-                                                onClick={() => {
-                                                    handleOpenLeadsTab();
-                                                    setPagesMenuOpen(false);
-                                                }}
-                                                className="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
-                                            >
-                                                <svg className="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                                                </svg>
-                                                <span>Leads</span>
-                                            </button>
-                                            <button
-                                                onClick={() => {
-                                                    handleOpenOpportunitiesTab();
-                                                    setPagesMenuOpen(false);
-                                                }}
-                                                className="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
-                                            >
-                                                <svg className="w-4 h-4 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
-                                                </svg>
-                                                <span>Opportunities</span>
-                                            </button>
-                                            <button
-                                                onClick={() => {
-                                                    handleOpenCompaniesTab();
-                                                    setPagesMenuOpen(false);
-                                                }}
-                                                className="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
-                                            >
-                                                <svg className="w-4 h-4 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                                                </svg>
-                                                <span>Companies</span>
-                                            </button>
-                                            <div className="border-t border-gray-200 my-1"></div>
-                                            <button
-                                                onClick={() => {
-                                                    handleOpenUsersTab();
-                                                    setPagesMenuOpen(false);
-                                                }}
-                                                className="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
-                                            >
-                                                <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
-                                                </svg>
-                                                <span>Users</span>
-                                            </button>
-                                        </div>
-                                    )}
-                                </div>
-
-                                {/* View selector dropdown */}
-                                <select 
-                                    value="" 
-                                    onChange={(e) => {
-                                        if (e.target.value) {
-                                            loadView(e.target.value);
-                                        }
-                                    }}
-                                    className="px-3 py-2 border border-gray-300 rounded-md"
-                                >
-                                    <option value="">Open View...</option>
-                                    {views.map(view => (
-                                        <option key={view.id} value={view.id}>{view.name}</option>
-                                    ))}
-                                </select>
-
-                                {/* Edit mode toggle - only show for dashboard views, not main pages */}
-                                {!currentViewId?.includes('-page') && (
-                                    !isEditMode ? (
-                                        <button
-                                            onClick={handleEditLayoutClick}
-                                            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-                                            disabled={!currentViewId}
-                                            title={!currentViewId ? "No view selected - a default view should be created automatically" : "Enter edit mode"}
-                                        >
-                                            Edit Layout
-                                        </button>
-                                    ) : (
-                                        <div className="flex space-x-2">
-                                            <button
-                                                onClick={() => setAddModalOpen(true)}
-                                                className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 flex items-center space-x-2"
-                                            >
-                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                                                </svg>
-                                                <span>Add Widget</span>
-                                            </button>
-                                            <button
-                                                onClick={handleUpdateView}
-                                                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-                                                disabled={!currentViewId}
-                                            >
-                                                Save Changes
-                                            </button>
-                                            <button
-                                                onClick={handleCancelEdit}
-                                                className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700"
-                                            >
-                                                Cancel
-                                            </button>
-                                            <button
-                                                onClick={() => setSaveModalOpen(true)}
-                                                className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700"
-                                            >
-                                                Save as New View
-                                            </button>
-                                        </div>
-                                    )
-                                )}
-
-                                {/* User menu */}
-                                <div className="relative" ref={menuRef}>
-                                    <button
-                                        onClick={toggleMenu}
-                                        className="flex items-center space-x-2 px-4 py-2 bg-gray-200 rounded-md hover:bg-gray-300"
-                                    >
-                                        <span>{user.username}</span>
-                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                        </svg>
-                                    </button>
-
-                                    {menuOpen && (
-                                        <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10">
-                                            {user.role === 'Administrator' && (
-                                                <button 
-                                                    onClick={() => { setUploadModalOpen(true); setMenuOpen(false); }} 
-                                                    className="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                                                >
-                                                    Upload Widget
-                                                </button>
-                                            )}
-                                            <button 
-                                                onClick={handleOpenEditPopup}
-                                                className="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                                            >
-                                                Edit Profile
-                                            </button>
-                                            {user.role === 'Administrator' && (
-                                                <Link 
-                                                    to="/edit-company" 
-                                                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                                                    onClick={() => setMenuOpen(false)}
-                                                >
-                                                    Edit Company
-                                                </Link>
-                                            )}
-                                            <button 
-                                                onClick={handleLogout}
-                                                className="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                                            >
-                                                Logout
-                                            </button>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </header>
-
-                {/* Tab bar */}
-                {openTabs.length > 0 && (
-                    <div className="bg-white border-b border-gray-200">
-                        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleTabDragEnd} onDragStart={handleTabDragStart}>
-                                <SortableContext items={openTabs.map(tab => tab.id)} strategy={horizontalListSortingStrategy}>
-                                    <div className="flex space-x-1 overflow-x-auto justify-start">
-                                        {openTabs.map((tab) => (
-                                            <SortableTab key={tab.id} id={tab.id}>
-                                                <div
-                                                    className={`tab flex items-center space-x-2 px-4 py-2 border-b-2 cursor-pointer whitespace-nowrap ${
-                                                        activeTabId === tab.id
-                                                            ? 'border-blue-500 bg-blue-50 text-blue-700'
-                                                            : 'border-transparent hover:border-gray-300 hover:bg-gray-50'
-                                                    }`}
-                                                    onClick={() => { if (!isDraggingTab) switchToTab(tab.id); }}
-                                                >
-                                                    <span className="text-sm font-medium">{tab.name}</span>
-                                                    {tab.isDefault && (
-                                                        <svg className="w-3 h-3 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
-                                                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                                                        </svg>
-                                                    )}
-                                                    <button
-                                                        className="tab-close-button ml-1 text-gray-400 hover:text-gray-600"
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            closeTab(tab.id);
-                                                        }}
-                                                        title="Close tab"
-                                                    >
-                                                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                                        </svg>
-                                                    </button>
-                                                </div>
-                                            </SortableTab>
-                                        ))}
-                                    </div>
-                                </SortableContext>
-                            </DndContext>
-                        </div>
-                    </div>
-                )}
+                <TabBar 
+                    openTabs={openTabs}
+                    activeTabId={activeTabId}
+                    onSwitchTab={switchToTab}
+                    onCloseTab={closeTab}
+                    onTabDragEnd={handleTabDragEnd}
+                    onTabDragStart={handleTabDragStart}
+                    isDraggingTab={isDraggingTab}
+                />
 
                 <main className="p-4">
-                    {/* Edit mode indicator */}
-                    {isEditMode && (
-                        <div className="mb-4 p-3 bg-blue-100 border border-blue-300 rounded-lg">
-                            <p className="text-blue-800 font-medium">
-                                🎯 Edit Mode Active - You can now drag, resize, and remove widgets. Click the red X to remove widgets.
-                            </p>
-                            {layout.length > 0 && (
-                                <button 
-                                    onClick={() => debugRemoveWidget(layout[0].i)}
-                                    className="mt-2 px-3 py-1 bg-red-500 text-white text-sm rounded hover:bg-red-600"
-                                >
-                                    Debug: Remove First Widget
-                                </button>
-                            )}
-                        </div>
-                    )}
+                    <EditLayoutControls 
+                        isEditMode={isEditMode}
+                        layout={layout}
+                        onDebugRemoveWidget={debugRemoveWidget}
+                        onAddWidget={handleOpenAddModal}
+                        onUpdateView={handleUpdateView}
+                        onCancelEdit={handleCancelEdit}
+                        onSaveAsNewView={() => setSaveModalOpen(true)}
+                        currentViewId={currentViewId}
+                    />
 
 
 
