@@ -42,7 +42,7 @@ const EditLayout = () => {
 
                 // Load widget library from API (now includes database widgets)
                 console.log('Fetching widget library...');
-                const widgetResponse = await axios.get(`${API_URL}/api/widgets/manifest?includeUnavailable=false`, { withCredentials: true });
+                const widgetResponse = await axios.get(`${API_URL}/api/widgets/manifest?includeInactive=false`, { withCredentials: true });
                 console.log('Widget library response:', widgetResponse);
                 
                 // Set widget library directly from API response

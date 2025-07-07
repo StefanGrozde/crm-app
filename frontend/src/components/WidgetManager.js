@@ -20,7 +20,6 @@ const WidgetManager = () => {
         version: '1.0.0',
         author: 'System',
         isActive: true,
-        available: true,
         sortOrder: 0
     });
 
@@ -71,8 +70,7 @@ const WidgetManager = () => {
             type: widget.type,
             version: widget.version || '1.0.0',
             author: widget.author || 'System',
-            isActive: widget.isActive !== false,
-            available: widget.available !== false,
+            isActive: widget.is_active !== false,
             sortOrder: widget.sortOrder || 0
         });
         setShowForm(true);
@@ -102,7 +100,6 @@ const WidgetManager = () => {
             version: '1.0.0',
             author: 'System',
             isActive: true,
-            available: true,
             sortOrder: 0
         });
     };
@@ -220,19 +217,7 @@ const WidgetManager = () => {
                                 className="mr-2"
                             />
                             <label htmlFor="isActive" className="text-sm font-medium text-gray-700">
-                                Active
-                            </label>
-                        </div>
-                        <div className="flex items-center">
-                            <input
-                                type="checkbox"
-                                id="available"
-                                checked={formData.available}
-                                onChange={(e) => setFormData({...formData, available: e.target.checked})}
-                                className="mr-2"
-                            />
-                            <label htmlFor="available" className="text-sm font-medium text-gray-700">
-                                Available in Add Widget Menu
+                                Active (Available in Add Widget Menu)
                             </label>
                         </div>
                         <div className="flex space-x-4">
@@ -270,13 +255,8 @@ const WidgetManager = () => {
                                         <span className="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                                             {widget.type}
                                         </span>
-                                        {widget.isActive === false && (
+                                        {widget.is_active === false && (
                                             <span className="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                                                Inactive
-                                            </span>
-                                        )}
-                                        {widget.available === false && (
-                                            <span className="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
                                                 Hidden
                                             </span>
                                         )}

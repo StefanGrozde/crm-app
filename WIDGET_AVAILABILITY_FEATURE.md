@@ -1,102 +1,88 @@
 # Widget Availability Feature
 
-This document describes the new widget availability feature that allows administrators to control which widgets appear in the "Add Widget" menu.
-
 ## Overview
 
-The widget availability feature adds a new `available` column to the `widgets` table that controls whether a widget appears in the Add Widget menu. This provides fine-grained control over widget visibility without affecting existing widget instances.
+The Widget Availability feature allows administrators to control which widgets appear in the "Add Widget" menu for end users. This provides a way to hide sensitive or administrative widgets (like the Users Widget) from regular users while keeping them functional if they're already added to a dashboard.
 
-## Database Changes
+## How It Works
 
-### New Column
-- **Column**: `available`
-- **Type**: `BOOLEAN`
-- **Default**: `true`
-- **Purpose**: Controls whether the widget appears in the Add Widget menu
+### Database Schema
 
-### Migration
-The migration `db/migrations/003_create_widgets_table.sql` includes:
-```sql
-available BOOLEAN DEFAULT true,
-```
+The `widgets` table includes an `is_active` boolean field that controls widget availability:
 
-### Initial Data
-The UsersWidget is set as unavailable by default:
-```sql
-('users-widget', 'Users Widget', 'Manage and view users', 'builtin-react', '1.0.0', 'System', 5, false),
-```
+- `is_active = true`: Widget can be added from the Add Widget menu
+- `is_active = false`: Widget is hidden from the Add Widget menu but remains functional if already added
 
-## Backend Changes
+### API Changes
 
-### Widget Model (`backend/models/Widget.js`)
-Added the `available` field to the Sequelize model:
-```javascript
-available: {
-    type: DataTypes.BOOLEAN,
-    allowNull: false,
-    defaultValue: true,
-},
-```
+The widget manifest API now supports filtering by active status:
 
-### Widget Service (`backend/services/widgetService.js`)
-Updated `getWidgetManifest()` function to support filtering by availability:
-```javascript
-async function getWidgetManifest(forceRefresh = false, includeUnavailable = false)
-```
+- `GET /api/widgets/manifest` - Returns only active widgets (for end users)
+- `GET /api/widgets/manifest?includeInactive=true` - Returns all widgets including inactive ones (for admin management)
 
-- **includeUnavailable = false**: Only returns widgets where `available = true`
-- **includeUnavailable = true**: Returns all widgets regardless of availability
+### Frontend Changes
 
-### Widget Routes (`backend/routes/widgetRoutes.js`)
-Updated the manifest endpoint to support the new parameter:
-```javascript
-const includeUnavailable = req.query.includeUnavailable === 'true';
-const widgets = await widgetService.getWidgetManifest(false, includeUnavailable);
-```
+1. **EditLayout Component**: Only loads active widgets for the Add Widget menu
+2. **WidgetManager Component**: Shows all widgets and allows toggling the `is_active` status
+3. **Widget Display**: Shows a "Hidden" badge for inactive widgets in the admin interface
 
-## Frontend Changes
+## Implementation Details
 
-### EditLayout Component (`frontend/src/pages/EditLayout.js`)
-Updated to only load available widgets for the Add Widget menu:
-```javascript
-const widgetResponse = await axios.get(`${API_URL}/api/widgets/manifest?includeUnavailable=false`, { withCredentials: true });
-```
+### Backend
 
-### WidgetManager Component (`frontend/src/components/WidgetManager.js`)
-Added UI controls for managing widget availability:
+- **Widget Service**: Updated to filter by `is_active` status
+- **Widget Routes**: Added `includeInactive` query parameter support
+- **Widget Model**: Uses `is_active` field for availability control
 
-1. **Form Field**: Checkbox to toggle availability
-2. **Status Display**: "Hidden" badge for unavailable widgets
-3. **Admin Control**: Only administrators can modify availability
+### Frontend
+
+- **EditLayout**: Fetches only active widgets for the Add Widget modal
+- **WidgetManager**: 
+  - Shows all widgets (active and inactive)
+  - Provides checkbox to toggle `is_active` status
+  - Displays "Hidden" badge for inactive widgets
+  - Updated form to use `is_active` instead of separate `available` field
 
 ## Usage
 
-### For End Users
-- Only available widgets appear in the "Add Widget" menu
-- Existing widget instances continue to work regardless of availability setting
-- No impact on current dashboard layouts
-
 ### For Administrators
-1. **Access Widget Manager**: Navigate to the admin widget management interface
-2. **Edit Widget**: Click "Edit" on any widget
-3. **Toggle Availability**: Check/uncheck "Available in Add Widget Menu"
-4. **Save Changes**: Click "Update Widget"
 
-### Widget States
-- **Active + Available**: Widget appears in Add Widget menu and functions normally
-- **Active + Hidden**: Widget functions normally but doesn't appear in Add Widget menu
-- **Inactive**: Widget is completely disabled (regardless of availability)
+1. Navigate to the Widget Manager (Admin only)
+2. Find the widget you want to hide/show
+3. Toggle the "Active (Available in Add Widget Menu)" checkbox
+4. Save the changes
+
+### For End Users
+
+- Only active widgets appear in the Add Widget menu
+- Hidden widgets remain functional if already added to dashboards
+- No changes to existing functionality
+
+## Default Configuration
+
+The `users-widget` is set to inactive by default, hiding it from regular users while keeping it available for administrators.
+
+## Benefits
+
+1. **Security**: Hide sensitive administrative widgets from regular users
+2. **Clean UI**: Reduce clutter in the Add Widget menu
+3. **Flexibility**: Easy to show/hide widgets without affecting existing dashboards
+4. **Backward Compatibility**: Existing widget layouts remain unchanged
+
+## Migration
+
+The system automatically migrated from the previous `available` field to using `is_active` for controlling widget availability. The `available` column has been removed from the database schema.
 
 ## API Endpoints
 
 ### Get Available Widgets (for Add Widget menu)
 ```
-GET /api/widgets/manifest?includeUnavailable=false
+GET /api/widgets/manifest?includeInactive=false
 ```
 
 ### Get All Widgets (for admin management)
 ```
-GET /api/widgets/manifest?includeUnavailable=true
+GET /api/widgets/manifest?includeInactive=true
 ```
 
 ### Update Widget Availability
@@ -104,54 +90,26 @@ GET /api/widgets/manifest?includeUnavailable=true
 POST /api/widgets/database
 {
     "widgetKey": "users-widget",
-    "available": false
+    "is_active": false
 }
 ```
-
-## Benefits
-
-1. **Security**: Hide sensitive widgets (like UsersWidget) from regular users
-2. **UX Control**: Reduce clutter in the Add Widget menu
-3. **Flexibility**: Easy to enable/disable widgets without code changes
-4. **Backward Compatibility**: Existing widget instances are unaffected
-
-## Examples
-
-### Hide UsersWidget from Add Widget Menu
-```sql
-UPDATE widgets SET available = false WHERE widget_key = 'users-widget';
-```
-
-### Show All Widgets in Admin Interface
-The WidgetManager loads all widgets regardless of availability to allow administrators to manage them.
-
-### Filter Widgets for End Users
-The EditLayout only loads available widgets to keep the Add Widget menu clean.
-
-## Future Enhancements
-
-1. **User-Specific Availability**: Different availability per user role
-2. **Conditional Availability**: Show widgets based on user permissions
-3. **Bulk Operations**: Enable/disable multiple widgets at once
-4. **Audit Logging**: Track availability changes
-5. **Widget Categories**: Group widgets and control category availability
 
 ## Troubleshooting
 
 ### Widget Not Appearing in Add Widget Menu
-1. Check if `available = true` in the database
+1. Check if `is_active = true` in the database
 2. Verify the widget is also `is_active = true`
 3. Check browser console for API errors
 4. Ensure user has proper permissions
 
-### Widget Still Appears After Setting Available = False
+### Widget Still Appears After Setting Active = False
 1. Clear browser cache
 2. Refresh the page
 3. Check if the widget is cached on the frontend
-4. Verify the API response includes the correct availability status
+4. Verify the API response includes the correct active status
 
 ### Admin Can't See Widget in WidgetManager
 1. Ensure the admin is using the correct API endpoint
-2. Check if `includeUnavailable=true` parameter is being sent
+2. Check if `includeInactive=true` parameter is being sent
 3. Verify admin permissions
 4. Check database connection and widget table structure 
