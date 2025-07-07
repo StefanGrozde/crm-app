@@ -194,8 +194,12 @@ const DynamicWidget = memo(({ widgetKey, widgetPath, type, resultData, onLoad, o
     
     console.log('DynamicWidget render:', memoizedWidgetKey, 'type:', type, 'has onLoad:', !!onLoad, 'widgetState:', widgetState);
     
-    // Show loading state if needed
-    if (widgetState === 'loading' && showLoadingSpinner) {
+    // Show loading state only for external widgets
+    if (
+        (type === 'uploaded' || type === 'builtin') &&
+        widgetState === 'loading' &&
+        showLoadingSpinner
+    ) {
         const spinnerSize = loadingSpinnerSize === 'small' ? 'h-4 w-4' : 
                            loadingSpinnerSize === 'large' ? 'h-12 w-12' : 'h-8 w-8';
         
