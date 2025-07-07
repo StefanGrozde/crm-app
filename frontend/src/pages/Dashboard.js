@@ -81,12 +81,55 @@ const Dashboard = () => {
                 console.log('API_URL:', API_URL);
                 console.log('User:', user);
 
-                // Load widget library
+                // Load widget library from backend (external widgets)
                 console.log('Fetching widget library...');
                 const widgetResponse = await axios.get(`${API_URL}/api/widgets/manifest`, { withCredentials: true });
-                console.log('Widget library response:', widgetResponse);
-                setWidgetLibrary(widgetResponse.data);
-                console.log('Widget library loaded:', widgetResponse.data);
+                console.log('Backend widget library:', widgetResponse.data);
+                
+                // Create hybrid widget library with built-in React widgets
+                const builtinReactWidgets = [
+                    {
+                        key: 'contacts-widget',
+                        name: 'Contacts Widget',
+                        description: 'Manage and view contacts',
+                        type: 'builtin-react',
+                        path: null
+                    },
+                    {
+                        key: 'leads-widget',
+                        name: 'Leads Widget',
+                        description: 'Manage and view leads',
+                        type: 'builtin-react',
+                        path: null
+                    },
+                    {
+                        key: 'opportunities-widget',
+                        name: 'Opportunities Widget',
+                        description: 'Manage and view opportunities',
+                        type: 'builtin-react',
+                        path: null
+                    },
+                    {
+                        key: 'companies-widget',
+                        name: 'Companies Widget',
+                        description: 'Manage and view companies',
+                        type: 'builtin-react',
+                        path: null
+                    },
+                    {
+                        key: 'users-widget',
+                        name: 'Users Widget',
+                        description: 'Manage and view users',
+                        type: 'builtin-react',
+                        path: null
+                    }
+                ];
+                
+                const hybridWidgetLibrary = [...builtinReactWidgets, ...widgetResponse.data];
+                console.log('Hybrid widget library:', hybridWidgetLibrary);
+                console.log('Widget library keys:', hybridWidgetLibrary.map(w => w.key));
+                setWidgetLibrary(hybridWidgetLibrary);
+                console.log('Widget library loaded:', hybridWidgetLibrary);
 
                 // Load views
                 console.log('Fetching views...');
@@ -979,7 +1022,9 @@ const Dashboard = () => {
                             preventCollision={true}
                         >
                             {layout.map(item => {
+                                console.log('Looking for widget:', item.i, 'in library:', widgetLibrary);
                                 const widget = widgetLibrary.find(w => w.key === item.i);
+                                console.log('Found widget:', widget);
                                 return (
                                     <MemoizedWidget
                                         key={item.i}

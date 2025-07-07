@@ -54,6 +54,14 @@ export const WIDGET_TYPE_CONFIG = {
         cacheTimeout: 60000, // Cache for 1 minute
     },
     
+    // Built-in React widgets
+    'builtin-react': {
+        ...DEFAULT_WIDGET_CONFIG,
+        renderMode: 'eager', // Built-in React widgets should load immediately
+        showLoadingSpinner: true,
+        autoReload: false,
+    },
+    
     'leads-widget': {
         ...DEFAULT_WIDGET_CONFIG,
         renderMode: 'lazy',
@@ -236,7 +244,18 @@ export const WIDGET_SECURITY_CONFIG = {
  * @returns {Object} Widget configuration
  */
 export const getWidgetConfig = (widgetKey) => {
-    return WIDGET_TYPE_CONFIG[widgetKey] || WIDGET_TYPE_CONFIG['default'];
+    // First try to get specific widget config
+    if (WIDGET_TYPE_CONFIG[widgetKey]) {
+        return WIDGET_TYPE_CONFIG[widgetKey];
+    }
+    
+    // Check if it's a built-in React widget
+    if (widgetKey.endsWith('-widget') && ['contacts', 'leads', 'opportunities', 'companies', 'users'].some(type => widgetKey.startsWith(type))) {
+        return WIDGET_TYPE_CONFIG['builtin-react'];
+    }
+    
+    // Return default config
+    return WIDGET_TYPE_CONFIG['default'];
 };
 
 /**
