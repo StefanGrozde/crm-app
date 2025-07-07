@@ -387,168 +387,225 @@ const UsersWidget = () => {
         );
     };
 
-    if (error) {
+    if (loading) {
         return (
-            <div className="p-4 text-red-500 border border-red-200 rounded-lg bg-red-50">
-                <div className="font-medium">Error: {error}</div>
+            <div className="flex items-center justify-center h-32">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
             </div>
         );
     }
 
+    if (error) {
+        return (
+            <div className="text-center py-8">
+                <div className="text-red-600 text-sm">{error}</div>
+                <button
+                    onClick={() => loadUsers()}
+                    className="mt-2 px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700"
+                >
+                    Retry
+                </button>
+            </div>
+        );
+    }
+
+    // Check if any filters are active
+    const hasActiveFilters = Object.values(filters).some(value => value && value !== '');
+
     return (
-        <div className="bg-white rounded-lg shadow-lg p-4 h-full">
+        <div className="h-full overflow-hidden">
             {/* Header */}
             <div className="flex justify-between items-center mb-4">
                 <h2 className="text-lg font-semibold text-gray-900">Users</h2>
                 <div className="flex space-x-2">
                     <button
                         onClick={() => setShowFilterModal(true)}
-                        className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50"
+                        className={`px-3 py-1 text-sm rounded flex items-center space-x-1 ${
+                            hasActiveFilters 
+                                ? 'bg-blue-100 text-blue-700 border border-blue-300' 
+                                : 'bg-gray-100 text-gray-700 border border-gray-300'
+                        } hover:bg-gray-200`}
                     >
-                        Filter
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.207A1 1 0 013 6.5V4z" />
+                        </svg>
+                        <span>Filter</span>
+                        {hasActiveFilters && (
+                            <span className="bg-blue-600 text-white text-xs rounded-full px-1.5 py-0.5">
+                                {Object.values(filters).filter(v => v && v !== '').length}
+                            </span>
+                        )}
                     </button>
                     <button
                         onClick={() => setShowAddModal(true)}
-                        className="px-3 py-1 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                        className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 flex items-center space-x-1"
                     >
-                        Add User
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                        </svg>
+                        <span>Add</span>
                     </button>
                 </div>
             </div>
 
-            {/* Search and Filters */}
+            {/* Search */}
             <div className="mb-4">
-                <div className="flex space-x-2 mb-2">
-                    <input
-                        type="text"
-                        placeholder="Search users..."
-                        value={searchInput}
-                        onChange={(e) => handleSearchInputChange(e.target.value)}
-                        className="flex-1 border border-gray-300 rounded-md px-3 py-2 text-sm"
-                    />
-                </div>
-                
-                {/* Active Filters */}
-                {Object.entries(filters).some(([key, value]) => value && key !== 'search') && (
-                    <div className="flex flex-wrap gap-2 mb-2">
-                        {Object.entries(filters).map(([key, value]) => {
-                            if (!value || key === 'search') return null;
-                            return (
-                                <span
-                                    key={key}
-                                    className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800"
-                                >
-                                    {key}: {value}
-                                    <button
-                                        onClick={() => {
-                                            setFilters(prev => ({ ...prev, [key]: '' }));
-                                            loadUsers(1);
-                                        }}
-                                        className="ml-1 text-blue-600 hover:text-blue-800"
-                                    >
-                                        ×
-                                    </button>
-                                </span>
-                            );
-                        })}
+                <input
+                    type="text"
+                    placeholder="Search users..."
+                    value={searchInput}
+                    onChange={(e) => handleSearchInputChange(e.target.value)}
+                    onKeyDown={(e) => {
+                        // Prevent any key events from bubbling up to parent components
+                        e.stopPropagation();
+                    }}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                />
+            </div>
+
+            {/* Active Filters Display */}
+            {hasActiveFilters && (
+                <div className="mb-4 p-2 bg-blue-50 border border-blue-200 rounded-md">
+                    <div className="flex items-center justify-between">
+                        <div className="flex flex-wrap gap-2">
+                            {Object.entries(filters).map(([key, value]) => {
+                                if (value && value !== '' && key !== 'search') {
+                                    // Get user-friendly label for filter key
+                                    const getFilterLabel = (filterKey) => {
+                                        const labels = {
+                                            role: 'Role',
+                                            company: 'Company'
+                                        };
+                                        return labels[filterKey] || filterKey;
+                                    };
+
+                                    return (
+                                        <span
+                                            key={key}
+                                            className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
+                                        >
+                                            {getFilterLabel(key)}: {value}
+                                            <button
+                                                onClick={() => {
+                                                    setFilters(prev => ({ ...prev, [key]: '' }));
+                                                    setFilterFormData(prev => ({ ...prev, [key]: '' }));
+                                                    loadUsers(1);
+                                                }}
+                                                className="ml-1 inline-flex items-center justify-center w-4 h-4 rounded-full text-blue-400 hover:bg-blue-200 hover:text-blue-500"
+                                            >
+                                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                                </svg>
+                                            </button>
+                                        </span>
+                                    );
+                                }
+                                return null;
+                            })}
+                        </div>
                         <button
                             onClick={clearFilters}
-                            className="text-xs text-gray-500 hover:text-gray-700"
+                            className="text-xs text-blue-600 hover:text-blue-800"
                         >
                             Clear All
                         </button>
                     </div>
-                )}
-            </div>
+                </div>
+            )}
 
             {/* Users Table */}
-            {loading ? (
-                <div className="flex items-center justify-center py-8">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                </div>
-            ) : (
-                <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-gray-50">
-                            <tr>
-                                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    User
-                                </th>
-                                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Role
-                                </th>
-                                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Company
-                                </th>
-                                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Actions
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody className="bg-white divide-y divide-gray-200">
-                            {users.map((userItem) => (
-                                <tr key={userItem.id} className="hover:bg-gray-50">
-                                    <td className="px-3 py-2 whitespace-nowrap">
-                                        <div className="text-sm font-medium text-gray-900">
-                                            {userItem.firstName} {userItem.lastName}
+            <div className="overflow-x-auto" style={{ maxHeight: 'calc(100vh - 300px)' }}>
+                <table className="min-w-full bg-white border border-gray-200 rounded-lg">
+                    <thead className="bg-gray-50">
+                        <tr>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b">
+                                User
+                            </th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b">
+                                Role
+                            </th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b">
+                                Company
+                            </th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b">
+                                Actions
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200">
+                        {users.map((userItem) => (
+                            <tr key={userItem.id} className="hover:bg-gray-50 transition-colors">
+                                <td className="px-4 py-3 whitespace-nowrap">
+                                    <div className="flex items-center">
+                                        <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center mr-3">
+                                            <span className="text-xs font-medium text-blue-600">
+                                                {userItem.firstName.charAt(0)}{userItem.lastName.charAt(0)}
+                                            </span>
                                         </div>
-                                        <div className="text-sm text-gray-500">{userItem.email}</div>
-                                    </td>
-                                    <td className="px-3 py-2 whitespace-nowrap">
-                                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getRoleColor(userItem.role)}`}>
-                                            {userItem.role}
-                                        </span>
-                                    </td>
-                                    <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-900">
-                                        {userItem.company ? userItem.company.name : 'No Company'}
-                                    </td>
-                                    <td className="px-3 py-2 whitespace-nowrap text-sm font-medium">
+                                        <div>
+                                            <div className="text-sm font-medium text-gray-900">
+                                                {userItem.firstName} {userItem.lastName}
+                                            </div>
+                                            <div className="text-xs text-gray-500">{userItem.email}</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td className="px-4 py-3 whitespace-nowrap">
+                                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getRoleColor(userItem.role)}`}>
+                                        {userItem.role}
+                                    </span>
+                                </td>
+                                <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                                    {userItem.company ? userItem.company.name : 'No Company'}
+                                </td>
+                                <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                                    <div className="flex space-x-2">
                                         <button
                                             onClick={() => handleEdit(userItem)}
-                                            className="text-blue-600 hover:text-blue-900 mr-2"
+                                            className="text-blue-600 hover:text-blue-900 text-xs font-medium"
                                         >
                                             Edit
                                         </button>
                                         <button
                                             onClick={() => handleDelete(userItem.id)}
-                                            className="text-red-600 hover:text-red-900"
+                                            className="text-red-600 hover:text-red-900 text-xs font-medium"
                                         >
                                             Delete
                                         </button>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-            )}
+                                    </div>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+                
+                {/* Pagination */}
+                {pagination.totalPages > 1 && (
+                    <div className="mt-4 flex justify-between items-center px-4">
+                        <div className="text-xs text-gray-500">
+                            Page {pagination.currentPage} of {pagination.totalPages}
+                        </div>
+                        <div className="flex space-x-1">
+                            <button
+                                onClick={() => loadUsers(pagination.currentPage - 1)}
+                                disabled={pagination.currentPage === 1}
+                                className="px-2 py-1 text-xs border border-gray-300 rounded disabled:opacity-50"
+                            >
+                                Previous
+                            </button>
+                            <button
+                                onClick={() => loadUsers(pagination.currentPage + 1)}
+                                disabled={pagination.currentPage === pagination.totalPages}
+                                className="px-2 py-1 text-xs border border-gray-300 rounded disabled:opacity-50"
+                            >
+                                Next
+                            </button>
+                        </div>
+                    </div>
+                )}
+            </div>
 
-            {/* Pagination */}
-            {pagination.totalPages > 1 && (
-                <div className="flex justify-between items-center mt-4">
-                    <div className="text-sm text-gray-700">
-                        Showing {((pagination.currentPage - 1) * pagination.itemsPerPage) + 1} to{' '}
-                        {Math.min(pagination.currentPage * pagination.itemsPerPage, pagination.totalItems)} of{' '}
-                        {pagination.totalItems} results
-                    </div>
-                    <div className="flex space-x-2">
-                        <button
-                            onClick={() => loadUsers(pagination.currentPage - 1)}
-                            disabled={pagination.currentPage === 1}
-                            className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50"
-                        >
-                            Previous
-                        </button>
-                        <button
-                            onClick={() => loadUsers(pagination.currentPage + 1)}
-                            disabled={pagination.currentPage === pagination.totalPages}
-                            className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50"
-                        >
-                            Next
-                        </button>
-                    </div>
-                </div>
-            )}
+
 
             {/* Modals */}
             <FilterModal isOpen={showFilterModal} onClose={() => setShowFilterModal(false)} />
