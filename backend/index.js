@@ -107,6 +107,7 @@ const startServer = async () => {
     const Opportunity = require('./models/Opportunity');
     const Company = require('./models/Company');
     const User = require('./models/User');
+    const Widget = require('./models/Widget');
     
     // Define associations
     // Company associations

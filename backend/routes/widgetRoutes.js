@@ -120,4 +120,55 @@ router.post('/refresh', authenticate, authorize(['Administrator']), async (req, 
     }
 });
 
+// Create or update database widget (Admin only)
+router.post('/database', authenticate, authorize(['Administrator']), async (req, res) => {
+    try {
+        const widgetData = req.body;
+        const widget = await widgetService.createOrUpdateWidget(widgetData);
+        
+        res.json({
+            success: true,
+            message: 'Widget saved successfully',
+            widget
+        });
+    } catch (error) {
+        console.error('Error creating/updating database widget:', error);
+        res.status(400).json({ error: error.message });
+    }
+});
+
+// Delete database widget (Admin only)
+router.delete('/database/:widgetKey', authenticate, authorize(['Administrator']), async (req, res) => {
+    try {
+        const { widgetKey } = req.params;
+        
+        await widgetService.deleteDatabaseWidget(widgetKey);
+        
+        res.json({
+            success: true,
+            message: 'Database widget deleted successfully'
+        });
+    } catch (error) {
+        console.error('Error deleting database widget:', error);
+        res.status(400).json({ error: error.message });
+    }
+});
+
+// Get single database widget
+router.get('/database/:widgetKey', authenticate, async (req, res) => {
+    try {
+        const { widgetKey } = req.params;
+        const widget = await widgetService.getWidgetByKey(widgetKey);
+        
+        if (!widget) {
+            return res.status(404).json({ error: 'Widget not found' });
+        }
+        
+        res.json(widget);
+    } catch (error) {
+        console.error('Error getting database widget:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
 module.exports = router;

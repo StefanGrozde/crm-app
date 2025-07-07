@@ -1,5 +1,6 @@
 const fs = require('fs').promises;
 const path = require('path');
+const Widget = require('../models/Widget');
 
 // Widget cache
 let widgetCache = null;
@@ -25,38 +26,67 @@ async function getWidgetManifest(forceRefresh = false) {
     try {
         const widgets = [];
         
-        // Read all directories in widgets folder
-        const typeDirs = await fs.readdir(WIDGETS_DIR);
+        // Load widgets from database
+        const dbWidgets = await Widget.findAll({
+            where: { isActive: true },
+            order: [['sortOrder', 'ASC'], ['name', 'ASC']],
+            raw: true
+        });
         
-        for (const typeDir of typeDirs) {
-            const typePath = path.join(WIDGETS_DIR, typeDir);
-            const typeStat = await fs.stat(typePath);
+        // Convert database widgets to manifest format
+        for (const dbWidget of dbWidgets) {
+            const manifest = {
+                key: dbWidget.widgetKey,
+                name: dbWidget.name,
+                description: dbWidget.description,
+                type: dbWidget.type,
+                version: dbWidget.version,
+                author: dbWidget.author,
+                entry: dbWidget.entry,
+                directory: dbWidget.directory,
+                config: dbWidget.config,
+                dependencies: dbWidget.dependencies
+            };
             
-            if (typeStat.isDirectory()) {
-                const widgetDirs = await fs.readdir(typePath);
+            widgets.push(manifest);
+        }
+        
+        // Also load file-based widgets (buildin and custom)
+        try {
+            const typeDirs = await fs.readdir(WIDGETS_DIR);
+            
+            for (const typeDir of typeDirs) {
+                const typePath = path.join(WIDGETS_DIR, typeDir);
+                const typeStat = await fs.stat(typePath);
                 
-                for (const widgetDir of widgetDirs) {
-                    const widgetPath = path.join(typePath, widgetDir);
-                    const widgetStat = await fs.stat(widgetPath);
+                if (typeStat.isDirectory()) {
+                    const widgetDirs = await fs.readdir(typePath);
                     
-                    if (widgetStat.isDirectory()) {
-                        try {
-                            // Try to read widget.json
-                            const manifestPath = path.join(widgetPath, 'widget.json');
-                            const manifestContent = await fs.readFile(manifestPath, 'utf8');
-                            const manifest = JSON.parse(manifestContent);
-                            
-                            // Add type and directory info
-                            manifest.type = typeDir;
-                            manifest.directory = widgetDir;
-                            
-                            widgets.push(manifest);
-                        } catch (error) {
-                            console.warn(`Failed to read manifest for widget ${typeDir}/${widgetDir}:`, error.message);
+                    for (const widgetDir of widgetDirs) {
+                        const widgetPath = path.join(typePath, widgetDir);
+                        const widgetStat = await fs.stat(widgetPath);
+                        
+                        if (widgetStat.isDirectory()) {
+                            try {
+                                // Try to read widget.json
+                                const manifestPath = path.join(widgetPath, 'widget.json');
+                                const manifestContent = await fs.readFile(manifestPath, 'utf8');
+                                const manifest = JSON.parse(manifestContent);
+                                
+                                // Add type and directory info
+                                manifest.type = typeDir;
+                                manifest.directory = widgetDir;
+                                
+                                widgets.push(manifest);
+                            } catch (error) {
+                                console.warn(`Failed to read manifest for widget ${typeDir}/${widgetDir}:`, error.message);
+                            }
                         }
                     }
                 }
             }
+        } catch (error) {
+            console.warn('Error reading file-based widgets:', error.message);
         }
         
         // Update cache
@@ -221,9 +251,126 @@ async function deleteWidget(key, type) {
     }
 }
 
+/**
+ * Create or update a widget in the database
+ * @param {Object} widgetData - Widget data
+ * @returns {Promise<Object>} Created/updated widget
+ */
+async function createOrUpdateWidget(widgetData) {
+    try {
+        const { widgetKey, name, description, type, version, author, entry, directory, config, dependencies, isActive, sortOrder } = widgetData;
+        
+        if (!widgetKey || !name) {
+            throw new Error('Missing required widget data: widgetKey and name are required');
+        }
+        
+        const [widget, created] = await Widget.findOrCreate({
+            where: { widgetKey },
+            defaults: {
+                name,
+                description: description || '',
+                type: type || 'builtin-react',
+                version: version || '1.0.0',
+                author: author || 'System',
+                entry: entry || null,
+                directory: directory || null,
+                config: config || {},
+                dependencies: dependencies || [],
+                isActive: isActive !== undefined ? isActive : true,
+                sortOrder: sortOrder || 0
+            }
+        });
+        
+        if (!created) {
+            // Update existing widget
+            await widget.update({
+                name,
+                description: description || widget.description,
+                type: type || widget.type,
+                version: version || widget.version,
+                author: author || widget.author,
+                entry: entry || widget.entry,
+                directory: directory || widget.directory,
+                config: config || widget.config,
+                dependencies: dependencies || widget.dependencies,
+                isActive: isActive !== undefined ? isActive : widget.isActive,
+                sortOrder: sortOrder || widget.sortOrder
+            });
+        }
+        
+        // Clear cache to force refresh
+        widgetCache = null;
+        
+        return widget.toJSON();
+    } catch (error) {
+        console.error('Error creating/updating widget:', error);
+        throw new Error(`Failed to create/update widget: ${error.message}`);
+    }
+}
+
+/**
+ * Delete a widget from the database
+ * @param {string} widgetKey - Widget key to delete
+ * @returns {Promise<void>}
+ */
+async function deleteDatabaseWidget(widgetKey) {
+    try {
+        const widget = await Widget.findOne({ where: { widgetKey } });
+        
+        if (!widget) {
+            throw new Error('Widget not found in database');
+        }
+        
+        await widget.destroy();
+        
+        // Clear cache to force refresh
+        widgetCache = null;
+    } catch (error) {
+        console.error('Error deleting database widget:', error);
+        throw new Error(`Failed to delete database widget: ${error.message}`);
+    }
+}
+
+/**
+ * Get a single widget by key
+ * @param {string} widgetKey - Widget key
+ * @returns {Promise<Object|null>} Widget data or null if not found
+ */
+async function getWidgetByKey(widgetKey) {
+    try {
+        const widget = await Widget.findOne({
+            where: { widgetKey, isActive: true },
+            raw: true
+        });
+        
+        if (!widget) {
+            return null;
+        }
+        
+        return {
+            key: widget.widgetKey,
+            name: widget.name,
+            description: widget.description,
+            type: widget.type,
+            version: widget.version,
+            author: widget.author,
+            entry: widget.entry,
+            directory: widget.directory,
+            config: widget.config,
+            dependencies: widget.dependencies
+        };
+    } catch (error) {
+        console.error('Error getting widget by key:', error);
+        throw new Error(`Failed to get widget: ${error.message}`);
+    }
+}
+
 module.exports = {
     getWidgetManifest,
     getWidgetFile,
     uploadWidget,
-    deleteWidget
+    deleteWidget,
+    createOrUpdateWidget,
+    deleteDatabaseWidget,
+    getWidgetByKey
 };

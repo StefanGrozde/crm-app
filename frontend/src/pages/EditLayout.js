@@ -40,60 +40,13 @@ const EditLayout = () => {
                 console.log('Loading initial data for EditLayout...');
                 console.log('View ID:', viewId);
 
-                // Load widget library
+                // Load widget library from API (now includes database widgets)
                 console.log('Fetching widget library...');
                 const widgetResponse = await axios.get(`${API_URL}/api/widgets/manifest`, { withCredentials: true });
                 console.log('Widget library response:', widgetResponse);
                 
-                // Create hybrid widget library with built-in React widgets
-                const builtinReactWidgets = [
-                    {
-                        key: 'contacts-widget',
-                        name: 'Contacts Widget',
-                        description: 'Manage and view contacts',
-                        type: 'builtin-react',
-                        path: null
-                    },
-                    {
-                        key: 'leads-widget',
-                        name: 'Leads Widget',
-                        description: 'Manage and view leads',
-                        type: 'builtin-react',
-                        path: null
-                    },
-                    {
-                        key: 'opportunities-widget',
-                        name: 'Opportunities Widget',
-                        description: 'Manage and view opportunities',
-                        type: 'builtin-react',
-                        path: null
-                    },
-                    {
-                        key: 'companies-widget',
-                        name: 'Companies Widget',
-                        description: 'Manage and view companies',
-                        type: 'builtin-react',
-                        path: null
-                    },
-                    {
-                        key: 'users-widget',
-                        name: 'Users Widget',
-                        description: 'Manage and view users',
-                        type: 'builtin-react',
-                        path: null
-                    },
-                    {
-                        key: 'lead-conversion',
-                        name: 'Lead Conversion Analytics',
-                        description: 'Track lead conversion rates and metrics',
-                        type: 'builtin-react',
-                        path: null
-                    }
-                ];
-                
-                const hybridWidgetLibrary = [...builtinReactWidgets, ...widgetResponse.data];
-                console.log('Hybrid widget library:', hybridWidgetLibrary);
-                setWidgetLibrary(hybridWidgetLibrary);
+                // Set widget library directly from API response
+                setWidgetLibrary(widgetResponse.data);
 
                 // Load the specific view
                 if (viewId) {
