@@ -63,47 +63,10 @@ const Dashboard = () => {
         if (activeTabId && !String(activeTabId).includes('-page') && !String(activeTabId).includes('search-')) {
             console.log('Dashboard mounted with active view tab - checking if refresh is needed');
             
-            // Check if there's a flag indicating a view was updated
-            const viewUpdated = localStorage.getItem('dashboard_view_updated');
-            const viewUpdatedId = localStorage.getItem('dashboard_view_updated_id');
-            const viewUpdatedTimestamp = localStorage.getItem('dashboard_view_updated_timestamp');
-            
-            if (viewUpdated === 'true' && viewUpdatedId && viewUpdatedTimestamp) {
-                const timestamp = parseInt(viewUpdatedTimestamp);
-                const now = Date.now();
-                const timeDiff = now - timestamp;
-                
-                // Only refresh if the update was recent (within last 60 seconds)
-                if (timeDiff < 60000) {
-                    console.log('View update detected - refreshing view data');
-                    
-                    // Clear the flag immediately to prevent duplicate refreshes
-                    localStorage.removeItem('dashboard_view_updated');
-                    localStorage.removeItem('dashboard_view_updated_id');
-                    localStorage.removeItem('dashboard_view_updated_timestamp');
-                    
-                    // Refresh both the views list and the current view data
-                    setTimeout(async () => {
-                        try {
-                            await refreshViewsList();
-                            await refreshCurrentView();
-                            console.log('Dashboard view refreshed successfully after EditLayout');
-                        } catch (error) {
-                            console.error('Failed to refresh dashboard view after EditLayout:', error);
-                        }
-                    }, 200);
-                } else {
-                    // Clear old flags
-                    localStorage.removeItem('dashboard_view_updated');
-                    localStorage.removeItem('dashboard_view_updated_id');
-                    localStorage.removeItem('dashboard_view_updated_timestamp');
-                }
-            } else {
-                // Add a delay to ensure everything is loaded
-                setTimeout(() => {
-                    refreshCurrentView();
-                }, 500);
-            }
+            // Add a delay to ensure everything is loaded
+            setTimeout(() => {
+                refreshCurrentView();
+            }, 500);
         }
     }, []); // eslint-disable-next-line react-hooks/exhaustive-deps
 
@@ -150,9 +113,9 @@ const Dashboard = () => {
                         path: null
                     },
                     {
-                        key: 'companies-widget',
-                        name: 'Companies Widget',
-                        description: 'Manage and view companies',
+                        key: 'business-widget',
+                        name: 'Business Widget',
+                        description: 'Manage and view businesses',
                         type: 'builtin-react',
                         path: null
                     },
@@ -698,60 +661,47 @@ const Dashboard = () => {
 
     // Refresh view data when returning from EditLayout
     useEffect(() => {
-        let previousUrl = window.location.pathname;
+        let lastRefreshTime = 0;
+        const REFRESH_DEBOUNCE = 2000; // 2 seconds debounce
         
         const handleFocus = () => {
             console.log('Dashboard focused - checking if refresh is needed');
-            // Add a small delay to ensure we're back from EditLayout
-            setTimeout(() => {
-                refreshCurrentView();
-            }, 100);
+            const now = Date.now();
+            if (now - lastRefreshTime > REFRESH_DEBOUNCE) {
+                console.log('Dashboard focused - refreshing view data');
+                lastRefreshTime = now;
+                // Use the same logic as the manual refresh button
+                setTimeout(() => {
+                    refreshCurrentView();
+                }, 100);
+            } else {
+                console.log('Skipping refresh due to debounce');
+            }
         };
 
         const handleVisibilityChange = () => {
             if (!document.hidden) {
                 console.log('Dashboard became visible - checking if refresh is needed');
-                // Add a small delay to ensure we're back from EditLayout
-                setTimeout(() => {
-                    refreshCurrentView();
-                }, 100);
+                const now = Date.now();
+                if (now - lastRefreshTime > REFRESH_DEBOUNCE) {
+                    console.log('Dashboard became visible - refreshing view data');
+                    lastRefreshTime = now;
+                    setTimeout(() => {
+                        refreshCurrentView();
+                    }, 100);
+                } else {
+                    console.log('Skipping refresh due to debounce');
+                }
             }
         };
 
-        const handleUrlChange = () => {
-            const currentUrl = window.location.pathname;
-            console.log('URL changed from:', previousUrl, 'to:', currentUrl);
-            
-            // If we're returning from EditLayout to Dashboard
-            if (previousUrl.includes('/edit-layout/') && currentUrl === '/dashboard') {
-                console.log('Returning from EditLayout - refreshing view data');
-                setTimeout(() => {
-                    refreshCurrentView();
-                }, 100);
-            }
-            
-            previousUrl = currentUrl;
-        };
-
-        // Listen for focus, visibility changes, and URL changes
+        // Listen for focus and visibility changes
         window.addEventListener('focus', handleFocus);
         document.addEventListener('visibilitychange', handleVisibilityChange);
-        
-        // Use popstate to detect navigation changes
-        window.addEventListener('popstate', handleUrlChange);
-        
-        // Also check on mount if we're coming from EditLayout
-        if (previousUrl.includes('/edit-layout/')) {
-            console.log('Dashboard mounted after EditLayout - refreshing view data');
-            setTimeout(() => {
-                refreshCurrentView();
-            }, 100);
-        }
 
         return () => {
             window.removeEventListener('focus', handleFocus);
             document.removeEventListener('visibilitychange', handleVisibilityChange);
-            window.removeEventListener('popstate', handleUrlChange);
         };
     }, [activeTabId, currentViewId]); // eslint-disable-next-line react-hooks/exhaustive-deps
 
@@ -876,6 +826,8 @@ const Dashboard = () => {
                     onTabDragEnd={handleTabDragEnd}
                     onTabDragStart={handleTabDragStart}
                     isDraggingTab={isDraggingTab}
+                    onRefreshTab={refreshCurrentView}
+                    isRefreshing={isRefreshing}
                 />
 
                 <main className="p-4">

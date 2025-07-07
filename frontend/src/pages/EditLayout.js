@@ -110,11 +110,7 @@ const EditLayout = () => {
             // Check if there are unsaved changes
             const hasChanges = JSON.stringify(layout) !== JSON.stringify(originalLayout);
             if (hasChanges) {
-                console.log('Unsaved changes detected, setting refresh flag');
-                // Set a flag to indicate that the view might have been updated
-                localStorage.setItem('dashboard_view_updated', 'true');
-                localStorage.setItem('dashboard_view_updated_id', viewId);
-                localStorage.setItem('dashboard_view_updated_timestamp', Date.now().toString());
+                console.log('Unsaved changes detected');
                 
                 // Show confirmation dialog
                 const message = 'You have unsaved changes. Are you sure you want to leave?';
@@ -124,27 +120,12 @@ const EditLayout = () => {
             }
         };
 
-        const handleVisibilityChange = () => {
-            if (document.hidden) {
-                console.log('EditLayout page hidden, checking for changes');
-                const hasChanges = JSON.stringify(layout) !== JSON.stringify(originalLayout);
-                if (hasChanges) {
-                    console.log('Changes detected when leaving page, setting refresh flag');
-                    localStorage.setItem('dashboard_view_updated', 'true');
-                    localStorage.setItem('dashboard_view_updated_id', viewId);
-                    localStorage.setItem('dashboard_view_updated_timestamp', Date.now().toString());
-                }
-            }
-        };
-
         window.addEventListener('beforeunload', handleBeforeUnload);
-        document.addEventListener('visibilitychange', handleVisibilityChange);
 
         return () => {
             window.removeEventListener('beforeunload', handleBeforeUnload);
-            document.removeEventListener('visibilitychange', handleVisibilityChange);
         };
-    }, [layout, originalLayout, viewId]);
+    }, [layout, originalLayout]);
 
     // Handlers
     const handleSaveView = async () => {
@@ -175,11 +156,6 @@ const EditLayout = () => {
             
             setOriginalLayout([...layout]); // Update original layout to current
             
-            // Set a flag to indicate that the view has been updated
-            localStorage.setItem('dashboard_view_updated', 'true');
-            localStorage.setItem('dashboard_view_updated_id', currentView.id);
-            localStorage.setItem('dashboard_view_updated_timestamp', Date.now().toString());
-            
             alert('View saved successfully!');
             
         } catch (error) { 
@@ -209,11 +185,6 @@ const EditLayout = () => {
             }, { withCredentials: true });
 
             console.log("New view saved successfully:", response.data);
-            
-            // Set a flag to indicate that a new view has been created
-            localStorage.setItem('dashboard_view_updated', 'true');
-            localStorage.setItem('dashboard_view_updated_id', response.data.id);
-            localStorage.setItem('dashboard_view_updated_timestamp', Date.now().toString());
             
             setSaveModalOpen(false);
             alert('New view saved successfully!');
@@ -268,11 +239,7 @@ const EditLayout = () => {
             if (!confirmLeave) {
                 return; // Stay on the page
             }
-            console.log('User confirmed leaving with unsaved changes, setting refresh flag');
-            // Set a flag to indicate that the view might have been updated
-            localStorage.setItem('dashboard_view_updated', 'true');
-            localStorage.setItem('dashboard_view_updated_id', viewId);
-            localStorage.setItem('dashboard_view_updated_timestamp', Date.now().toString());
+            console.log('User confirmed leaving with unsaved changes');
         }
         
         console.log('Navigating back to Dashboard');

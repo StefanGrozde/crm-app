@@ -76,7 +76,7 @@ export const WIDGET_TYPE_CONFIG = {
         showLoadingSpinner: true,
     },
     
-    'companies-widget': {
+    'business-widget': {
         ...DEFAULT_WIDGET_CONFIG,
         renderMode: 'lazy',
         autoReload: false,
@@ -125,7 +125,7 @@ export const WIDGET_REGISTRY_CONFIG = {
         'contacts-widget',
         'leads-widget', 
         'opportunities-widget',
-        'companies-widget',
+        'business-widget',
         'users-widget',
         'search-result-widget'
     ],

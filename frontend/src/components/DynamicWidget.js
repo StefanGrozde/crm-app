@@ -3,7 +3,7 @@ import SearchResultWidget from './SearchResultWidget';
 import ContactsWidget from './ContactsWidget';
 import LeadsWidget from './LeadsWidget';
 import OpportunitiesWidget from './OpportunitiesWidget';
-import CompaniesWidget from './CompaniesWidget';
+import BusinessWidget from './BusinessWidget';
 import UsersWidget from './UsersWidget';
 import LeadConversionWidget from './LeadConversionWidget';
 
@@ -14,7 +14,7 @@ const WidgetRegistry = {
     'search-result-widget': SearchResultWidget,
     'leads-widget': LeadsWidget,
     'opportunities-widget': OpportunitiesWidget,
-    'companies-widget': CompaniesWidget,
+    'business-widget': BusinessWidget,
     'users-widget': UsersWidget,
     'lead-conversion': LeadConversionWidget
 };

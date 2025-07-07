@@ -15,6 +15,7 @@ const searchRoutes = require('./routes/searchRoutes');
 const contactRoutes = require('./routes/contactRoutes');
 const leadRoutes = require('./routes/leadRoutes');
 const opportunityRoutes = require('./routes/opportunityRoutes');
+const businessRoutes = require('./routes/businessRoutes');
 const path = require('path');
 
 console.log("Application starting...");
@@ -73,6 +74,7 @@ app.use('/api/search', searchRoutes);
 app.use('/api/contacts', contactRoutes);
 app.use('/api/leads', leadRoutes);
 app.use('/api/opportunities', opportunityRoutes);
+app.use('/api/businesses', businessRoutes);
 app.use('/api/widgets/buildin', express.static(path.join(__dirname, 'widgets', 'buildin')));
 app.use('/api/widgets/custom', express.static(path.join(__dirname, 'widgets', 'custom')));
 // Test Route to check DB connection
