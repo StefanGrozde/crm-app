@@ -343,7 +343,7 @@ const LeadsWidget = () => {
                                 <option value="">All Users</option>
                                 {users.map(user => (
                                     <option key={user.id} value={user.id}>
-                                        {user.firstName} {user.lastName}
+                                        {user.username}
                                     </option>
                                 ))}
                             </select>
@@ -502,7 +502,7 @@ const LeadsWidget = () => {
                                     <option value="">Unassigned</option>
                                     {users.map(user => (
                                         <option key={user.id} value={user.id}>
-                                            {user.firstName} {user.lastName}
+                                            {user.username}
                                         </option>
                                     ))}
                                 </select>
@@ -706,7 +706,7 @@ const LeadsWidget = () => {
                                         {lead.estimatedValue ? `${lead.currency} ${parseFloat(lead.estimatedValue).toLocaleString()}` : '-'}
                                     </td>
                                     <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-900">
-                                        {lead.assignedUser ? `${lead.assignedUser.firstName} ${lead.assignedUser.lastName}` : 'Unassigned'}
+                                        {lead.assignedUser ? lead.assignedUser.username : 'Unassigned'}
                                     </td>
                                     <td className="px-3 py-2 whitespace-nowrap text-sm font-medium">
                                         <button

@@ -345,7 +345,7 @@ const OpportunitiesWidget = () => {
                                 <option value="">All Users</option>
                                 {users.map(user => (
                                     <option key={user.id} value={user.id}>
-                                        {user.firstName} {user.lastName}
+                                        {user.username}
                                     </option>
                                 ))}
                             </select>
@@ -511,7 +511,7 @@ const OpportunitiesWidget = () => {
                                     <option value="">Unassigned</option>
                                     {users.map(user => (
                                         <option key={user.id} value={user.id}>
-                                            {user.firstName} {user.lastName}
+                                            {user.username}
                                         </option>
                                     ))}
                                 </select>
@@ -715,7 +715,7 @@ const OpportunitiesWidget = () => {
                                         {opportunity.amount ? `${opportunity.currency} ${parseFloat(opportunity.amount).toLocaleString()}` : '-'}
                                     </td>
                                     <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-900">
-                                        {opportunity.assignedUser ? `${opportunity.assignedUser.firstName} ${opportunity.assignedUser.lastName}` : 'Unassigned'}
+                                        {opportunity.assignedUser ? opportunity.assignedUser.username : 'Unassigned'}
                                     </td>
                                     <td className="px-3 py-2 whitespace-nowrap text-sm font-medium">
                                         <button

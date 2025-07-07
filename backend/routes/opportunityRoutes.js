@@ -79,12 +79,12 @@ router.get('/', protect, async (req, res) => {
                 {
                     model: User,
                     as: 'assignedUser',
-                    attributes: ['id', 'firstName', 'lastName', 'email']
+                    attributes: ['id', 'username', 'email', 'role']
                 },
                 {
                     model: User,
                     as: 'creator',
-                    attributes: ['id', 'firstName', 'lastName', 'email']
+                    attributes: ['id', 'username', 'email', 'role']
                 },
                 {
                     model: Contact,
@@ -125,12 +125,12 @@ router.get('/:id', protect, async (req, res) => {
                 {
                     model: User,
                     as: 'assignedUser',
-                    attributes: ['id', 'firstName', 'lastName', 'email']
+                    attributes: ['id', 'username', 'email', 'role']
                 },
                 {
                     model: User,
                     as: 'creator',
-                    attributes: ['id', 'firstName', 'lastName', 'email']
+                    attributes: ['id', 'username', 'email', 'role']
                 },
                 {
                     model: Contact,
@@ -210,12 +210,12 @@ router.post('/', protect, async (req, res) => {
                 {
                     model: User,
                     as: 'assignedUser',
-                    attributes: ['id', 'firstName', 'lastName', 'email']
+                    attributes: ['id', 'username', 'email', 'role']
                 },
                 {
                     model: User,
                     as: 'creator',
-                    attributes: ['id', 'firstName', 'lastName', 'email']
+                    attributes: ['id', 'username', 'email', 'role']
                 },
                 {
                     model: Contact,
@@ -298,12 +298,12 @@ router.put('/:id', protect, async (req, res) => {
                 {
                     model: User,
                     as: 'assignedUser',
-                    attributes: ['id', 'firstName', 'lastName', 'email']
+                    attributes: ['id', 'username', 'email', 'role']
                 },
                 {
                     model: User,
                     as: 'creator',
-                    attributes: ['id', 'firstName', 'lastName', 'email']
+                    attributes: ['id', 'username', 'email', 'role']
                 },
                 {
                     model: Contact,

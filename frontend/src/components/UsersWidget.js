@@ -537,14 +537,16 @@ const UsersWidget = () => {
                             <tr key={userItem.id} className="hover:bg-gray-50 transition-colors">
                                 <td className="px-4 py-3 whitespace-nowrap">
                                     <div className="flex items-center">
-                                        <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center mr-3">
-                                            <span className="text-xs font-medium text-blue-600">
-                                                {userItem.firstName.charAt(0)}{userItem.lastName.charAt(0)}
-                                            </span>
+                                        <div className="flex-shrink-0 h-10 w-10">
+                                            <div className="h-10 w-10 rounded-full bg-blue-500 flex items-center justify-center">
+                                                <span className="text-sm font-medium text-white">
+                                                    {userItem.username.charAt(0).toUpperCase()}
+                                                </span>
+                                            </div>
                                         </div>
-                                        <div>
+                                        <div className="ml-4">
                                             <div className="text-sm font-medium text-gray-900">
-                                                {userItem.firstName} {userItem.lastName}
+                                                {userItem.username}
                                             </div>
                                             <div className="text-xs text-gray-500">{userItem.email}</div>
                                         </div>

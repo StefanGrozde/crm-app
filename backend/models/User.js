@@ -9,6 +9,11 @@ const User = sequelize.define('User', {
     autoIncrement: true,
     primaryKey: true,
   },
+  username: {
+    type: DataTypes.STRING(50),
+    allowNull: false,
+    unique: true,
+  },
   email: {
     type: DataTypes.STRING,
     allowNull: false,
@@ -20,29 +25,27 @@ const User = sequelize.define('User', {
   password: {
     type: DataTypes.STRING,
     allowNull: false,
-    field: 'password_hash' // <--- ADD THIS LINE
+    field: 'password_hash'
   },
   role: {
     type: DataTypes.STRING,
     allowNull: false,
-    defaultValue: 'Sales Representative', // Default role
+    defaultValue: 'Sales Representative',
   },
   companyId: {
     type: DataTypes.INTEGER,
-    field: 'company_id', // <--- ADD THIS LINE
+    field: 'company_id',
     references: {
       model: Company,
       key: 'id',
     },
-    allowNull: true, // Let's allow this to be null for now
-  },
-  
-
+    allowNull: true,
+  }
 }, {
     tableName: 'users',
     timestamps: true,
-    createdAt: 'created_at', // Add this line
-    updatedAt: 'updated_at', // Add this line
+    createdAt: 'created_at',
+    updatedAt: 'updated_at',
   });
 
 // Associations will be defined in the main index.js file
@@ -57,6 +60,5 @@ User.beforeCreate(async (user, options) => {
 User.prototype.matchPassword = async function (enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
 };
-
 
 module.exports = User;
