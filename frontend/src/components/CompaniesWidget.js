@@ -5,8 +5,11 @@ import { AuthContext } from '../context/AuthContext';
 const API_URL = process.env.REACT_APP_API_URL;
 
 const CompaniesWidget = () => {
+    // Context
     const { user } = useContext(AuthContext);
-    const [companies, setCompanies] = useState([]);
+    
+    // Core data states
+    const [data, setData] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [pagination, setPagination] = useState({
@@ -24,21 +27,17 @@ const CompaniesWidget = () => {
         status: ''
     });
     
-    // Separate state for search input
+    // Separate search input state
     const [searchInput, setSearchInput] = useState('');
     
-    // Filter modal state
+    // Modal states
     const [showFilterModal, setShowFilterModal] = useState(false);
-    const [filterFormData, setFilterFormData] = useState({
-        industry: '',
-        size: '',
-        status: ''
-    });
-    
-    // Form states
     const [showAddModal, setShowAddModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
-    const [editingCompany, setEditingCompany] = useState(null);
+    const [editingItem, setEditingItem] = useState(null);
+    
+    // Form states
+    const [filterFormData, setFilterFormData] = useState({});
     const [formData, setFormData] = useState({
         name: '',
         industry: '',
@@ -55,10 +54,11 @@ const CompaniesWidget = () => {
         status: 'active'
     });
     
+    // Dropdown data
+    const [dropdownData, setDropdownData] = useState([]);
 
-
-    // Load companies
-    const loadCompanies = useCallback(async (page = 1) => {
+    // Logic: Load data
+    const loadData = useCallback(async (page = 1) => {
         try {
             setLoading(true);
             const params = new URLSearchParams({
@@ -71,23 +71,36 @@ const CompaniesWidget = () => {
                 withCredentials: true
             });
             
-            setCompanies(response.data.companies);
+            setData(response.data.companies);
             setPagination(response.data.pagination);
         } catch (error) {
-            console.error('Error loading companies:', error);
-            setError('Failed to load companies');
+            console.error('Error loading data:', error);
+            setError('Failed to load data');
         } finally {
             setLoading(false);
         }
     }, [filters, pagination.itemsPerPage]);
 
+    // Logic: Load dropdown data
+    const loadDropdownData = useCallback(async () => {
+        try {
+            const response = await axios.get(`${API_URL}/api/companies/filter-options`, { 
+                withCredentials: true 
+            });
+            setDropdownData(response.data);
+        } catch (error) {
+            console.error('Error loading dropdown data:', error);
+        }
+    }, []);
+
+    // Logic: Initialize component
     useEffect(() => {
         const initializeComponent = async () => {
             try {
-                await loadCompanies();
+                await Promise.all([loadData(), loadDropdownData()]);
             } catch (error) {
-                console.error('Error initializing CompaniesWidget:', error);
-                setError('Failed to initialize companies widget');
+                console.error('Error initializing widget:', error);
+                setError('Failed to initialize widget');
             }
         };
 
@@ -98,9 +111,9 @@ const CompaniesWidget = () => {
                 clearTimeout(window.searchTimeout);
             }
         };
-    }, [loadCompanies]);
+    }, [loadData, loadDropdownData]);
 
-    // Handle search input changes
+    // Logic: Handle search input changes
     const handleSearchInputChange = useCallback((value) => {
         if (searchInput === value) return;
         
@@ -119,379 +132,133 @@ const CompaniesWidget = () => {
                 }
                 return newFilters;
             });
-            loadCompanies(1);
+            loadData(1);
         }, 300);
-    }, [searchInput, loadCompanies]);
+    }, [searchInput, loadData]);
 
-    // Handle filter form input changes
+    // Logic: Handle filter form input changes
     const handleFilterInputChange = useCallback((e) => {
         const { name, value } = e.target;
         setFilterFormData(prev => ({ ...prev, [name]: value }));
     }, []);
 
-    // Apply filters
+    // Logic: Apply filters
     const applyFilters = useCallback(() => {
         setFilters(prev => ({ ...prev, ...filterFormData }));
         setShowFilterModal(false);
-        loadCompanies(1);
-    }, [filterFormData, loadCompanies]);
+        loadData(1);
+    }, [filterFormData, loadData]);
 
-    // Clear filters
+    // Logic: Clear filters
     const clearFilters = useCallback(() => {
-        const clearedFilters = {
-            search: searchInput,
-            industry: '',
-            size: '',
-            status: ''
-        };
+        const clearedFilters = { search: searchInput };
         setFilters(clearedFilters);
-        setFilterFormData({
-            industry: '',
-            size: '',
-            status: ''
-        });
-        loadCompanies(1);
-    }, [searchInput, loadCompanies]);
+        setFilterFormData({});
+        loadData(1);
+    }, [searchInput, loadData]);
 
-    // Handle form input changes
+    // Logic: Handle form input changes
     const handleInputChange = useCallback((e) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
     }, []);
 
-    // Handle form submission
-    const handleSubmit = useCallback(async (e) => {
-        e.preventDefault();
-        try {
-            if (editingCompany) {
-                await axios.put(`${API_URL}/api/companies/${editingCompany.id}`, formData, {
-                    withCredentials: true
-                });
-            } else {
-                await axios.post(`${API_URL}/api/companies`, formData, {
-                    withCredentials: true
-                });
-            }
-            
-            setShowAddModal(false);
-            setShowEditModal(false);
-            setEditingCompany(null);
-            setFormData({
-                name: '',
-                industry: '',
-                size: '',
-                website: '',
-                phoneNumber: '',
-                email: '',
-                address: '',
-                city: '',
-                state: '',
-                zipCode: '',
-                country: '',
-                description: '',
-                status: 'active'
-            });
-            loadCompanies();
-        } catch (error) {
-            console.error('Error saving company:', error);
-            alert('Failed to save company');
-        }
-    }, [editingCompany, formData, loadCompanies]);
-
-    // Handle edit
-    const handleEdit = useCallback((company) => {
-        setEditingCompany(company);
+    // Logic: Reset form
+    const resetForm = useCallback(() => {
         setFormData({
-            name: company.name || '',
-            industry: company.industry || '',
-            size: company.size || '',
-            website: company.website || '',
-            phoneNumber: company.phoneNumber || '',
-            email: company.email || '',
-            address: company.address || '',
-            city: company.city || '',
-            state: company.state || '',
-            zipCode: company.zipCode || '',
-            country: company.country || '',
-            description: company.description || '',
-            status: company.status || 'active'
+            name: '',
+            industry: '',
+            size: '',
+            website: '',
+            phoneNumber: '',
+            email: '',
+            address: '',
+            city: '',
+            state: '',
+            zipCode: '',
+            country: '',
+            description: '',
+            status: 'active'
+        });
+    }, []);
+
+    // Logic: Open add modal
+    const openAddModal = useCallback(() => {
+        resetForm();
+        setShowAddModal(true);
+    }, [resetForm]);
+
+    // Logic: Open filter modal
+    const openFilterModal = useCallback(() => {
+        setFilterFormData(filters);
+        setShowFilterModal(true);
+    }, [filters]);
+
+    // Logic: Open edit modal
+    const openEditModal = useCallback((item) => {
+        setEditingItem(item);
+        setFormData({
+            name: item.name || '',
+            industry: item.industry || '',
+            size: item.size || '',
+            website: item.website || '',
+            phoneNumber: item.phoneNumber || '',
+            email: item.email || '',
+            address: item.address || '',
+            city: item.city || '',
+            state: item.state || '',
+            zipCode: item.zipCode || '',
+            country: item.country || '',
+            description: item.description || '',
+            status: item.status || 'active'
         });
         setShowEditModal(true);
     }, []);
 
-    // Handle delete
-    const handleDelete = useCallback(async (companyId) => {
-        if (!window.confirm('Are you sure you want to delete this company?')) {
+    // Logic: Handle form submission
+    const handleSubmit = useCallback(async (e) => {
+        e.preventDefault();
+        
+        try {
+            if (showEditModal) {
+                await axios.put(`${API_URL}/api/companies/${editingItem.id}`, formData, {
+                    withCredentials: true
+                });
+                setShowEditModal(false);
+            } else {
+                await axios.post(`${API_URL}/api/companies`, formData, {
+                    withCredentials: true
+                });
+                setShowAddModal(false);
+            }
+            
+            resetForm();
+            loadData(pagination.currentPage);
+        } catch (error) {
+            console.error('Error saving item:', error);
+            alert(error.response?.data?.message || 'Failed to save item');
+        }
+    }, [showEditModal, editingItem, formData, resetForm, loadData, pagination.currentPage]);
+
+    // Logic: Handle delete
+    const handleDelete = useCallback(async (itemId) => {
+        if (!window.confirm('Are you sure you want to delete this item?')) {
             return;
         }
         
         try {
-            await axios.delete(`${API_URL}/api/companies/${companyId}`, {
+            await axios.delete(`${API_URL}/api/companies/${itemId}`, {
                 withCredentials: true
             });
-            loadCompanies();
+            
+            loadData(pagination.currentPage);
         } catch (error) {
-            console.error('Error deleting company:', error);
-            alert('Failed to delete company');
+            console.error('Error deleting item:', error);
+            alert('Failed to delete item');
         }
-    }, [loadCompanies]);
+    }, [loadData, pagination.currentPage]);
 
-    // Get status color
-    const getStatusColor = useCallback((status) => {
-        const colors = {
-            active: 'bg-green-100 text-green-800',
-            inactive: 'bg-red-100 text-red-800',
-            prospect: 'bg-yellow-100 text-yellow-800'
-        };
-        return colors[status] || 'bg-gray-100 text-gray-800';
-    }, []);
-
-    // Filter Modal Component
-    const FilterModal = ({ isOpen, onClose }) => {
-        if (!isOpen) return null;
-
-        return (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                <div className="bg-white rounded-lg p-6 w-full max-w-md">
-                    <h3 className="text-lg font-semibold mb-4">Filter Companies</h3>
-                    <div className="space-y-4">
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">Industry</label>
-                            <input
-                                type="text"
-                                name="industry"
-                                value={filterFormData.industry}
-                                onChange={handleFilterInputChange}
-                                placeholder="Enter industry to filter"
-                                className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">Size</label>
-                            <select
-                                name="size"
-                                value={filterFormData.size}
-                                onChange={handleFilterInputChange}
-                                className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
-                            >
-                                <option value="">All Sizes</option>
-                                <option value="1-10">1-10 employees</option>
-                                <option value="11-50">11-50 employees</option>
-                                <option value="51-200">51-200 employees</option>
-                                <option value="201-500">201-500 employees</option>
-                                <option value="501-1000">501-1000 employees</option>
-                                <option value="1000+">1000+ employees</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">Status</label>
-                            <select
-                                name="status"
-                                value={filterFormData.status}
-                                onChange={handleFilterInputChange}
-                                className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
-                            >
-                                <option value="">All Statuses</option>
-                                <option value="active">Active</option>
-                                <option value="inactive">Inactive</option>
-                                <option value="prospect">Prospect</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div className="flex justify-end space-x-3 mt-6">
-                        <button
-                            onClick={onClose}
-                            className="px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50"
-                        >
-                            Cancel
-                        </button>
-                        <button
-                            onClick={applyFilters}
-                            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-                        >
-                            Apply Filters
-                        </button>
-                    </div>
-                </div>
-            </div>
-        );
-    };
-
-    // Company Modal Component
-    const CompanyModal = ({ isOpen, onClose, title, onSubmit }) => {
-        if (!isOpen) return null;
-
-        return (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-                    <h3 className="text-lg font-semibold mb-4">{title}</h3>
-                    <form onSubmit={onSubmit} className="space-y-4">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700">Company Name *</label>
-                                <input
-                                    type="text"
-                                    name="name"
-                                    value={formData.name}
-                                    onChange={handleInputChange}
-                                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
-                                    required
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700">Industry</label>
-                                <input
-                                    type="text"
-                                    name="industry"
-                                    value={formData.industry}
-                                    onChange={handleInputChange}
-                                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700">Size</label>
-                                <select
-                                    name="size"
-                                    value={formData.size}
-                                    onChange={handleInputChange}
-                                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
-                                >
-                                    <option value="">Select Size</option>
-                                    <option value="1-10">1-10 employees</option>
-                                    <option value="11-50">11-50 employees</option>
-                                    <option value="51-200">51-200 employees</option>
-                                    <option value="201-500">201-500 employees</option>
-                                    <option value="501-1000">501-1000 employees</option>
-                                    <option value="1000+">1000+ employees</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700">Website</label>
-                                <input
-                                    type="url"
-                                    name="website"
-                                    value={formData.website}
-                                    onChange={handleInputChange}
-                                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700">Phone Number</label>
-                                <input
-                                    type="tel"
-                                    name="phoneNumber"
-                                    value={formData.phoneNumber}
-                                    onChange={handleInputChange}
-                                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700">Email</label>
-                                <input
-                                    type="email"
-                                    name="email"
-                                    value={formData.email}
-                                    onChange={handleInputChange}
-                                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700">Status</label>
-                                <select
-                                    name="status"
-                                    value={formData.status}
-                                    onChange={handleInputChange}
-                                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
-                                >
-                                    <option value="active">Active</option>
-                                    <option value="inactive">Inactive</option>
-                                    <option value="prospect">Prospect</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700">Country</label>
-                                <input
-                                    type="text"
-                                    name="country"
-                                    value={formData.country}
-                                    onChange={handleInputChange}
-                                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
-                                />
-                            </div>
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">Address</label>
-                            <input
-                                type="text"
-                                name="address"
-                                value={formData.address}
-                                onChange={handleInputChange}
-                                className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
-                            />
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700">City</label>
-                                <input
-                                    type="text"
-                                    name="city"
-                                    value={formData.city}
-                                    onChange={handleInputChange}
-                                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700">State</label>
-                                <input
-                                    type="text"
-                                    name="state"
-                                    value={formData.state}
-                                    onChange={handleInputChange}
-                                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700">ZIP Code</label>
-                                <input
-                                    type="text"
-                                    name="zipCode"
-                                    value={formData.zipCode}
-                                    onChange={handleInputChange}
-                                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
-                                />
-                            </div>
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">Description</label>
-                            <textarea
-                                name="description"
-                                value={formData.description}
-                                onChange={handleInputChange}
-                                rows="3"
-                                className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
-                            />
-                        </div>
-                        <div className="flex justify-end space-x-3">
-                            <button
-                                type="button"
-                                onClick={onClose}
-                                className="px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                type="submit"
-                                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-                            >
-                                {editingCompany ? 'Update Company' : 'Create Company'}
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        );
-    };
-
+    // Rendering: Loading state
     if (loading) {
         return (
             <div className="flex items-center justify-center h-32">
@@ -500,12 +267,13 @@ const CompaniesWidget = () => {
         );
     }
 
+    // Rendering: Error state
     if (error) {
         return (
             <div className="text-center py-8">
                 <div className="text-red-600 text-sm">{error}</div>
                 <button
-                    onClick={() => loadCompanies()}
+                    onClick={() => loadData()}
                     className="mt-2 px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700"
                 >
                     Retry
@@ -524,7 +292,7 @@ const CompaniesWidget = () => {
                 <h2 className="text-lg font-semibold text-gray-900">Companies</h2>
                 <div className="flex space-x-2">
                     <button
-                        onClick={() => setShowFilterModal(true)}
+                        onClick={openFilterModal}
                         className={`px-3 py-1 text-sm rounded flex items-center space-x-1 ${
                             hasActiveFilters 
                                 ? 'bg-blue-100 text-blue-700 border border-blue-300' 
@@ -542,7 +310,7 @@ const CompaniesWidget = () => {
                         )}
                     </button>
                     <button
-                        onClick={() => setShowAddModal(true)}
+                        onClick={openAddModal}
                         className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 flex items-center space-x-1"
                     >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -560,10 +328,7 @@ const CompaniesWidget = () => {
                     placeholder="Search companies..."
                     value={searchInput}
                     onChange={(e) => handleSearchInputChange(e.target.value)}
-                    onKeyDown={(e) => {
-                        // Prevent any key events from bubbling up to parent components
-                        e.stopPropagation();
-                    }}
+                    onKeyDown={(e) => e.stopPropagation()}
                     className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                 />
             </div>
@@ -575,7 +340,6 @@ const CompaniesWidget = () => {
                         <div className="flex flex-wrap gap-2">
                             {Object.entries(filters).map(([key, value]) => {
                                 if (value && value !== '' && key !== 'search') {
-                                    // Get user-friendly label for filter key
                                     const getFilterLabel = (filterKey) => {
                                         const labels = {
                                             industry: 'Industry',
@@ -595,7 +359,7 @@ const CompaniesWidget = () => {
                                                 onClick={() => {
                                                     setFilters(prev => ({ ...prev, [key]: '' }));
                                                     setFilterFormData(prev => ({ ...prev, [key]: '' }));
-                                                    loadCompanies(1);
+                                                    loadData(1);
                                                 }}
                                                 className="ml-1 inline-flex items-center justify-center w-4 h-4 rounded-full text-blue-400 hover:bg-blue-200 hover:text-blue-500"
                                             >
@@ -619,7 +383,7 @@ const CompaniesWidget = () => {
                 </div>
             )}
 
-            {/* Companies Table */}
+            {/* Data Table */}
             <div className="overflow-x-auto" style={{ maxHeight: 'calc(100vh - 300px)' }}>
                 <table className="min-w-full bg-white border border-gray-200 rounded-lg">
                     <thead className="bg-gray-50">
@@ -645,54 +409,54 @@ const CompaniesWidget = () => {
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200">
-                        {companies.map((company) => (
-                            <tr key={company.id} className="hover:bg-gray-50 transition-colors">
+                        {data.map((item) => (
+                            <tr key={item.id} className="hover:bg-gray-50 transition-colors">
                                 <td className="px-4 py-3 whitespace-nowrap">
                                     <div className="flex items-center">
                                         <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center mr-3">
                                             <span className="text-xs font-medium text-blue-600">
-                                                {company.name.charAt(0)}
+                                                {item.name.charAt(0)}
                                             </span>
                                         </div>
                                         <div>
                                             <div className="text-sm font-medium text-gray-900">
-                                                {company.name}
+                                                {item.name}
                                             </div>
                                             <div className="text-xs text-gray-500">
-                                                {company.website || 'No Website'}
+                                                {item.website || 'No Website'}
                                             </div>
                                         </div>
                                     </div>
                                 </td>
                                 <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
-                                    {company.industry || '-'}
+                                    {item.industry || '-'}
                                 </td>
                                 <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
-                                    {company.size || '-'}
+                                    {item.size || '-'}
                                 </td>
                                 <td className="px-4 py-3 whitespace-nowrap">
                                     <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                                        company.status === 'active' ? 'bg-green-100 text-green-800' :
-                                        company.status === 'inactive' ? 'bg-red-100 text-red-800' :
+                                        item.status === 'active' ? 'bg-green-100 text-green-800' :
+                                        item.status === 'inactive' ? 'bg-red-100 text-red-800' :
                                         'bg-yellow-100 text-yellow-800'
                                     }`}>
-                                        {company.status}
+                                        {item.status}
                                     </span>
                                 </td>
                                 <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
-                                    <div>{company.phoneNumber || '-'}</div>
-                                    <div className="text-xs text-gray-500">{company.email || '-'}</div>
+                                    <div>{item.phoneNumber || '-'}</div>
+                                    <div className="text-xs text-gray-500">{item.email || '-'}</div>
                                 </td>
                                 <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
                                     <div className="flex space-x-2">
                                         <button
-                                            onClick={() => handleEdit(company)}
+                                            onClick={() => openEditModal(item)}
                                             className="text-blue-600 hover:text-blue-900 text-xs font-medium"
                                         >
                                             Edit
                                         </button>
                                         <button
-                                            onClick={() => handleDelete(company.id)}
+                                            onClick={() => handleDelete(item.id)}
                                             className="text-red-600 hover:text-red-900 text-xs font-medium"
                                         >
                                             Delete
@@ -712,14 +476,14 @@ const CompaniesWidget = () => {
                         </div>
                         <div className="flex space-x-1">
                             <button
-                                onClick={() => loadCompanies(pagination.currentPage - 1)}
+                                onClick={() => loadData(pagination.currentPage - 1)}
                                 disabled={pagination.currentPage === 1}
                                 className="px-2 py-1 text-xs border border-gray-300 rounded disabled:opacity-50"
                             >
                                 Previous
                             </button>
                             <button
-                                onClick={() => loadCompanies(pagination.currentPage + 1)}
+                                onClick={() => loadData(pagination.currentPage + 1)}
                                 disabled={pagination.currentPage === pagination.totalPages}
                                 className="px-2 py-1 text-xs border border-gray-300 rounded disabled:opacity-50"
                             >
@@ -730,22 +494,249 @@ const CompaniesWidget = () => {
                 )}
             </div>
 
-
-
             {/* Modals */}
-            <FilterModal isOpen={showFilterModal} onClose={() => setShowFilterModal(false)} />
-            <CompanyModal 
-                isOpen={showAddModal} 
-                onClose={() => setShowAddModal(false)} 
-                title="Add New Company"
-                onSubmit={handleSubmit}
-            />
-            <CompanyModal 
-                isOpen={showEditModal} 
-                onClose={() => setShowEditModal(false)} 
-                title="Edit Company"
-                onSubmit={handleSubmit}
-            />
+            {/* Filter Modal */}
+            {showFilterModal && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-lg p-6 w-full max-w-md">
+                        <h3 className="text-lg font-semibold mb-4">Filter Companies</h3>
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700">Industry</label>
+                                <input
+                                    type="text"
+                                    name="industry"
+                                    value={filterFormData.industry || ''}
+                                    onChange={handleFilterInputChange}
+                                    placeholder="Enter industry to filter"
+                                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700">Size</label>
+                                <select
+                                    name="size"
+                                    value={filterFormData.size || ''}
+                                    onChange={handleFilterInputChange}
+                                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
+                                >
+                                    <option value="">All Sizes</option>
+                                    <option value="1-10">1-10 employees</option>
+                                    <option value="11-50">11-50 employees</option>
+                                    <option value="51-200">51-200 employees</option>
+                                    <option value="201-500">201-500 employees</option>
+                                    <option value="501-1000">501-1000 employees</option>
+                                    <option value="1000+">1000+ employees</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700">Status</label>
+                                <select
+                                    name="status"
+                                    value={filterFormData.status || ''}
+                                    onChange={handleFilterInputChange}
+                                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
+                                >
+                                    <option value="">All Statuses</option>
+                                    <option value="active">Active</option>
+                                    <option value="inactive">Inactive</option>
+                                    <option value="prospect">Prospect</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div className="flex justify-end space-x-3 mt-6">
+                            <button
+                                onClick={() => setShowFilterModal(false)}
+                                className="px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={applyFilters}
+                                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                            >
+                                Apply Filters
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Add/Edit Modal */}
+            {(showAddModal || showEditModal) && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+                        <h3 className="text-lg font-semibold mb-4">
+                            {showEditModal ? 'Edit Company' : 'Add New Company'}
+                        </h3>
+                        <form onSubmit={handleSubmit} className="space-y-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700">Company Name *</label>
+                                    <input
+                                        type="text"
+                                        name="name"
+                                        value={formData.name}
+                                        onChange={handleInputChange}
+                                        className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
+                                        required
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700">Industry</label>
+                                    <input
+                                        type="text"
+                                        name="industry"
+                                        value={formData.industry}
+                                        onChange={handleInputChange}
+                                        className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700">Size</label>
+                                    <select
+                                        name="size"
+                                        value={formData.size}
+                                        onChange={handleInputChange}
+                                        className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
+                                    >
+                                        <option value="">Select Size</option>
+                                        <option value="1-10">1-10 employees</option>
+                                        <option value="11-50">11-50 employees</option>
+                                        <option value="51-200">51-200 employees</option>
+                                        <option value="201-500">201-500 employees</option>
+                                        <option value="501-1000">501-1000 employees</option>
+                                        <option value="1000+">1000+ employees</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700">Website</label>
+                                    <input
+                                        type="url"
+                                        name="website"
+                                        value={formData.website}
+                                        onChange={handleInputChange}
+                                        className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700">Phone Number</label>
+                                    <input
+                                        type="tel"
+                                        name="phoneNumber"
+                                        value={formData.phoneNumber}
+                                        onChange={handleInputChange}
+                                        className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700">Email</label>
+                                    <input
+                                        type="email"
+                                        name="email"
+                                        value={formData.email}
+                                        onChange={handleInputChange}
+                                        className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700">Status</label>
+                                    <select
+                                        name="status"
+                                        value={formData.status}
+                                        onChange={handleInputChange}
+                                        className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
+                                    >
+                                        <option value="active">Active</option>
+                                        <option value="inactive">Inactive</option>
+                                        <option value="prospect">Prospect</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700">Country</label>
+                                    <input
+                                        type="text"
+                                        name="country"
+                                        value={formData.country}
+                                        onChange={handleInputChange}
+                                        className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
+                                    />
+                                </div>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700">Address</label>
+                                <input
+                                    type="text"
+                                    name="address"
+                                    value={formData.address}
+                                    onChange={handleInputChange}
+                                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
+                                />
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700">City</label>
+                                    <input
+                                        type="text"
+                                        name="city"
+                                        value={formData.city}
+                                        onChange={handleInputChange}
+                                        className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700">State</label>
+                                    <input
+                                        type="text"
+                                        name="state"
+                                        value={formData.state}
+                                        onChange={handleInputChange}
+                                        className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700">ZIP Code</label>
+                                    <input
+                                        type="text"
+                                        name="zipCode"
+                                        value={formData.zipCode}
+                                        onChange={handleInputChange}
+                                        className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
+                                    />
+                                </div>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700">Description</label>
+                                <textarea
+                                    name="description"
+                                    value={formData.description}
+                                    onChange={handleInputChange}
+                                    rows="3"
+                                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
+                                />
+                            </div>
+                            <div className="flex justify-end space-x-3">
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setShowAddModal(false);
+                                        setShowEditModal(false);
+                                    }}
+                                    className="px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                                >
+                                    {showEditModal ? 'Update Company' : 'Create Company'}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

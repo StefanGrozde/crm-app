@@ -5,8 +5,11 @@ import { AuthContext } from '../context/AuthContext';
 const API_URL = process.env.REACT_APP_API_URL;
 
 const UsersWidget = () => {
+    // Context
     const { user } = useContext(AuthContext);
-    const [users, setUsers] = useState([]);
+    
+    // Core data states
+    const [data, setData] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [pagination, setPagination] = useState({
@@ -23,20 +26,17 @@ const UsersWidget = () => {
         company: ''
     });
     
-    // Separate state for search input
+    // Separate search input state
     const [searchInput, setSearchInput] = useState('');
     
-    // Filter modal state
+    // Modal states
     const [showFilterModal, setShowFilterModal] = useState(false);
-    const [filterFormData, setFilterFormData] = useState({
-        role: '',
-        company: ''
-    });
-    
-    // Form states
     const [showAddModal, setShowAddModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
-    const [editingUser, setEditingUser] = useState(null);
+    const [editingItem, setEditingItem] = useState(null);
+    
+    // Form states
+    const [filterFormData, setFilterFormData] = useState({});
     const [formData, setFormData] = useState({
         firstName: '',
         lastName: '',
@@ -45,11 +45,11 @@ const UsersWidget = () => {
         companyId: ''
     });
     
-    // Additional data for dropdowns
-    const [companies, setCompanies] = useState([]);
+    // Dropdown data
+    const [dropdownData, setDropdownData] = useState([]);
 
-    // Load users
-    const loadUsers = useCallback(async (page = 1) => {
+    // Logic: Load data
+    const loadData = useCallback(async (page = 1) => {
         try {
             setLoading(true);
             const params = new URLSearchParams({
@@ -62,36 +62,36 @@ const UsersWidget = () => {
                 withCredentials: true
             });
             
-            setUsers(response.data.users);
+            setData(response.data.users);
             setPagination(response.data.pagination);
         } catch (error) {
-            console.error('Error loading users:', error);
-            setError('Failed to load users');
+            console.error('Error loading data:', error);
+            setError('Failed to load data');
         } finally {
             setLoading(false);
         }
     }, [filters, pagination.itemsPerPage]);
 
-    // Load dropdown data
+    // Logic: Load dropdown data
     const loadDropdownData = useCallback(async () => {
         try {
-            const companiesResponse = await axios.get(`${API_URL}/api/companies`, { withCredentials: true });
-            setCompanies(companiesResponse.data);
+            const companiesResponse = await axios.get(`${API_URL}/api/companies`, { 
+                withCredentials: true 
+            });
+            setDropdownData(companiesResponse.data);
         } catch (error) {
             console.error('Error loading dropdown data:', error);
         }
     }, []);
 
+    // Logic: Initialize component
     useEffect(() => {
         const initializeComponent = async () => {
             try {
-                await Promise.all([
-                    loadUsers(),
-                    loadDropdownData()
-                ]);
+                await Promise.all([loadData(), loadDropdownData()]);
             } catch (error) {
-                console.error('Error initializing UsersWidget:', error);
-                setError('Failed to initialize users widget');
+                console.error('Error initializing widget:', error);
+                setError('Failed to initialize widget');
             }
         };
 
@@ -102,9 +102,9 @@ const UsersWidget = () => {
                 clearTimeout(window.searchTimeout);
             }
         };
-    }, [loadUsers, loadDropdownData]);
+    }, [loadData, loadDropdownData]);
 
-    // Handle search input changes
+    // Logic: Handle search input changes
     const handleSearchInputChange = useCallback((value) => {
         if (searchInput === value) return;
         
@@ -123,106 +123,117 @@ const UsersWidget = () => {
                 }
                 return newFilters;
             });
-            loadUsers(1);
+            loadData(1);
         }, 300);
-    }, [searchInput, loadUsers]);
+    }, [searchInput, loadData]);
 
-    // Handle filter form input changes
+    // Logic: Handle filter form input changes
     const handleFilterInputChange = useCallback((e) => {
         const { name, value } = e.target;
         setFilterFormData(prev => ({ ...prev, [name]: value }));
     }, []);
 
-    // Apply filters
+    // Logic: Apply filters
     const applyFilters = useCallback(() => {
         setFilters(prev => ({ ...prev, ...filterFormData }));
         setShowFilterModal(false);
-        loadUsers(1);
-    }, [filterFormData, loadUsers]);
+        loadData(1);
+    }, [filterFormData, loadData]);
 
-    // Clear filters
+    // Logic: Clear filters
     const clearFilters = useCallback(() => {
-        const clearedFilters = {
-            search: searchInput,
-            role: '',
-            company: ''
-        };
+        const clearedFilters = { search: searchInput };
         setFilters(clearedFilters);
-        setFilterFormData({
-            role: '',
-            company: ''
-        });
-        loadUsers(1);
-    }, [searchInput, loadUsers]);
+        setFilterFormData({});
+        loadData(1);
+    }, [searchInput, loadData]);
 
-    // Handle form input changes
+    // Logic: Handle form input changes
     const handleInputChange = useCallback((e) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
     }, []);
 
-    // Handle form submission
-    const handleSubmit = useCallback(async (e) => {
-        e.preventDefault();
-        try {
-            if (editingUser) {
-                await axios.put(`${API_URL}/api/users/${editingUser.id}`, formData, {
-                    withCredentials: true
-                });
-            } else {
-                await axios.post(`${API_URL}/api/users`, formData, {
-                    withCredentials: true
-                });
-            }
-            
-            setShowAddModal(false);
-            setShowEditModal(false);
-            setEditingUser(null);
-            setFormData({
-                firstName: '',
-                lastName: '',
-                email: '',
-                role: 'Sales Representative',
-                companyId: ''
-            });
-            loadUsers();
-        } catch (error) {
-            console.error('Error saving user:', error);
-            alert('Failed to save user');
-        }
-    }, [editingUser, formData, loadUsers]);
-
-    // Handle edit
-    const handleEdit = useCallback((user) => {
-        setEditingUser(user);
+    // Logic: Reset form
+    const resetForm = useCallback(() => {
         setFormData({
-            firstName: user.firstName || '',
-            lastName: user.lastName || '',
-            email: user.email || '',
-            role: user.role || 'Sales Representative',
-            companyId: user.companyId || ''
+            firstName: '',
+            lastName: '',
+            email: '',
+            role: 'Sales Representative',
+            companyId: ''
+        });
+    }, []);
+
+    // Logic: Open add modal
+    const openAddModal = useCallback(() => {
+        resetForm();
+        setShowAddModal(true);
+    }, [resetForm]);
+
+    // Logic: Open filter modal
+    const openFilterModal = useCallback(() => {
+        setFilterFormData(filters);
+        setShowFilterModal(true);
+    }, [filters]);
+
+    // Logic: Open edit modal
+    const openEditModal = useCallback((item) => {
+        setEditingItem(item);
+        setFormData({
+            firstName: item.firstName || '',
+            lastName: item.lastName || '',
+            email: item.email || '',
+            role: item.role || 'Sales Representative',
+            companyId: item.companyId || ''
         });
         setShowEditModal(true);
     }, []);
 
-    // Handle delete
-    const handleDelete = useCallback(async (userId) => {
-        if (!window.confirm('Are you sure you want to delete this user?')) {
+    // Logic: Handle form submission
+    const handleSubmit = useCallback(async (e) => {
+        e.preventDefault();
+        
+        try {
+            if (showEditModal) {
+                await axios.put(`${API_URL}/api/users/${editingItem.id}`, formData, {
+                    withCredentials: true
+                });
+                setShowEditModal(false);
+            } else {
+                await axios.post(`${API_URL}/api/users`, formData, {
+                    withCredentials: true
+                });
+                setShowAddModal(false);
+            }
+            
+            resetForm();
+            loadData(pagination.currentPage);
+        } catch (error) {
+            console.error('Error saving item:', error);
+            alert(error.response?.data?.message || 'Failed to save item');
+        }
+    }, [showEditModal, editingItem, formData, resetForm, loadData, pagination.currentPage]);
+
+    // Logic: Handle delete
+    const handleDelete = useCallback(async (itemId) => {
+        if (!window.confirm('Are you sure you want to delete this item?')) {
             return;
         }
         
         try {
-            await axios.delete(`${API_URL}/api/users/${userId}`, {
+            await axios.delete(`${API_URL}/api/users/${itemId}`, {
                 withCredentials: true
             });
-            loadUsers();
+            
+            loadData(pagination.currentPage);
         } catch (error) {
-            console.error('Error deleting user:', error);
-            alert('Failed to delete user');
+            console.error('Error deleting item:', error);
+            alert('Failed to delete item');
         }
-    }, [loadUsers]);
+    }, [loadData, pagination.currentPage]);
 
-    // Get role color
+    // Logic: Get role color
     const getRoleColor = useCallback((role) => {
         const colors = {
             'Administrator': 'bg-red-100 text-red-800',
@@ -234,159 +245,7 @@ const UsersWidget = () => {
         return colors[role] || 'bg-gray-100 text-gray-800';
     }, []);
 
-    // Filter Modal Component
-    const FilterModal = ({ isOpen, onClose }) => {
-        if (!isOpen) return null;
-
-        return (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                <div className="bg-white rounded-lg p-6 w-full max-w-md">
-                    <h3 className="text-lg font-semibold mb-4">Filter Users</h3>
-                    <div className="space-y-4">
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">Role</label>
-                            <select
-                                name="role"
-                                value={filterFormData.role}
-                                onChange={handleFilterInputChange}
-                                className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
-                            >
-                                <option value="">All Roles</option>
-                                <option value="Sales Representative">Sales Representative</option>
-                                <option value="Sales Manager">Sales Manager</option>
-                                <option value="Marketing Manager">Marketing Manager</option>
-                                <option value="Support Representative">Support Representative</option>
-                                <option value="Administrator">Administrator</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">Company</label>
-                            <select
-                                name="company"
-                                value={filterFormData.company}
-                                onChange={handleFilterInputChange}
-                                className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
-                            >
-                                <option value="">All Companies</option>
-                                {companies.map(company => (
-                                    <option key={company.id} value={company.id}>{company.name}</option>
-                                ))}
-                            </select>
-                        </div>
-                    </div>
-                    <div className="flex justify-end space-x-3 mt-6">
-                        <button
-                            onClick={onClose}
-                            className="px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50"
-                        >
-                            Cancel
-                        </button>
-                        <button
-                            onClick={applyFilters}
-                            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-                        >
-                            Apply Filters
-                        </button>
-                    </div>
-                </div>
-            </div>
-        );
-    };
-
-    // User Modal Component
-    const UserModal = ({ isOpen, onClose, title, onSubmit }) => {
-        if (!isOpen) return null;
-
-        return (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                <div className="bg-white rounded-lg p-6 w-full max-w-md">
-                    <h3 className="text-lg font-semibold mb-4">{title}</h3>
-                    <form onSubmit={onSubmit} className="space-y-4">
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">First Name *</label>
-                            <input
-                                type="text"
-                                name="firstName"
-                                value={formData.firstName}
-                                onChange={handleInputChange}
-                                className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
-                                required
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">Last Name *</label>
-                            <input
-                                type="text"
-                                name="lastName"
-                                value={formData.lastName}
-                                onChange={handleInputChange}
-                                className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
-                                required
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">Email *</label>
-                            <input
-                                type="email"
-                                name="email"
-                                value={formData.email}
-                                onChange={handleInputChange}
-                                className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
-                                required
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">Role</label>
-                            <select
-                                name="role"
-                                value={formData.role}
-                                onChange={handleInputChange}
-                                className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
-                            >
-                                <option value="Sales Representative">Sales Representative</option>
-                                <option value="Sales Manager">Sales Manager</option>
-                                <option value="Marketing Manager">Marketing Manager</option>
-                                <option value="Support Representative">Support Representative</option>
-                                <option value="Administrator">Administrator</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">Company</label>
-                            <select
-                                name="companyId"
-                                value={formData.companyId}
-                                onChange={handleInputChange}
-                                className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
-                            >
-                                <option value="">No Company</option>
-                                {companies.map(company => (
-                                    <option key={company.id} value={company.id}>
-                                        {company.name}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-                        <div className="flex justify-end space-x-3">
-                            <button
-                                type="button"
-                                onClick={onClose}
-                                className="px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                type="submit"
-                                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-                            >
-                                {editingUser ? 'Update User' : 'Create User'}
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        );
-    };
-
+    // Rendering: Loading state
     if (loading) {
         return (
             <div className="flex items-center justify-center h-32">
@@ -395,12 +254,13 @@ const UsersWidget = () => {
         );
     }
 
+    // Rendering: Error state
     if (error) {
         return (
             <div className="text-center py-8">
                 <div className="text-red-600 text-sm">{error}</div>
                 <button
-                    onClick={() => loadUsers()}
+                    onClick={() => loadData()}
                     className="mt-2 px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700"
                 >
                     Retry
@@ -419,7 +279,7 @@ const UsersWidget = () => {
                 <h2 className="text-lg font-semibold text-gray-900">Users</h2>
                 <div className="flex space-x-2">
                     <button
-                        onClick={() => setShowFilterModal(true)}
+                        onClick={openFilterModal}
                         className={`px-3 py-1 text-sm rounded flex items-center space-x-1 ${
                             hasActiveFilters 
                                 ? 'bg-blue-100 text-blue-700 border border-blue-300' 
@@ -437,7 +297,7 @@ const UsersWidget = () => {
                         )}
                     </button>
                     <button
-                        onClick={() => setShowAddModal(true)}
+                        onClick={openAddModal}
                         className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 flex items-center space-x-1"
                     >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -455,10 +315,7 @@ const UsersWidget = () => {
                     placeholder="Search users..."
                     value={searchInput}
                     onChange={(e) => handleSearchInputChange(e.target.value)}
-                    onKeyDown={(e) => {
-                        // Prevent any key events from bubbling up to parent components
-                        e.stopPropagation();
-                    }}
+                    onKeyDown={(e) => e.stopPropagation()}
                     className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                 />
             </div>
@@ -470,7 +327,6 @@ const UsersWidget = () => {
                         <div className="flex flex-wrap gap-2">
                             {Object.entries(filters).map(([key, value]) => {
                                 if (value && value !== '' && key !== 'search') {
-                                    // Get user-friendly label for filter key
                                     const getFilterLabel = (filterKey) => {
                                         const labels = {
                                             role: 'Role',
@@ -489,7 +345,7 @@ const UsersWidget = () => {
                                                 onClick={() => {
                                                     setFilters(prev => ({ ...prev, [key]: '' }));
                                                     setFilterFormData(prev => ({ ...prev, [key]: '' }));
-                                                    loadUsers(1);
+                                                    loadData(1);
                                                 }}
                                                 className="ml-1 inline-flex items-center justify-center w-4 h-4 rounded-full text-blue-400 hover:bg-blue-200 hover:text-blue-500"
                                             >
@@ -513,7 +369,7 @@ const UsersWidget = () => {
                 </div>
             )}
 
-            {/* Users Table */}
+            {/* Data Table */}
             <div className="overflow-x-auto" style={{ maxHeight: 'calc(100vh - 300px)' }}>
                 <table className="min-w-full bg-white border border-gray-200 rounded-lg">
                     <thead className="bg-gray-50">
@@ -533,43 +389,43 @@ const UsersWidget = () => {
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200">
-                        {users.map((userItem) => (
-                            <tr key={userItem.id} className="hover:bg-gray-50 transition-colors">
+                        {data.map((item) => (
+                            <tr key={item.id} className="hover:bg-gray-50 transition-colors">
                                 <td className="px-4 py-3 whitespace-nowrap">
                                     <div className="flex items-center">
                                         <div className="flex-shrink-0 h-10 w-10">
                                             <div className="h-10 w-10 rounded-full bg-blue-500 flex items-center justify-center">
                                                 <span className="text-sm font-medium text-white">
-                                                    {userItem.username.charAt(0).toUpperCase()}
+                                                    {item.username.charAt(0).toUpperCase()}
                                                 </span>
                                             </div>
                                         </div>
                                         <div className="ml-4">
                                             <div className="text-sm font-medium text-gray-900">
-                                                {userItem.username}
+                                                {item.username}
                                             </div>
-                                            <div className="text-xs text-gray-500">{userItem.email}</div>
+                                            <div className="text-xs text-gray-500">{item.email}</div>
                                         </div>
                                     </div>
                                 </td>
                                 <td className="px-4 py-3 whitespace-nowrap">
-                                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getRoleColor(userItem.role)}`}>
-                                        {userItem.role}
+                                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getRoleColor(item.role)}`}>
+                                        {item.role}
                                     </span>
                                 </td>
                                 <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
-                                    {userItem.company ? userItem.company.name : 'No Company'}
+                                    {item.company ? item.company.name : 'No Company'}
                                 </td>
                                 <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
                                     <div className="flex space-x-2">
                                         <button
-                                            onClick={() => handleEdit(userItem)}
+                                            onClick={() => openEditModal(item)}
                                             className="text-blue-600 hover:text-blue-900 text-xs font-medium"
                                         >
                                             Edit
                                         </button>
                                         <button
-                                            onClick={() => handleDelete(userItem.id)}
+                                            onClick={() => handleDelete(item.id)}
                                             className="text-red-600 hover:text-red-900 text-xs font-medium"
                                         >
                                             Delete
@@ -589,14 +445,14 @@ const UsersWidget = () => {
                         </div>
                         <div className="flex space-x-1">
                             <button
-                                onClick={() => loadUsers(pagination.currentPage - 1)}
+                                onClick={() => loadData(pagination.currentPage - 1)}
                                 disabled={pagination.currentPage === 1}
                                 className="px-2 py-1 text-xs border border-gray-300 rounded disabled:opacity-50"
                             >
                                 Previous
                             </button>
                             <button
-                                onClick={() => loadUsers(pagination.currentPage + 1)}
+                                onClick={() => loadData(pagination.currentPage + 1)}
                                 disabled={pagination.currentPage === pagination.totalPages}
                                 className="px-2 py-1 text-xs border border-gray-300 rounded disabled:opacity-50"
                             >
@@ -607,22 +463,156 @@ const UsersWidget = () => {
                 )}
             </div>
 
-
-
             {/* Modals */}
-            <FilterModal isOpen={showFilterModal} onClose={() => setShowFilterModal(false)} />
-            <UserModal 
-                isOpen={showAddModal} 
-                onClose={() => setShowAddModal(false)} 
-                title="Add New User"
-                onSubmit={handleSubmit}
-            />
-            <UserModal 
-                isOpen={showEditModal} 
-                onClose={() => setShowEditModal(false)} 
-                title="Edit User"
-                onSubmit={handleSubmit}
-            />
+            {/* Filter Modal */}
+            {showFilterModal && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-lg p-6 w-full max-w-md">
+                        <h3 className="text-lg font-semibold mb-4">Filter Users</h3>
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700">Role</label>
+                                <select
+                                    name="role"
+                                    value={filterFormData.role || ''}
+                                    onChange={handleFilterInputChange}
+                                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
+                                >
+                                    <option value="">All Roles</option>
+                                    <option value="Sales Representative">Sales Representative</option>
+                                    <option value="Sales Manager">Sales Manager</option>
+                                    <option value="Marketing Manager">Marketing Manager</option>
+                                    <option value="Support Representative">Support Representative</option>
+                                    <option value="Administrator">Administrator</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700">Company</label>
+                                <select
+                                    name="company"
+                                    value={filterFormData.company || ''}
+                                    onChange={handleFilterInputChange}
+                                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
+                                >
+                                    <option value="">All Companies</option>
+                                    {dropdownData.map(company => (
+                                        <option key={company.id} value={company.id}>{company.name}</option>
+                                    ))}
+                                </select>
+                            </div>
+                        </div>
+                        <div className="flex justify-end space-x-3 mt-6">
+                            <button
+                                onClick={() => setShowFilterModal(false)}
+                                className="px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={applyFilters}
+                                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                            >
+                                Apply Filters
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Add/Edit Modal */}
+            {(showAddModal || showEditModal) && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-lg p-6 w-full max-w-md">
+                        <h3 className="text-lg font-semibold mb-4">
+                            {showEditModal ? 'Edit User' : 'Add New User'}
+                        </h3>
+                        <form onSubmit={handleSubmit} className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700">First Name *</label>
+                                <input
+                                    type="text"
+                                    name="firstName"
+                                    value={formData.firstName}
+                                    onChange={handleInputChange}
+                                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
+                                    required
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700">Last Name *</label>
+                                <input
+                                    type="text"
+                                    name="lastName"
+                                    value={formData.lastName}
+                                    onChange={handleInputChange}
+                                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
+                                    required
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700">Email *</label>
+                                <input
+                                    type="email"
+                                    name="email"
+                                    value={formData.email}
+                                    onChange={handleInputChange}
+                                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
+                                    required
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700">Role</label>
+                                <select
+                                    name="role"
+                                    value={formData.role}
+                                    onChange={handleInputChange}
+                                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
+                                >
+                                    <option value="Sales Representative">Sales Representative</option>
+                                    <option value="Sales Manager">Sales Manager</option>
+                                    <option value="Marketing Manager">Marketing Manager</option>
+                                    <option value="Support Representative">Support Representative</option>
+                                    <option value="Administrator">Administrator</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700">Company</label>
+                                <select
+                                    name="companyId"
+                                    value={formData.companyId}
+                                    onChange={handleInputChange}
+                                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
+                                >
+                                    <option value="">No Company</option>
+                                    {dropdownData.map(company => (
+                                        <option key={company.id} value={company.id}>
+                                            {company.name}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div className="flex justify-end space-x-3">
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setShowAddModal(false);
+                                        setShowEditModal(false);
+                                    }}
+                                    className="px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                                >
+                                    {showEditModal ? 'Update User' : 'Create User'}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
