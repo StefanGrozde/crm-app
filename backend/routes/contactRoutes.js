@@ -115,7 +115,91 @@ router.get('/', protect, async (req, res) => {
     }
 });
 
+// GET /api/contacts/filter-options - Get available filter options
+router.get('/filter-options', protect, async (req, res) => {
+    try {
+        // Get all unique sources
+        const sources = await Contact.findAll({
+            attributes: [
+                'source',
+                [Contact.sequelize.fn('COUNT', Contact.sequelize.col('id')), 'count']
+            ],
+            where: {
+                source: { [Op.ne]: null },
+                companyId: req.user.companyId
+            },
+            group: ['source'],
+            order: [['source', 'ASC']]
+        });
 
+        // Get all unique departments
+        const departments = await Contact.findAll({
+            attributes: [
+                'department',
+                [Contact.sequelize.fn('COUNT', Contact.sequelize.col('id')), 'count']
+            ],
+            where: {
+                department: { [Op.ne]: null },
+                companyId: req.user.companyId
+            },
+            group: ['department'],
+            order: [['department', 'ASC']]
+        });
+
+        // Get all unique cities
+        const cities = await Contact.findAll({
+            attributes: [
+                'city',
+                [Contact.sequelize.fn('COUNT', Contact.sequelize.col('id')), 'count']
+            ],
+            where: {
+                city: { [Op.ne]: null },
+                companyId: req.user.companyId
+            },
+            group: ['city'],
+            order: [['city', 'ASC']]
+        });
+
+        // Get all unique states
+        const states = await Contact.findAll({
+            attributes: [
+                'state',
+                [Contact.sequelize.fn('COUNT', Contact.sequelize.col('id')), 'count']
+            ],
+            where: {
+                state: { [Op.ne]: null },
+                companyId: req.user.companyId
+            },
+            group: ['state'],
+            order: [['state', 'ASC']]
+        });
+
+        // Get all unique countries
+        const countries = await Contact.findAll({
+            attributes: [
+                'country',
+                [Contact.sequelize.fn('COUNT', Contact.sequelize.col('id')), 'count']
+            ],
+            where: {
+                country: { [Op.ne]: null },
+                companyId: req.user.companyId
+            },
+            group: ['country'],
+            order: [['country', 'ASC']]
+        });
+
+        res.json({
+            sources: sources.map(s => ({ value: s.source, count: s.dataValues.count })),
+            departments: departments.map(d => ({ value: d.department, count: d.dataValues.count })),
+            cities: cities.map(c => ({ value: c.city, count: c.dataValues.count })),
+            states: states.map(s => ({ value: s.state, count: s.dataValues.count })),
+            countries: countries.map(c => ({ value: c.country, count: c.dataValues.count }))
+        });
+    } catch (error) {
+        console.error('Error fetching filter options:', error);
+        res.status(500).json({ message: 'Failed to fetch filter options' });
+    }
+});
 
 // GET /api/contacts/:id - Get a specific contact
 router.get('/:id', protect, async (req, res) => {
@@ -414,92 +498,6 @@ router.post('/:id/undo', protect, async (req, res) => {
     } catch (error) {
         console.error('Error restoring contact:', error);
         res.status(500).json({ message: 'Failed to restore contact' });
-    }
-});
-
-// GET /api/contacts/filter-options - Get available filter options
-router.get('/filter-options', protect, async (req, res) => {
-    try {
-        // Get all unique sources
-        const sources = await Contact.findAll({
-            attributes: [
-                'source',
-                [Contact.sequelize.fn('COUNT', Contact.sequelize.col('id')), 'count']
-            ],
-            where: {
-                source: { [Op.ne]: null },
-                companyId: req.user.companyId
-            },
-            group: ['source'],
-            order: [['source', 'ASC']]
-        });
-
-        // Get all unique departments
-        const departments = await Contact.findAll({
-            attributes: [
-                'department',
-                [Contact.sequelize.fn('COUNT', Contact.sequelize.col('id')), 'count']
-            ],
-            where: {
-                department: { [Op.ne]: null },
-                companyId: req.user.companyId
-            },
-            group: ['department'],
-            order: [['department', 'ASC']]
-        });
-
-        // Get all unique cities
-        const cities = await Contact.findAll({
-            attributes: [
-                'city',
-                [Contact.sequelize.fn('COUNT', Contact.sequelize.col('id')), 'count']
-            ],
-            where: {
-                city: { [Op.ne]: null },
-                companyId: req.user.companyId
-            },
-            group: ['city'],
-            order: [['city', 'ASC']]
-        });
-
-        // Get all unique states
-        const states = await Contact.findAll({
-            attributes: [
-                'state',
-                [Contact.sequelize.fn('COUNT', Contact.sequelize.col('id')), 'count']
-            ],
-            where: {
-                state: { [Op.ne]: null },
-                companyId: req.user.companyId
-            },
-            group: ['state'],
-            order: [['state', 'ASC']]
-        });
-
-        // Get all unique countries
-        const countries = await Contact.findAll({
-            attributes: [
-                'country',
-                [Contact.sequelize.fn('COUNT', Contact.sequelize.col('id')), 'count']
-            ],
-            where: {
-                country: { [Op.ne]: null },
-                companyId: req.user.companyId
-            },
-            group: ['country'],
-            order: [['country', 'ASC']]
-        });
-
-        res.json({
-            sources: sources.map(s => ({ value: s.source, count: s.dataValues.count })),
-            departments: departments.map(d => ({ value: d.department, count: d.dataValues.count })),
-            cities: cities.map(c => ({ value: c.city, count: c.dataValues.count })),
-            states: states.map(s => ({ value: s.state, count: s.dataValues.count })),
-            countries: countries.map(c => ({ value: c.country, count: c.dataValues.count }))
-        });
-    } catch (error) {
-        console.error('Error fetching filter options:', error);
-        res.status(500).json({ message: 'Failed to fetch filter options' });
     }
 });
 
