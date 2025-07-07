@@ -196,7 +196,7 @@ const Navbar = ({
                             </select>
 
                             {/* Edit mode toggle - only show for dashboard views, not main pages */}
-                            {!currentViewId?.includes('-page') && (
+                            {currentViewId && !currentViewId.includes('-page') && (
                                 !isEditMode ? (
                                     <button
                                         onClick={onEditLayout}
