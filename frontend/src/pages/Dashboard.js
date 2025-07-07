@@ -906,7 +906,7 @@ const Dashboard = () => {
                     {/* Grid layout - only show if there's an active tab and layout is ready */}
                     {activeTabId && layout && (
                         <ResponsiveReactGridLayout
-                            layouts={{ lg: layout }}
+                            layouts={{ lg: Array.isArray(layout) ? layout : [] }}
                             onLayoutChange={handleLayoutChange}
                             className="layout"
                             cols={{ lg: 12, md: 10, sm: 6, xs: 4, xxs: 2 }}
