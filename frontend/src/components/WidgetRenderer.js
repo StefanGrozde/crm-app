@@ -108,26 +108,6 @@ const WidgetRenderer = memo(({
         );
     }
     
-    // Render loading state
-    if (widgetState === WIDGET_STATES.LOADING) {
-        console.log(`Widget ${widgetKey} is in LOADING state, showLoadingSpinner:`, widgetConfig.showLoadingSpinner);
-        if (!widgetConfig.showLoadingSpinner) {
-            return null; // Don't show loading state for widgets that don't want it
-        }
-        
-        const spinnerSize = widgetConfig.loadingSpinnerSize === 'small' ? 'h-4 w-4' : 
-                           widgetConfig.loadingSpinnerSize === 'large' ? 'h-12 w-12' : 'h-8 w-8';
-        
-        return (
-            <div className="widget-loading">
-                <div className="flex items-center justify-center p-8">
-                    <div className={`animate-spin rounded-full ${spinnerSize} border-b-2 border-blue-600`}></div>
-                    <span className="ml-2 text-gray-600">Loading {widgetKey}...</span>
-                </div>
-            </div>
-        );
-    }
-    
     // Render error state
     if (widgetState === WIDGET_STATES.ERROR) {
         if (!widgetConfig.showErrors) {
@@ -157,7 +137,7 @@ const WidgetRenderer = memo(({
         );
     }
     
-    // Render the actual widget
+    // Always render the DynamicWidget, let it handle loading states
     return (
         <div 
             className="widget-container"
@@ -170,6 +150,9 @@ const WidgetRenderer = memo(({
                 {...memoizedProps}
                 onLoad={handleWidgetReady}
                 onError={handleWidgetError}
+                widgetState={widgetState}
+                showLoadingSpinner={widgetConfig.showLoadingSpinner}
+                loadingSpinnerSize={widgetConfig.loadingSpinnerSize}
             />
         </div>
     );

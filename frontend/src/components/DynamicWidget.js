@@ -188,11 +188,26 @@ const ExternalWidgetLoader = memo(({ widgetKey, widgetPath, type, onLoad, onErro
 });
 
 // Main DynamicWidget component
-const DynamicWidget = memo(({ widgetKey, widgetPath, type, resultData, onLoad, onError, ...props }) => {
+const DynamicWidget = memo(({ widgetKey, widgetPath, type, resultData, onLoad, onError, widgetState, showLoadingSpinner, loadingSpinnerSize, ...props }) => {
     // Memoize the widget key to prevent unnecessary re-renders
     const memoizedWidgetKey = useMemo(() => widgetKey, [widgetKey]);
     
-    console.log('DynamicWidget render:', memoizedWidgetKey, 'type:', type, 'has onLoad:', !!onLoad);
+    console.log('DynamicWidget render:', memoizedWidgetKey, 'type:', type, 'has onLoad:', !!onLoad, 'widgetState:', widgetState);
+    
+    // Show loading state if needed
+    if (widgetState === 'loading' && showLoadingSpinner) {
+        const spinnerSize = loadingSpinnerSize === 'small' ? 'h-4 w-4' : 
+                           loadingSpinnerSize === 'large' ? 'h-12 w-12' : 'h-8 w-8';
+        
+        return (
+            <div className="widget-loading">
+                <div className="flex items-center justify-center p-8">
+                    <div className={`animate-spin rounded-full ${spinnerSize} border-b-2 border-blue-600`}></div>
+                    <span className="ml-2 text-gray-600">Loading {widgetKey}...</span>
+                </div>
+            </div>
+        );
+    }
     
     // Handle search result widgets
     if (memoizedWidgetKey.startsWith('search-result-')) {
