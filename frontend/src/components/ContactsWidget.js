@@ -970,64 +970,136 @@ const ContactsWidget = () => {
                 </div>
             )}
 
-            {/* Contacts List */}
-            <div className="overflow-y-auto" style={{ maxHeight: 'calc(100vh - 300px)' }}>
-                <div className="space-y-2">
-                    {contacts.map((contact) => (
-                        <div key={contact.id} className="bg-white border border-gray-200 rounded-lg p-3 hover:shadow-md transition-shadow">
-                            <div className="flex justify-between items-start">
-                                <div className="flex-1">
-                                    <div className="flex items-center space-x-2">
-                                        <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
+            {/* Contacts Table */}
+            <div className="overflow-x-auto" style={{ maxHeight: 'calc(100vh - 300px)' }}>
+                <table className="min-w-full bg-white border border-gray-200 rounded-lg">
+                    <thead className="bg-gray-50">
+                        <tr>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b">
+                                Contact
+                            </th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b">
+                                Email
+                            </th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b">
+                                Phone
+                            </th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b">
+                                Job Title
+                            </th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b">
+                                Department
+                            </th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b">
+                                Status
+                            </th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b">
+                                Actions
+                            </th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b">
+                                Manage
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200">
+                        {contacts.map((contact) => (
+                            <tr key={contact.id} className="hover:bg-gray-50 transition-colors">
+                                <td className="px-4 py-3 whitespace-nowrap">
+                                    <div className="flex items-center">
+                                        <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center mr-3">
                                             <span className="text-xs font-medium text-blue-600">
                                                 {contact.firstName.charAt(0)}{contact.lastName.charAt(0)}
                                             </span>
                                         </div>
                                         <div>
-                                            <div className="font-medium text-gray-900 text-sm">
+                                            <div className="text-sm font-medium text-gray-900">
                                                 {contact.firstName} {contact.lastName}
                                             </div>
                                             <div className="text-xs text-gray-500">
-                                                {contact.jobTitle}
+                                                {contact.companyName || 'No Company'}
                                             </div>
                                         </div>
                                     </div>
-                                    <div className="mt-2 text-xs text-gray-600">
-                                        {contact.email && <div>{contact.email}</div>}
-                                        {contact.phone && <div>{contact.phone}</div>}
+                                </td>
+                                <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                                    {contact.email || '-'}
+                                </td>
+                                <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                                    {contact.phone || contact.mobile || '-'}
+                                </td>
+                                <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                                    {contact.jobTitle || '-'}
+                                </td>
+                                <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                                    {contact.department || '-'}
+                                </td>
+                                <td className="px-4 py-3 whitespace-nowrap">
+                                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                                        contact.status === 'active' ? 'bg-green-100 text-green-800' :
+                                        contact.status === 'inactive' ? 'bg-red-100 text-red-800' :
+                                        'bg-yellow-100 text-yellow-800'
+                                    }`}>
+                                        {contact.status}
+                                    </span>
+                                </td>
+                                <td className="px-4 py-3 whitespace-nowrap">
+                                    <div className="flex space-x-1">
+                                        <button
+                                            onClick={() => {
+                                                // TODO: Implement Start Lead functionality
+                                                console.log('Start Lead for:', contact.id);
+                                            }}
+                                            className="px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
+                                            title="Start Lead"
+                                        >
+                                            Lead
+                                        </button>
+                                        <button
+                                            onClick={() => {
+                                                // TODO: Implement Start Opportunity functionality
+                                                console.log('Start Opportunity for:', contact.id);
+                                            }}
+                                            className="px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+                                            title="Start Opportunity"
+                                        >
+                                            Opp
+                                        </button>
+                                        <button
+                                            onClick={() => {
+                                                // TODO: Implement Start Sale functionality
+                                                console.log('Start Sale for:', contact.id);
+                                            }}
+                                            className="px-2 py-1 text-xs bg-purple-600 text-white rounded hover:bg-purple-700 transition-colors"
+                                            title="Start Sale"
+                                        >
+                                            Sale
+                                        </button>
                                     </div>
-                                    <div className="mt-2">
-                                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                                            contact.status === 'active' ? 'bg-green-100 text-green-800' :
-                                            contact.status === 'inactive' ? 'bg-red-100 text-red-800' :
-                                            'bg-yellow-100 text-yellow-800'
-                                        }`}>
-                                            {contact.status}
-                                        </span>
+                                </td>
+                                <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                                    <div className="flex space-x-2">
+                                        <button
+                                            onClick={() => openEditModal(contact)}
+                                            className="text-blue-600 hover:text-blue-900 text-xs font-medium"
+                                        >
+                                            Edit
+                                        </button>
+                                        <button
+                                            onClick={() => handleDelete(contact.id)}
+                                            className="text-red-600 hover:text-red-900 text-xs font-medium"
+                                        >
+                                            Delete
+                                        </button>
                                     </div>
-                                </div>
-                                <div className="flex space-x-1">
-                                    <button
-                                        onClick={() => openEditModal(contact)}
-                                        className="text-blue-600 hover:text-blue-900 text-xs"
-                                    >
-                                        Edit
-                                    </button>
-                                    <button
-                                        onClick={() => handleDelete(contact.id)}
-                                        className="text-red-600 hover:text-red-900 text-xs"
-                                    >
-                                        Delete
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    ))}
-                </div>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
                 
                 {/* Pagination */}
                 {pagination.totalPages > 1 && (
-                    <div className="mt-4 flex justify-between items-center">
+                    <div className="mt-4 flex justify-between items-center px-4">
                         <div className="text-xs text-gray-500">
                             Page {pagination.currentPage} of {pagination.totalPages}
                         </div>
