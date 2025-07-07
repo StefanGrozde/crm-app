@@ -1,5 +1,5 @@
 // frontend/src/pages/Dashboard.js
-import React, { useState, useEffect, useContext, useRef } from 'react';
+import React, { useState, useEffect, useContext, useRef, useCallback } from 'react';
 import axios from 'axios';
 import { Responsive, WidthProvider } from 'react-grid-layout';
 import { arrayMove } from '@dnd-kit/sortable';
@@ -102,7 +102,7 @@ const Dashboard = () => {
                 }, 500);
             }
         }
-    }, []); // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [activeTabId, refreshCurrentView, refreshViewsList]); // eslint-disable-next-line react-hooks/exhaustive-deps
 
     // Load initial data
     useEffect(() => {
@@ -428,7 +428,7 @@ const Dashboard = () => {
     };
 
     // Refresh current view data from backend
-    const refreshCurrentView = async () => {
+    const refreshCurrentView = useCallback(async () => {
         if (!activeTabId || String(activeTabId).includes('-page') || String(activeTabId).includes('search-')) {
             console.log('Skipping refresh for non-view tab:', activeTabId);
             return;
@@ -462,10 +462,10 @@ const Dashboard = () => {
         } catch (error) {
             console.error("Failed to refresh view", error);
         }
-    };
+    }, [activeTabId, currentViewId, setTabLayouts, setLayout]);
 
     // Refresh views list from backend
-    const refreshViewsList = async () => {
+    const refreshViewsList = useCallback(async () => {
         try {
             console.log('Refreshing views list from backend');
             const { data } = await axios.get(`${API_URL}/api/dashboard/views`, { withCredentials: true });
@@ -474,7 +474,7 @@ const Dashboard = () => {
         } catch (error) {
             console.error("Failed to refresh views list", error);
         }
-    };
+    }, [setViews]);
 
     // Handle opening search results as new tabs
     const handleOpenSearchResult = (result) => {
@@ -726,7 +726,7 @@ const Dashboard = () => {
             document.removeEventListener('visibilitychange', handleVisibilityChange);
             window.removeEventListener('popstate', handleUrlChange);
         };
-    }, [activeTabId, currentViewId]); // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [activeTabId, currentViewId, refreshCurrentView]); // eslint-disable-next-line react-hooks/exhaustive-deps
 
     if (!user) return <div>Loading...</div>;
     if (isLoading || isSessionLoading) return <div className="min-h-screen bg-gray-100 flex items-center justify-center">Loading dashboard...</div>;
