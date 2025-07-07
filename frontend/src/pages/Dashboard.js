@@ -52,6 +52,7 @@ const Dashboard = () => {
     const [currentViewId, setCurrentViewId] = useState(null);
     const [isEditMode, setIsEditMode] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
+    const [isTabSwitching, setIsTabSwitching] = useState(false);
     
     // Tab management state with session persistence
     const {
@@ -136,50 +137,48 @@ const Dashboard = () => {
                     console.log('Loading saved session...');
                     loadSession();
                     
-                    // Give the session time to load, then validate and restore
-                    setTimeout(async () => {
-                        console.log('Session loaded, validating tabs...');
+                    // Validate and restore session immediately
+                    console.log('Session loaded, validating tabs...');
+                    
+                    // Get the current session data after loading
+                    const sessionKey = `dashboard_tab_session_${user.id}`;
+                    const savedSession = localStorage.getItem(sessionKey);
+                    
+                    if (savedSession) {
+                        const sessionData = JSON.parse(savedSession);
+                        const savedTabs = sessionData.openTabs || [];
                         
-                        // Get the current session data after loading
-                        const sessionKey = `dashboard_tab_session_${user.id}`;
-                        const savedSession = localStorage.getItem(sessionKey);
-                        
-                        if (savedSession) {
-                            const sessionData = JSON.parse(savedSession);
-                            const savedTabs = sessionData.openTabs || [];
-                            
-                            // Validate that all saved tabs correspond to existing views
-                            const validTabs = savedTabs.filter(tab => {
-                                // Check if it's a search result tab, main page tab, or a regular view tab
-                                if (String(tab.id).startsWith('search-') || String(tab.id).includes('-page')) {
-                                    return true; // Search result tabs and main page tabs are always valid
-                                }
-                                return viewsResponse.data.some(view => String(view.id) === String(tab.id));
-                            });
-
-                            if (validTabs.length > 0) {
-                                console.log('Valid tabs found:', validTabs);
-                                setOpenTabs(validTabs);
-                                
-                                // Switch to the active tab if it's still valid
-                                const savedActiveTab = sessionData.activeTabId;
-                                console.log('Saved active tab:', savedActiveTab, 'Type:', typeof savedActiveTab);
-                                console.log('Valid tab IDs:', validTabs.map(tab => ({ id: tab.id, type: typeof tab.id })));
-                                
-                                if (savedActiveTab && validTabs.some(tab => String(tab.id) === String(savedActiveTab))) {
-                                    console.log('Switching to saved active tab:', savedActiveTab);
-                                    await switchToTab(savedActiveTab);
-                                } else {
-                                    // Switch to the first valid tab
-                                    console.log('Saved active tab not found, switching to first valid tab:', validTabs[0].id);
-                                    await switchToTab(validTabs[0].id);
-                                }
-                            } else {
-                                console.log('No valid tabs in session, creating default view');
-                                await createDefaultView();
+                        // Validate that all saved tabs correspond to existing views
+                        const validTabs = savedTabs.filter(tab => {
+                            // Check if it's a search result tab, main page tab, or a regular view tab
+                            if (String(tab.id).startsWith('search-') || String(tab.id).includes('-page')) {
+                                return true; // Search result tabs and main page tabs are always valid
                             }
+                            return viewsResponse.data.some(view => String(view.id) === String(tab.id));
+                        });
+
+                        if (validTabs.length > 0) {
+                            console.log('Valid tabs found:', validTabs);
+                            setOpenTabs(validTabs);
+                            
+                            // Switch to the active tab if it's still valid
+                            const savedActiveTab = sessionData.activeTabId;
+                            console.log('Saved active tab:', savedActiveTab, 'Type:', typeof savedActiveTab);
+                            console.log('Valid tab IDs:', validTabs.map(tab => ({ id: tab.id, type: typeof tab.id })));
+                            
+                            if (savedActiveTab && validTabs.some(tab => String(tab.id) === String(savedActiveTab))) {
+                                console.log('Switching to saved active tab:', savedActiveTab);
+                                await switchToTab(savedActiveTab);
+                            } else {
+                                // Switch to the first valid tab
+                                console.log('Saved active tab not found, switching to first valid tab:', validTabs[0].id);
+                                await switchToTab(validTabs[0].id);
+                            }
+                        } else {
+                            console.log('No valid tabs in session, creating default view');
+                            await createDefaultView();
                         }
-                    }, 200);
+                    }
                 } else {
                     // No saved session, check if user has any views
                     if (!viewsResponse.data || viewsResponse.data.length === 0) {
@@ -290,11 +289,24 @@ const Dashboard = () => {
                     name: view.name,
                     isDefault: view.isDefault
                 };
+                
+                // Update all state synchronously
                 setOpenTabs(prev => [...prev, newTab]);
                 setTabLayouts(prev => ({ ...prev, [view.id]: tabLayout }));
                 setTabEditModes(prev => ({ ...prev, [view.id]: false }));
-                // Switch to the new tab with timeout to ensure React has time to render
-                setTimeout(() => switchToTab(view.id), 300);
+                
+                // Switch to the new tab immediately
+                setIsTabSwitching(true);
+                setActiveTabId(view.id);
+                setCurrentViewId(view.id);
+                setLayout(tabLayout);
+                setOriginalLayout([...tabLayout]);
+                setIsEditMode(false);
+                
+                console.log('Opened new tab:', view.id, 'with layout:', tabLayout);
+                
+                // Small delay to ensure state updates are processed
+                setTimeout(() => setIsTabSwitching(false), 50);
             } else {
                 // If already open, just switch
                 await switchToTab(view.id);
@@ -304,24 +316,9 @@ const Dashboard = () => {
         }
     };
 
-    // Effect: Track tab count and auto-switch to new tabs when layout is ready (backup)
+    // Effect: Track tab count for debugging (removed backup switching to prevent race conditions)
     useEffect(() => {
         console.log('Tab count changed:', openTabs.length, 'Previous:', prevTabsLengthRef.current);
-        
-        // If a new tab was added and no active tab is set, switch to it as backup
-        if (openTabs.length > prevTabsLengthRef.current && !activeTabId) {
-            const lastTab = openTabs[openTabs.length - 1];
-            console.log('New tab added, switching as backup to:', lastTab.id);
-            
-            // Use a shorter delay as backup
-            setTimeout(() => {
-                if (!activeTabId) {
-                    console.log('Backup auto-switching to new tab:', lastTab.id);
-                    switchToTab(lastTab.id);
-                }
-            }, 200);
-        }
-        
         prevTabsLengthRef.current = openTabs.length;
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [openTabs]);
@@ -332,36 +329,27 @@ const Dashboard = () => {
         console.log('Available tab layouts:', Object.keys(tabLayouts));
         console.log('Available tab edit modes:', Object.keys(tabEditModes));
         
-        // Update active tab
-        setActiveTabId(tabId);
-        setCurrentViewId(tabId);
+        setIsTabSwitching(true);
         
-        // Load the tab's layout
-        const tabLayout = tabLayouts[tabId] || [];
-        console.log('Loading layout for tab:', tabId, 'Layout:', tabLayout);
-        setLayout(tabLayout);
-        setOriginalLayout([...tabLayout]);
-        
-        // Load the tab's edit mode
-        const tabEditMode = tabEditModes[tabId] || false;
-        setIsEditMode(tabEditMode);
-        
-        console.log('Switched to tab:', tabId, 'with layout:', tabLayout, 'edit mode:', tabEditMode);
-        
-        // Safety check: if this is a main page tab and we don't have layout data, create it
-        if (tabId.includes('-page') && (!tabLayouts[tabId] || tabLayouts[tabId].length === 0)) {
-            console.log('Creating layout for main page tab:', tabId);
-            const pageWidgetKey = tabId.replace('-page', '-widget');
-            const pageLayout = [{
-                i: pageWidgetKey,
-                x: 0,
-                y: 0,
-                w: 12,
-                h: 8
-            }];
-            setTabLayouts(prev => ({ ...prev, [tabId]: pageLayout }));
-            setLayout(pageLayout);
-            setOriginalLayout([...pageLayout]);
+        try {
+            // Update active tab
+            setActiveTabId(tabId);
+            setCurrentViewId(tabId);
+            
+            // Load the tab's layout
+            const tabLayout = tabLayouts[tabId] || [];
+            console.log('Loading layout for tab:', tabId, 'Layout:', tabLayout);
+            setLayout(tabLayout);
+            setOriginalLayout([...tabLayout]);
+            
+            // Load the tab's edit mode
+            const tabEditMode = tabEditModes[tabId] || false;
+            setIsEditMode(tabEditMode);
+            
+            console.log('Switched to tab:', tabId, 'with layout:', tabLayout, 'edit mode:', tabEditMode);
+        } finally {
+            // Small delay to ensure state updates are processed
+            setTimeout(() => setIsTabSwitching(false), 50);
         }
     };
 
@@ -662,9 +650,6 @@ const Dashboard = () => {
             isDefault: false
         };
         
-        // Add the new tab
-        setOpenTabs(prev => [...prev, newTab]);
-        
         // Create a simple layout for the search result
         const resultLayout = [{
             i: `search-result-${result.id}`,
@@ -675,12 +660,23 @@ const Dashboard = () => {
             resultData: result // Store the result data in the layout item
         }];
         
-        // Store the layout and edit mode for the new tab
+        // Update all state synchronously
+        setOpenTabs(prev => [...prev, newTab]);
         setTabLayouts(prev => ({ ...prev, [tabId]: resultLayout }));
         setTabEditModes(prev => ({ ...prev, [tabId]: false }));
         
-        // Switch to the new tab with longer timeout to ensure React has time to render
-        setTimeout(() => switchToTab(tabId), 300);
+        // Switch to the new tab immediately
+        setIsTabSwitching(true);
+        setActiveTabId(tabId);
+        setCurrentViewId(tabId);
+        setLayout(resultLayout);
+        setOriginalLayout([...resultLayout]);
+        setIsEditMode(false);
+        
+        console.log('Opened search result tab:', tabId, 'with layout:', resultLayout);
+        
+        // Small delay to ensure state updates are processed
+        setTimeout(() => setIsTabSwitching(false), 50);
     };
 
     // Generic function to open any page as a new tab
@@ -704,9 +700,6 @@ const Dashboard = () => {
             isDefault: false
         };
         
-        // Add the new tab
-        setOpenTabs(prev => [...prev, newTab]);
-        
         // Create a layout for the widget
         const pageLayout = [{
             i: widgetKey,
@@ -716,12 +709,23 @@ const Dashboard = () => {
             h: 8
         }];
         
-        // Store the layout and edit mode for the new tab
+        // Update all state synchronously
+        setOpenTabs(prev => [...prev, newTab]);
         setTabLayouts(prev => ({ ...prev, [tabId]: pageLayout }));
         setTabEditModes(prev => ({ ...prev, [tabId]: false }));
         
-        // Switch to the new tab with timeout to ensure React has time to render
-        setTimeout(() => switchToTab(tabId), 300);
+        // Switch to the new tab immediately
+        setIsTabSwitching(true);
+        setActiveTabId(tabId);
+        setCurrentViewId(tabId);
+        setLayout(pageLayout);
+        setOriginalLayout([...pageLayout]);
+        setIsEditMode(false);
+        
+        console.log('Opened new page tab:', tabId, 'with layout:', pageLayout);
+        
+        // Small delay to ensure state updates are processed
+        setTimeout(() => setIsTabSwitching(false), 50);
     };
 
     // Convenience functions for specific pages
@@ -1171,8 +1175,8 @@ const Dashboard = () => {
                         </div>
                     )}
 
-                    {/* Grid layout - only show if there's an active tab */}
-                    {activeTabId && (
+                    {/* Grid layout - only show if there's an active tab and layout is ready */}
+                    {activeTabId && layout && (
                         <ResponsiveReactGridLayout
                             layouts={{ lg: layout }}
                             onLayoutChange={handleLayoutChange}
@@ -1231,6 +1235,15 @@ const Dashboard = () => {
                                 );
                             })}
                         </ResponsiveReactGridLayout>
+                    )}
+                    
+                    {/* Loading state for active tab */}
+                    {activeTabId && (!layout || isTabSwitching) && (
+                        <div className="text-center py-12">
+                            <div className="text-gray-500 text-lg">
+                                {isTabSwitching ? 'Switching tabs...' : 'Loading tab content...'}
+                            </div>
+                        </div>
                     )}
                 </main>
             </div>
