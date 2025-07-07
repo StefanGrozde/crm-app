@@ -80,6 +80,13 @@ const EditLayout = () => {
                         description: 'Manage and view users',
                         type: 'builtin-react',
                         path: null
+                    },
+                    {
+                        key: 'lead-conversion',
+                        name: 'Lead Conversion Analytics',
+                        description: 'Track lead conversion rates and metrics',
+                        type: 'builtin-react',
+                        path: null
                     }
                 ];
                 
@@ -527,8 +534,11 @@ const EditLayout = () => {
                                             />
                                         ) : (
                                             <div className="text-center p-4">
-                                                <div className="text-gray-600 text-sm">
+                                                <div className="text-red-600 text-sm font-medium">
                                                     Widget not found: {item.i}
+                                                </div>
+                                                <div className="text-xs text-gray-400 mt-1">
+                                                    This widget may have been removed or renamed. You can remove it from the layout.
                                                 </div>
                                                 <div className="text-xs text-gray-400 mt-1">
                                                     Size: {item.w}x{item.h} | Position: ({item.x}, {item.y})

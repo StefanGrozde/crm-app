@@ -55,6 +55,18 @@ const WidgetRegistry = {
                 </div>
             </div>
         </div>
+    ),
+    
+    'lead-conversion': () => (
+        <div className="p-4 text-center">
+            <div className="text-gray-600 text-lg font-medium mb-2">Lead Conversion Analytics</div>
+            <div className="text-gray-500 text-sm">Lead conversion tracking coming soon...</div>
+            <div className="mt-4 p-3 bg-green-50 rounded-lg">
+                <div className="text-green-800 text-sm">
+                    This will include: Conversion rates, funnel analysis, performance metrics, and more.
+                </div>
+            </div>
+        </div>
     )
 };
 

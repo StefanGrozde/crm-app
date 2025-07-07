@@ -62,7 +62,7 @@ const Dashboard = () => {
 
     // Check if we need to refresh view data on mount (e.g., returning from EditLayout)
     useEffect(() => {
-        if (activeTabId && !activeTabId.includes('-page') && !activeTabId.includes('search-')) {
+        if (activeTabId && !String(activeTabId).includes('-page') && !String(activeTabId).includes('search-')) {
             console.log('Dashboard mounted with active view tab - checking if refresh is needed');
             
             // Check if there's a flag indicating a view was updated
@@ -157,6 +157,13 @@ const Dashboard = () => {
                         key: 'users-widget',
                         name: 'Users Widget',
                         description: 'Manage and view users',
+                        type: 'builtin-react',
+                        path: null
+                    },
+                    {
+                        key: 'lead-conversion',
+                        name: 'Lead Conversion Analytics',
+                        description: 'Track lead conversion rates and metrics',
                         type: 'builtin-react',
                         path: null
                     }
@@ -422,7 +429,7 @@ const Dashboard = () => {
 
     // Refresh current view data from backend
     const refreshCurrentView = async () => {
-        if (!activeTabId || activeTabId.includes('-page') || activeTabId.includes('search-')) {
+        if (!activeTabId || String(activeTabId).includes('-page') || String(activeTabId).includes('search-')) {
             console.log('Skipping refresh for non-view tab:', activeTabId);
             return;
         }
@@ -843,6 +850,29 @@ const Dashboard = () => {
                                 console.log('Looking for widget:', item.i, 'in library:', widgetLibrary);
                                 const widget = widgetLibrary.find(w => w.key === item.i);
                                 console.log('Found widget:', widget);
+                                
+                                if (!widget) {
+                                    return (
+                                        <div 
+                                            key={item.i} 
+                                            className="bg-white rounded-lg shadow-lg p-4 overflow-hidden transition-all duration-200 relative"
+                                            data-widget-key={item.i}
+                                        >
+                                            <div className="text-center">
+                                                <div className="text-red-600 text-sm font-medium">
+                                                    Widget not found: {item.i}
+                                                </div>
+                                                <div className="text-xs text-gray-400 mt-1">
+                                                    This widget may have been removed or renamed.
+                                                </div>
+                                                <div className="text-xs text-gray-400 mt-1">
+                                                    Size: {item.w}x{item.h} | Position: ({item.x}, {item.y})
+                                                </div>
+                                            </div>
+                                        </div>
+                                    );
+                                }
+                                
                                 return (
                                     <MemoizedWidget
                                         key={item.i}
