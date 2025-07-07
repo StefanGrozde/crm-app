@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useContext, useRef } from 'react';
 import axios from 'axios';
 import { arrayMove } from '@dnd-kit/sortable';
+import { useLocation } from 'react-router-dom';
 
 // Component Imports
 import { AuthContext } from '../context/AuthContext';
@@ -15,6 +16,7 @@ const API_URL = process.env.REACT_APP_API_URL;
 const Dashboard = () => {
     // Auth context
     const { user } = useContext(AuthContext);
+    const location = useLocation();
 
     // State variables
     const [layout, setLayout] = useState([]);
@@ -50,6 +52,7 @@ const Dashboard = () => {
 
     // Track previous openTabs length
     const prevTabsLengthRef = useRef(openTabs.length);
+    const prevLocationRef = useRef(location.pathname);
 
     // Debug: Log state changes
     useEffect(() => {
@@ -57,6 +60,28 @@ const Dashboard = () => {
         console.log('Open tabs:', openTabs);
         console.log('Active tab:', activeTabId);
     }, [layout, openTabs, activeTabId]);
+
+    // Track location changes to detect returning from EditLayout
+    useEffect(() => {
+        const currentPath = location.pathname;
+        const previousPath = prevLocationRef.current;
+        
+        console.log('Location changed from:', previousPath, 'to:', currentPath);
+        
+        // If we're returning from EditLayout to Dashboard
+        if (previousPath.includes('/edit-layout/') && currentPath === '/dashboard') {
+            console.log('Returning from EditLayout - triggering refresh');
+            // Add a small delay to ensure everything is loaded
+            setTimeout(() => {
+                if (activeTabId && !String(activeTabId).includes('-page') && !String(activeTabId).includes('search-')) {
+                    console.log('Refreshing view after returning from EditLayout');
+                    refreshCurrentView();
+                }
+            }, 500);
+        }
+        
+        prevLocationRef.current = currentPath;
+    }, [location.pathname, activeTabId]); // eslint-disable-next-line react-hooks/exhaustive-deps
 
     // Check if we need to refresh view data on mount (e.g., returning from EditLayout)
     useEffect(() => {
