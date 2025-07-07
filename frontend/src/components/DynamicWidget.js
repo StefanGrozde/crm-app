@@ -1,73 +1,22 @@
 import React, { useState, useEffect, memo, useMemo } from 'react';
 import SearchResultWidget from './SearchResultWidget';
 import ContactsWidget from './ContactsWidget';
+import LeadsWidget from './LeadsWidget';
+import OpportunitiesWidget from './OpportunitiesWidget';
+import CompaniesWidget from './CompaniesWidget';
+import UsersWidget from './UsersWidget';
+import LeadConversionWidget from './LeadConversionWidget';
 
 // Widget Registry - Central place to register all widgets
 const WidgetRegistry = {
     // Built-in React widgets
     'contacts-widget': ContactsWidget,
     'search-result-widget': SearchResultWidget,
-    
-    // Placeholder widgets for future implementation
-    'leads-widget': () => (
-        <div className="p-4 text-center">
-            <div className="text-gray-600 text-lg font-medium mb-2">Leads Management</div>
-            <div className="text-gray-500 text-sm">Leads functionality coming soon...</div>
-            <div className="mt-4 p-3 bg-blue-50 rounded-lg">
-                <div className="text-blue-800 text-sm">
-                    This will include: Lead capture, qualification, conversion tracking, and more.
-                </div>
-            </div>
-        </div>
-    ),
-    
-    'opportunities-widget': () => (
-        <div className="p-4 text-center">
-            <div className="text-gray-600 text-lg font-medium mb-2">Opportunities Management</div>
-            <div className="text-gray-500 text-sm">Opportunities functionality coming soon...</div>
-            <div className="mt-4 p-3 bg-purple-50 rounded-lg">
-                <div className="text-purple-800 text-sm">
-                    This will include: Pipeline management, deal tracking, forecasting, and more.
-                </div>
-            </div>
-        </div>
-    ),
-    
-    'companies-widget': () => (
-        <div className="p-4 text-center">
-            <div className="text-gray-600 text-lg font-medium mb-2">Companies Management</div>
-            <div className="text-gray-500 text-sm">Companies functionality coming soon...</div>
-            <div className="mt-4 p-3 bg-orange-50 rounded-lg">
-                <div className="text-orange-800 text-sm">
-                    This will include: Company profiles, relationships, hierarchy, and more.
-                </div>
-            </div>
-        </div>
-    ),
-    
-    'users-widget': () => (
-        <div className="p-4 text-center">
-            <div className="text-gray-600 text-lg font-medium mb-2">Users Management</div>
-            <div className="text-gray-500 text-sm">Users functionality coming soon...</div>
-            <div className="mt-4 p-3 bg-gray-50 rounded-lg">
-                <div className="text-gray-800 text-sm">
-                    This will include: User profiles, roles, permissions, and more.
-                </div>
-            </div>
-        </div>
-    ),
-    
-    'lead-conversion': () => (
-        <div className="p-4 text-center">
-            <div className="text-gray-600 text-lg font-medium mb-2">Lead Conversion Analytics</div>
-            <div className="text-gray-500 text-sm">Lead conversion tracking coming soon...</div>
-            <div className="mt-4 p-3 bg-green-50 rounded-lg">
-                <div className="text-green-800 text-sm">
-                    This will include: Conversion rates, funnel analysis, performance metrics, and more.
-                </div>
-            </div>
-        </div>
-    )
+    'leads-widget': LeadsWidget,
+    'opportunities-widget': OpportunitiesWidget,
+    'companies-widget': CompaniesWidget,
+    'users-widget': UsersWidget,
+    'lead-conversion': LeadConversionWidget
 };
 
 // Dynamic widget loader for external widgets

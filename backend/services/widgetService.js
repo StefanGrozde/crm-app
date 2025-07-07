@@ -13,13 +13,18 @@ const WIDGETS_DIR = path.join(__dirname, '..', 'widgets');
 /**
  * Get widget manifest (list of all available widgets)
  * @param {boolean} forceRefresh - Force refresh the cache
+ * @param {boolean} includeUnavailable - Include widgets that are not available for adding
  * @returns {Promise<Array>} Array of widget manifests
  */
-async function getWidgetManifest(forceRefresh = false) {
+async function getWidgetManifest(forceRefresh = false, includeUnavailable = false) {
     const now = Date.now();
     
     // Return cached data if still valid and not forcing refresh
     if (!forceRefresh && widgetCache && (now - lastCacheTime) < CACHE_DURATION) {
+        // Filter by availability if needed
+        if (!includeUnavailable) {
+            return widgetCache.filter(widget => widget.available !== false);
+        }
         return widgetCache;
     }
     
@@ -27,8 +32,13 @@ async function getWidgetManifest(forceRefresh = false) {
         const widgets = [];
         
         // Load widgets from database
+        const whereClause = { isActive: true };
+        if (!includeUnavailable) {
+            whereClause.available = true;
+        }
+        
         const dbWidgets = await Widget.findAll({
-            where: { isActive: true },
+            where: whereClause,
             order: [['sortOrder', 'ASC'], ['name', 'ASC']],
             raw: true
         });
@@ -45,7 +55,8 @@ async function getWidgetManifest(forceRefresh = false) {
                 entry: dbWidget.entry,
                 directory: dbWidget.directory,
                 config: dbWidget.config,
-                dependencies: dbWidget.dependencies
+                dependencies: dbWidget.dependencies,
+                available: dbWidget.available
             };
             
             widgets.push(manifest);
@@ -92,6 +103,11 @@ async function getWidgetManifest(forceRefresh = false) {
         // Update cache
         widgetCache = widgets;
         lastCacheTime = now;
+        
+        // Filter by availability if needed
+        if (!includeUnavailable) {
+            return widgets.filter(widget => widget.available !== false);
+        }
         
         return widgets;
     } catch (error) {

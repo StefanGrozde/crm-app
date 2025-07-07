@@ -63,6 +63,11 @@ const Widget = sequelize.define('Widget', {
     defaultValue: true,
     field: 'is_active',
   },
+  available: {
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+    defaultValue: true,
+  },
   sortOrder: {
     type: DataTypes.INTEGER,
     allowNull: false,

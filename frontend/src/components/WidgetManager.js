@@ -20,6 +20,7 @@ const WidgetManager = () => {
         version: '1.0.0',
         author: 'System',
         isActive: true,
+        available: true,
         sortOrder: 0
     });
 
@@ -71,6 +72,7 @@ const WidgetManager = () => {
             version: widget.version || '1.0.0',
             author: widget.author || 'System',
             isActive: widget.isActive !== false,
+            available: widget.available !== false,
             sortOrder: widget.sortOrder || 0
         });
         setShowForm(true);
@@ -100,6 +102,7 @@ const WidgetManager = () => {
             version: '1.0.0',
             author: 'System',
             isActive: true,
+            available: true,
             sortOrder: 0
         });
     };
@@ -220,6 +223,18 @@ const WidgetManager = () => {
                                 Active
                             </label>
                         </div>
+                        <div className="flex items-center">
+                            <input
+                                type="checkbox"
+                                id="available"
+                                checked={formData.available}
+                                onChange={(e) => setFormData({...formData, available: e.target.checked})}
+                                className="mr-2"
+                            />
+                            <label htmlFor="available" className="text-sm font-medium text-gray-700">
+                                Available in Add Widget Menu
+                            </label>
+                        </div>
                         <div className="flex space-x-4">
                             <button
                                 type="submit"
@@ -258,6 +273,11 @@ const WidgetManager = () => {
                                         {widget.isActive === false && (
                                             <span className="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
                                                 Inactive
+                                            </span>
+                                        )}
+                                        {widget.available === false && (
+                                            <span className="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                                Hidden
                                             </span>
                                         )}
                                     </div>

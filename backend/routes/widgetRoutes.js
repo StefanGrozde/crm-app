@@ -40,7 +40,8 @@ const upload = multer({
 // Get widget manifest (list of all available widgets)
 router.get('/manifest', authenticate, async (req, res) => {
     try {
-        const widgets = await widgetService.getWidgetManifest();
+        const includeUnavailable = req.query.includeUnavailable === 'true';
+        const widgets = await widgetService.getWidgetManifest(false, includeUnavailable);
         res.json(widgets);
     } catch (error) {
         console.error('Error fetching widget manifest:', error);
