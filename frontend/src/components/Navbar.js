@@ -3,30 +3,13 @@ import { Link, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import SearchBar from './SearchBar';
 import EditUserPopup from './EditUserPopup';
-import AddWidgetModal from './AddWidgetModal';
-import UploadWidgetModal from './UploadWidgetModal';
 
 const Navbar = ({ 
     views, 
     onLoadView, 
     onOpenSearchResult, 
     onOpenPageTab,
-    isEditMode, 
-    onEditLayout, 
-    onAddWidget, 
-    onUpdateView, 
-    onCancelEdit, 
-    onSaveAsNewView,
-    currentViewId,
-    availableWidgets,
-    onWidgetUpload,
-    isSaveModalOpen,
-    onSaveModalClose,
-    isAddModalOpen,
-    onAddModalClose,
-    isUploadModalOpen,
-    onUploadModalClose,
-    onUploadModalOpen
+    currentViewId
 }) => {
     // Debug logging
     console.log('Navbar render - currentViewId:', currentViewId, 'type:', typeof currentViewId);
@@ -82,8 +65,6 @@ const Navbar = ({
         <>
             {/* Modals */}
             {isEditPopupOpen && <EditUserPopup onClose={() => setEditPopupOpen(false)} />}
-            {isAddModalOpen && <AddWidgetModal availableWidgets={availableWidgets} onAddWidget={onAddWidget} onClose={onAddModalClose} />}
-            {isUploadModalOpen && <UploadWidgetModal onUpload={onWidgetUpload} onClose={onUploadModalClose} />}
 
             <header className="bg-white shadow-md">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -201,7 +182,11 @@ const Navbar = ({
 
                             {/* Edit mode toggle - always show, but disable on main pages */}
                             <button
-                                onClick={onEditLayout}
+                                onClick={() => {
+                                    if (currentViewId && !String(currentViewId).includes('-page')) {
+                                        window.location.href = `/edit-layout/${currentViewId}`;
+                                    }
+                                }}
                                 className={`px-4 py-2 rounded-md transition-colors ${
                                     currentViewId && !String(currentViewId).includes('-page')
                                         ? 'bg-blue-600 text-white hover:bg-blue-700'
@@ -213,10 +198,10 @@ const Navbar = ({
                                         ? "No view selected - a default view should be created automatically" 
                                         : String(currentViewId).includes('-page')
                                             ? "Edit Layout is not available on main pages"
-                                            : "Enter edit mode"
+                                            : "Open Edit Layout"
                                 }
                             >
-                                {isEditMode ? 'Exit Edit Mode' : 'Edit Layout'}
+                                Edit Layout
                             </button>
 
                             {/* User menu */}
@@ -233,14 +218,6 @@ const Navbar = ({
 
                                 {menuOpen && (
                                     <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10">
-                                        {user.role === 'Administrator' && (
-                                            <button 
-                                                onClick={() => { onUploadModalOpen(); setMenuOpen(false); }} 
-                                                className="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                                            >
-                                                Upload Widget
-                                            </button>
-                                        )}
                                         <button 
                                             onClick={handleOpenEditPopup}
                                             className="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"

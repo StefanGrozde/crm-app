@@ -8,10 +8,12 @@ export const useTabSession = (userId) => {
     const [activeTabId, setActiveTabId] = useState(null);
     const [tabLayouts, setTabLayouts] = useState({});
     const [tabEditModes, setTabEditModes] = useState({});
+    const [isSessionLoading, setIsSessionLoading] = useState(true);
 
     // Load session data from localStorage
     const loadSession = useCallback(() => {
         try {
+            setIsSessionLoading(true);
             const sessionKey = `${SESSION_STORAGE_KEY}_${userId}`;
             const savedSession = localStorage.getItem(sessionKey);
             
@@ -28,11 +30,14 @@ export const useTabSession = (userId) => {
                     setActiveTabId(activeTab || null);
                     setTabLayouts(sessionData.tabLayouts || {});
                     setTabEditModes(sessionData.tabEditModes || {});
+                    setIsSessionLoading(false);
                     return true;
                 }
             }
+            setIsSessionLoading(false);
         } catch (error) {
             console.error('Failed to load session data:', error);
+            setIsSessionLoading(false);
         }
         return false;
     }, [userId]);
@@ -135,6 +140,8 @@ export const useTabSession = (userId) => {
     useEffect(() => {
         if (userId) {
             loadSession();
+        } else {
+            setIsSessionLoading(false);
         }
     }, [userId, loadSession]);
 
@@ -162,6 +169,7 @@ export const useTabSession = (userId) => {
         saveSession,
         clearSession,
         hasSession,
-        getSessionInfo
+        getSessionInfo,
+        isSessionLoading
     };
 }; 

@@ -1,5 +1,5 @@
 // frontend/src/pages/Dashboard.js
-import React, { useState, useEffect, useContext, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useContext, useRef } from 'react';
 import axios from 'axios';
 import { Responsive, WidthProvider } from 'react-grid-layout';
 import { arrayMove } from '@dnd-kit/sortable';
@@ -8,10 +8,8 @@ import 'react-resizable/css/styles.css';
 
 // Component Imports
 import { AuthContext } from '../context/AuthContext';
-import SaveViewModal from '../components/SaveViewModal';
 import Navbar from '../components/Navbar';
 import TabBar from '../components/TabBar';
-import EditLayoutControls from '../components/EditLayoutControls';
 import { WidgetRenderer } from '../components/WidgetRenderer';
 import { useTabSession } from '../hooks/useTabSession';
 
@@ -24,11 +22,9 @@ const Dashboard = () => {
 
     // State variables
     const [layout, setLayout] = useState([]);
-    const [originalLayout, setOriginalLayout] = useState([]);
     const [widgetLibrary, setWidgetLibrary] = useState([]);
     const [views, setViews] = useState([]);
     const [currentViewId, setCurrentViewId] = useState(null);
-    const [isEditMode, setIsEditMode] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const [isTabSwitching, setIsTabSwitching] = useState(false);
     
@@ -40,20 +36,14 @@ const Dashboard = () => {
         setActiveTabId,
         tabLayouts,
         setTabLayouts,
-        tabEditModes,
-        setTabEditModes,
         loadSession,
         // eslint-disable-next-line no-unused-vars
         saveSession,
         clearSession,
         hasSession,
-        getSessionInfo
+        getSessionInfo,
+        isSessionLoading
     } = useTabSession(user?.id);
-    
-    // Modal states
-    const [isSaveModalOpen, setSaveModalOpen] = useState(false);
-    const [isAddModalOpen, setAddModalOpen] = useState(false);
-    const [isUploadModalOpen, setUploadModalOpen] = useState(false);
 
     // Track if a tab is being dragged
     const [isDraggingTab, setIsDraggingTab] = useState(false);
@@ -64,12 +54,10 @@ const Dashboard = () => {
 
     // Debug: Log state changes
     useEffect(() => {
-        console.log('Edit mode changed:', isEditMode);
         console.log('Current layout:', layout);
-        console.log('Original layout:', originalLayout);
         console.log('Open tabs:', openTabs);
         console.log('Active tab:', activeTabId);
-    }, [isEditMode, layout, originalLayout, openTabs, activeTabId]);
+    }, [layout, openTabs, activeTabId]);
 
     // Load initial data
     useEffect(() => {
@@ -78,6 +66,12 @@ const Dashboard = () => {
                 console.log('Loading initial data...');
                 console.log('API_URL:', API_URL);
                 console.log('User:', user);
+
+                // Wait for session to be loaded first
+                if (isSessionLoading) {
+                    console.log('Waiting for session to load...');
+                    return;
+                }
 
                 // Load widget library from backend (external widgets)
                 console.log('Fetching widget library...');
@@ -142,51 +136,43 @@ const Dashboard = () => {
                 console.log('Has saved session:', sessionExists);
 
                 if (sessionExists) {
-                    // Load the session data
-                    console.log('Loading saved session...');
-                    loadSession();
+                    // Session is already loaded by useTabSession, just validate and restore
+                    console.log('Session exists, validating tabs...');
+                    console.log('Current openTabs from hook:', openTabs);
+                    console.log('Current activeTabId from hook:', activeTabId);
                     
-                    // Validate and restore session immediately
-                    console.log('Session loaded, validating tabs...');
+                    // Use the state from the hook instead of reading from localStorage
+                    const savedTabs = openTabs || [];
                     
-                    // Get the current session data after loading
-                    const sessionKey = `dashboard_tab_session_${user.id}`;
-                    const savedSession = localStorage.getItem(sessionKey);
-                    
-                    if (savedSession) {
-                        const sessionData = JSON.parse(savedSession);
-                        const savedTabs = sessionData.openTabs || [];
-                        
-                        // Validate that all saved tabs correspond to existing views
-                        const validTabs = savedTabs.filter(tab => {
-                            // Check if it's a search result tab, main page tab, or a regular view tab
-                            if (String(tab.id).startsWith('search-') || String(tab.id).includes('-page')) {
-                                return true; // Search result tabs and main page tabs are always valid
-                            }
-                            return viewsResponse.data.some(view => String(view.id) === String(tab.id));
-                        });
-
-                        if (validTabs.length > 0) {
-                            console.log('Valid tabs found:', validTabs);
-                            setOpenTabs(validTabs);
-                            
-                            // Switch to the active tab if it's still valid
-                            const savedActiveTab = sessionData.activeTabId;
-                            console.log('Saved active tab:', savedActiveTab, 'Type:', typeof savedActiveTab);
-                            console.log('Valid tab IDs:', validTabs.map(tab => ({ id: tab.id, type: typeof tab.id })));
-                            
-                            if (savedActiveTab && validTabs.some(tab => String(tab.id) === String(savedActiveTab))) {
-                                console.log('Switching to saved active tab:', savedActiveTab);
-                                await switchToTab(savedActiveTab);
-                            } else {
-                                // Switch to the first valid tab
-                                console.log('Saved active tab not found, switching to first valid tab:', validTabs[0].id);
-                                await switchToTab(validTabs[0].id);
-                            }
-                        } else {
-                            console.log('No valid tabs in session, creating default view');
-                            await createDefaultView();
+                    // Validate that all saved tabs correspond to existing views
+                    const validTabs = savedTabs.filter(tab => {
+                        // Check if it's a search result tab, main page tab, or a regular view tab
+                        if (String(tab.id).startsWith('search-') || String(tab.id).includes('-page')) {
+                            return true; // Search result tabs and main page tabs are always valid
                         }
+                        return viewsResponse.data.some(view => String(view.id) === String(tab.id));
+                    });
+
+                    if (validTabs.length > 0) {
+                        console.log('Valid tabs found:', validTabs);
+                        // Don't set openTabs again since they're already set by the hook
+                        
+                        // Switch to the active tab if it's still valid
+                        const savedActiveTab = activeTabId;
+                        console.log('Saved active tab:', savedActiveTab, 'Type:', typeof savedActiveTab);
+                        console.log('Valid tab IDs:', validTabs.map(tab => ({ id: tab.id, type: typeof tab.id })));
+                        
+                        if (savedActiveTab && validTabs.some(tab => String(tab.id) === String(savedActiveTab))) {
+                            console.log('Switching to saved active tab:', savedActiveTab);
+                            await switchToTab(savedActiveTab);
+                        } else {
+                            // Switch to the first valid tab
+                            console.log('Saved active tab not found, switching to first valid tab:', validTabs[0].id);
+                            await switchToTab(validTabs[0].id);
+                        }
+                    } else {
+                        console.log('No valid tabs in session, creating default view');
+                        await createDefaultView();
                     }
                 } else {
                     // No saved session, check if user has any views
@@ -213,11 +199,11 @@ const Dashboard = () => {
             }
         };
 
-        if (user) {
+        if (user && !isSessionLoading) {
             loadInitialData();
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [user]);
+    }, [user, isSessionLoading]);
 
     // Create a default view for the user
     const createDefaultView = async () => {
@@ -302,15 +288,12 @@ const Dashboard = () => {
                 // Update all state synchronously
                 setOpenTabs(prev => [...prev, newTab]);
                 setTabLayouts(prev => ({ ...prev, [view.id]: tabLayout }));
-                setTabEditModes(prev => ({ ...prev, [view.id]: false }));
                 
                 // Switch to the new tab immediately
                 setIsTabSwitching(true);
                 setActiveTabId(view.id);
                 setCurrentViewId(view.id);
                 setLayout(tabLayout);
-                setOriginalLayout([...tabLayout]);
-                setIsEditMode(false);
                 
                 console.log('Opened new tab:', view.id, 'with layout:', tabLayout);
                 
@@ -336,7 +319,6 @@ const Dashboard = () => {
     const switchToTab = async (tabId) => {
         console.log('Switching to tab:', tabId, 'Type:', typeof tabId);
         console.log('Available tab layouts:', Object.keys(tabLayouts));
-        console.log('Available tab edit modes:', Object.keys(tabEditModes));
         
         setIsTabSwitching(true);
         
@@ -349,13 +331,8 @@ const Dashboard = () => {
             const tabLayout = tabLayouts[tabId] || [];
             console.log('Loading layout for tab:', tabId, 'Layout:', tabLayout);
             setLayout(tabLayout);
-            setOriginalLayout([...tabLayout]);
             
-            // Load the tab's edit mode
-            const tabEditMode = tabEditModes[tabId] || false;
-            setIsEditMode(tabEditMode);
-            
-            console.log('Switched to tab:', tabId, 'with layout:', tabLayout, 'edit mode:', tabEditMode);
+            console.log('Switched to tab:', tabId, 'with layout:', tabLayout);
         } finally {
             // Small delay to ensure state updates are processed
             setTimeout(() => setIsTabSwitching(false), 50);
@@ -376,7 +353,7 @@ const Dashboard = () => {
         const newOpenTabs = openTabs.filter(tab => tab.id !== tabId);
         setOpenTabs(newOpenTabs);
         
-        // Keep the layout and edit mode data in memory (don't delete it)
+        // Keep the layout data in memory (don't delete it)
         // This allows the tab to be reopened with the same layout
         
         // If we're closing the active tab, switch to another tab
@@ -387,14 +364,6 @@ const Dashboard = () => {
         }
     };
 
-    // Load view data into the layout (legacy function - now handled by switchToTab)
-    // eslint-disable-next-line no-unused-vars
-    const loadViewData = async (view) => {
-        await openViewAsTab(view);
-    };
-
-    // Handle widget removal - now handled directly in the widget component
-
     // Load specific view (now opens as tab)
     const loadView = async (viewId) => {
         try {
@@ -404,209 +373,6 @@ const Dashboard = () => {
         } catch (error) { 
             console.error("Failed to load view", error); 
         }
-    };
-
-    // Handlers
-
-    // Enhanced Edit Layout handler with debugging
-    const handleEditLayoutClick = () => {
-        console.log('Edit Layout button clicked');
-        console.log('Current state - isEditMode:', isEditMode, 'currentViewId:', currentViewId);
-        console.log('Current layout before edit:', layout);
-        console.log('Widget library:', widgetLibrary);
-        console.log('Views:', views);
-        
-        if (!currentViewId) {
-            console.log('No view selected, cannot edit');
-            alert('Please select a view first. If you have no views, a default view should be created automatically.');
-            return;
-        }
-
-        // Create a proper deep copy of the layout
-        const layoutCopy = layout.map(item => ({ ...item }));
-        console.log('Creating layout copy:', layoutCopy);
-        
-        setOriginalLayout(layoutCopy);
-        setIsEditMode(true);
-        
-        // Update the tab's edit mode
-        setTabEditModes(prev => ({ ...prev, [currentViewId]: true }));
-        
-        console.log('Edit mode should now be active');
-    };
-
-    const handleSaveNewView = async (viewName) => {
-        try {
-            console.log('Saving new view:', viewName);
-            // Transform layout to match API expected format
-            const widgetsData = layout.map(item => ({
-                widgetKey: item.i,
-                x: item.x,
-                y: item.y,
-                w: item.w,
-                h: item.h
-            }));
-
-            const response = await axios.post(`${API_URL}/api/dashboard/views`, { 
-                name: viewName, 
-                widgets: widgetsData 
-            }, { withCredentials: true });
-
-            console.log("New view saved successfully:", response.data);
-            
-            setSaveModalOpen(false);
-            const { data } = await axios.get(`${API_URL}/api/dashboard/views`, { withCredentials: true });
-            setViews(data);
-            
-            // Open the new view as a tab
-            await openViewAsTab(response.data);
-            
-        } catch (error) { 
-            console.error("Failed to save new view", error);
-            console.error("Error details:", error.response?.data);
-            alert("Failed to save new view. Please try again.");
-        }
-    };
-
-    const handleUpdateView = async () => {
-        try {
-            console.log('Updating view:', currentViewId);
-            const currentView = views.find(v => v.id === currentViewId);
-            if (!currentView) {
-                console.error("No current view selected");
-                return;
-            }
-
-            // Transform layout to match API expected format
-            const widgetsData = layout.map(item => ({
-                widgetKey: item.i,
-                x: item.x,
-                y: item.y,
-                w: item.w,
-                h: item.h
-            }));
-
-            const response = await axios.put(`${API_URL}/api/dashboard/views/${currentViewId}`, { 
-                name: currentView.name, 
-                widgets: widgetsData 
-            }, { withCredentials: true });
-
-            console.log("View updated successfully:", response.data);
-            
-            setIsEditMode(false);
-            setOriginalLayout([...layout]); // Update original layout to current
-            
-            // Update the tab's edit mode and layout
-            setTabEditModes(prev => ({ ...prev, [currentViewId]: false }));
-            setTabLayouts(prev => ({ ...prev, [currentViewId]: [...layout] }));
-            
-            // Refresh the views list to reflect any changes
-            const { data } = await axios.get(`${API_URL}/api/dashboard/views`, { withCredentials: true });
-            setViews(data);
-            
-        } catch (error) { 
-            console.error("Failed to update view", error);
-            console.error("Error details:", error.response?.data);
-            alert("Failed to update view. Please try again.");
-        }
-    };
-
-    // eslint-disable-next-line no-unused-vars
-    const handleAddWidget = (widgetKey) => {
-        console.log('Adding widget:', widgetKey);
-        const widgetToAdd = widgetLibrary.find(w => w.key === widgetKey);
-        if (!widgetToAdd) {
-            console.log('Widget not found in library');
-            return;
-        }
-
-        const newLayoutItem = {
-            i: widgetKey,
-            x: (layout.length * 3) % 12,
-            y: Infinity,
-            w: 6, // Default width
-            h: 2, // Default height
-        };
-
-        console.log('Adding new layout item:', newLayoutItem);
-        const newLayout = [...layout, newLayoutItem];
-        setLayout(newLayout);
-        
-        // Update the tab's layout
-        setTabLayouts(prev => ({ ...prev, [currentViewId]: newLayout }));
-        
-        setAddModalOpen(false);
-    };
-
-    const handleOpenAddModal = () => {
-        setAddModalOpen(true);
-    };
-
-    const handleCloseAddModal = () => {
-        setAddModalOpen(false);
-    };
-
-    const handleOpenUploadModal = () => {
-        setUploadModalOpen(true);
-    };
-
-    const handleCloseUploadModal = () => {
-        setUploadModalOpen(false);
-    };
-
-    const handleCancelEdit = () => {
-        console.log('Canceling edit, reverting to original layout');
-        console.log('Original layout:', originalLayout);
-        setLayout([...originalLayout]); // Restore original layout
-        setIsEditMode(false);
-        
-        // Update the tab's edit mode
-        setTabEditModes(prev => ({ ...prev, [currentViewId]: false }));
-    };
-
-    const handleWidgetUpload = async (uploadResult) => {
-        try {
-            // Refresh the widget library after upload
-            const { data } = await axios.get(`${API_URL}/api/widgets/manifest`, { withCredentials: true });
-            setWidgetLibrary(data);
-            alert('Widget uploaded successfully!');
-        } catch (error) {
-            console.error('Failed to refresh widget library', error);
-            alert('Widget uploaded but failed to refresh library. Please reload the page.');
-        }
-    };
-
-    // Handle layout changes during edit mode
-    const handleLayoutChange = (newLayout) => {
-        console.log('Layout changed:', newLayout);
-        setLayout(newLayout);
-        
-        // Update the tab's layout
-        setTabLayouts(prev => ({ ...prev, [currentViewId]: newLayout }));
-    };
-
-    // Debug function to test remove functionality
-    const debugRemoveWidget = (widgetKey) => {
-        console.log('Debug: Attempting to remove widget:', widgetKey);
-        console.log('Current layout before removal:', layout);
-        const newLayout = layout.filter(item => item.i !== widgetKey);
-        console.log('New layout after removal:', newLayout);
-        setLayout(newLayout);
-        
-        // Update the tab's layout
-        setTabLayouts(prev => ({ ...prev, [currentViewId]: newLayout }));
-    };
-
-    // Handle widget removal
-    const handleRemoveWidget = (widgetKey, event) => {
-        event.preventDefault();
-        event.stopPropagation();
-        console.log('Removing widget:', widgetKey);
-        const newLayout = layout.filter(item => item.i !== widgetKey);
-        setLayout(newLayout);
-        
-        // Update the tab's layout
-        setTabLayouts(prev => ({ ...prev, [currentViewId]: newLayout }));
     };
 
     // Handle opening search results as new tabs
@@ -644,15 +410,12 @@ const Dashboard = () => {
         // Update all state synchronously
         setOpenTabs(prev => [...prev, newTab]);
         setTabLayouts(prev => ({ ...prev, [tabId]: resultLayout }));
-        setTabEditModes(prev => ({ ...prev, [tabId]: false }));
         
         // Switch to the new tab immediately
         setIsTabSwitching(true);
         setActiveTabId(tabId);
         setCurrentViewId(tabId);
         setLayout(resultLayout);
-        setOriginalLayout([...resultLayout]);
-        setIsEditMode(false);
         
         console.log('Opened search result tab:', tabId, 'with layout:', resultLayout);
         
@@ -693,15 +456,12 @@ const Dashboard = () => {
         // Update all state synchronously
         setOpenTabs(prev => [...prev, newTab]);
         setTabLayouts(prev => ({ ...prev, [tabId]: pageLayout }));
-        setTabEditModes(prev => ({ ...prev, [tabId]: false }));
         
         // Switch to the new tab immediately
         setIsTabSwitching(true);
         setActiveTabId(tabId);
         setCurrentViewId(tabId);
         setLayout(pageLayout);
-        setOriginalLayout([...pageLayout]);
-        setIsEditMode(false);
         
         console.log('Opened new page tab:', tabId, 'with layout:', pageLayout);
         
@@ -739,69 +499,15 @@ const Dashboard = () => {
         console.log('Current state - openTabs:', openTabs);
         console.log('Current state - activeTabId:', activeTabId, 'Type:', typeof activeTabId);
         console.log('Current state - tabLayouts keys:', Object.keys(tabLayouts));
-        console.log('Current state - tabEditModes keys:', Object.keys(tabEditModes));
+        console.log('Session loading state:', isSessionLoading);
         
-        alert(`Session Info:\nExists: ${sessionInfo.exists}\nTab Count: ${sessionInfo.tabCount || 0}\nActive Tab: ${sessionInfo.activeTab || 'None'} (${typeof sessionInfo.activeTab})\nCurrent Active Tab: ${activeTabId || 'None'} (${typeof activeTabId})\nAge: ${sessionInfo.age ? Math.round(sessionInfo.age / 1000 / 60) + ' minutes' : 'N/A'}\nExpires In: ${sessionInfo.expiresIn ? Math.round(sessionInfo.expiresIn / 1000 / 60) + ' minutes' : 'N/A'}`);
+        // Get raw localStorage data for comparison
+        const sessionKey = `dashboard_tab_session_${user?.id}`;
+        const rawSession = localStorage.getItem(sessionKey);
+        console.log('Raw localStorage session:', rawSession ? JSON.parse(rawSession) : 'None');
+        
+        alert(`Session Info:\nExists: ${sessionInfo.exists}\nTab Count: ${sessionInfo.tabCount || 0}\nActive Tab: ${sessionInfo.activeTab || 'None'} (${typeof sessionInfo.activeTab})\nCurrent Active Tab: ${activeTabId || 'None'} (${typeof activeTabId})\nSession Loading: ${isSessionLoading}\nAge: ${sessionInfo.age ? Math.round(sessionInfo.age / 1000 / 60) + ' minutes' : 'N/A'}\nExpires In: ${sessionInfo.expiresIn ? Math.round(sessionInfo.expiresIn / 1000 / 60) + ' minutes' : 'N/A'}`);
     };
-
-    // Test grid functionality
-    const testGridFunctionality = () => {
-        console.log('Testing grid functionality...');
-        console.log('Current edit mode:', isEditMode);
-        console.log('Current layout:', layout);
-        console.log('Widget library:', widgetLibrary);
-        
-        // Create a test layout if none exists
-        if (layout.length === 0 && widgetLibrary.length > 0) {
-            const testLayout = [
-                { i: widgetLibrary[0].key, x: 0, y: 0, w: 6, h: 2 },
-                { i: widgetLibrary[1]?.key || 'test-widget', x: 6, y: 0, w: 6, h: 2 }
-            ];
-            console.log('Creating test layout:', testLayout);
-            setLayout(testLayout);
-            setOriginalLayout([...testLayout]);
-            setTabLayouts(prev => ({ ...prev, [currentViewId]: testLayout }));
-        } else if (layout.length > 0) {
-            // If layout exists, just enable edit mode
-            console.log('Layout already exists, enabling edit mode');
-        }
-        
-        // Toggle edit mode if not in edit mode
-        if (!isEditMode) {
-            console.log('Enabling edit mode for testing');
-            setIsEditMode(true);
-            setTabEditModes(prev => ({ ...prev, [currentViewId]: true }));
-        }
-        
-        alert('Grid test completed. Check console for details. Edit mode should be enabled and widgets should be draggable/resizable. Try clicking on widgets to see if they respond.');
-    };
-
-    // Manual test to move a widget
-    const testMoveWidget = () => {
-        if (layout.length > 0 && isEditMode) {
-            const newLayout = layout.map(item => {
-                if (item.i === layout[0].i) {
-                    return { ...item, x: item.x + 1, y: item.y + 1 };
-                }
-                return item;
-            });
-            console.log('Manually moving widget:', newLayout);
-            setLayout(newLayout);
-            setTabLayouts(prev => ({ ...prev, [currentViewId]: newLayout }));
-        } else {
-            alert('No widgets to move or not in edit mode');
-        }
-    };
-
-    // Derived state - memoized to prevent unnecessary re-renders
-    const currentWidgetKeys = useMemo(() => layout.map(item => item.i), [layout]);
-    const availableWidgets = useMemo(() => {
-        const filtered = widgetLibrary.filter(widget => !currentWidgetKeys.includes(widget.key));
-        console.log('Available widgets:', filtered);
-        console.log('Current widget keys:', currentWidgetKeys);
-        console.log('Widget library:', widgetLibrary);
-        return filtered;
-    }, [widgetLibrary, currentWidgetKeys]);
 
     // Handle tab drag end
     const handleTabDragEnd = (event) => {
@@ -827,36 +533,15 @@ const Dashboard = () => {
     };
 
     // Enhanced widget component with robust rendering
-    const MemoizedWidget = ({ item, widget, isEditMode, onRemoveWidget }) => {
+    const MemoizedWidget = ({ item, widget }) => {
         return (
             <div 
                 key={item.i} 
-                className={`bg-white rounded-lg shadow-lg p-2 overflow-hidden transition-all duration-200 relative ${
-                    isEditMode ? 'ring-2 ring-blue-500 ring-offset-2 cursor-move' : ''
-                }`}
+                className="bg-white rounded-lg shadow-lg p-2 overflow-hidden transition-all duration-200 relative"
                 data-widget-key={item.i}
-                onClick={() => {
-                    if (isEditMode) {
-                        console.log('Widget clicked in edit mode:', item.i);
-                    }
-                }}
             >
-                {/* Remove button - only shown in edit mode */}
-                {isEditMode && (
-                    <button
-                        onClick={(e) => onRemoveWidget(item.i, e)}
-                        className="absolute top-2 right-2 z-50 bg-red-500 hover:bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center transition-colors duration-200 shadow-lg"
-                        style={{ zIndex: 9999 }}
-                        title="Remove widget"
-                    >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                    </button>
-                )}
-                
                 {/* Widget content with robust rendering */}
-                <div className={isEditMode ? 'pt-6' : ''}>
+                <div>
                     {console.log('Rendering widget:', item.i, 'widget data:', widget, 'type:', widget?.type)}
                     <WidgetRenderer 
                         widgetKey={item.i} 
@@ -872,15 +557,6 @@ const Dashboard = () => {
                         }}
                     />
                 </div>
-                
-                {/* Widget info overlay in edit mode */}
-                {isEditMode && (
-                    <div className="absolute bottom-1 left-1 z-10">
-                        <span className="bg-blue-500 text-white text-xs px-2 py-1 rounded opacity-75">
-                            {item.w}×{item.h}
-                        </span>
-                    </div>
-                )}
             </div>
         );
     };
@@ -893,31 +569,12 @@ const Dashboard = () => {
     }, []);
 
     if (!user) return <div>Loading...</div>;
-    if (isLoading) return <div className="min-h-screen bg-gray-100 flex items-center justify-center">Loading dashboard...</div>;
+    if (isLoading || isSessionLoading) return <div className="min-h-screen bg-gray-100 flex items-center justify-center">Loading dashboard...</div>;
 
     return (
         <>
             <style>
                 {`
-                   .react-grid-item.react-grid-placeholder {
-                       background: #cbd5e0 !important;
-                       border: 2px dashed #718096 !important;
-                       border-radius: 8px !important;
-                   }
-                   .react-resizable-handle {
-                       background-image: none !important;
-                       background-color: #3b82f6 !important;
-                       border-radius: 2px !important;
-                       width: 8px !important;
-                       height: 8px !important;
-                   }
-                   .react-resizable-handle:hover {
-                       background-color: #2563eb !important;
-                   }
-                   .react-resizable-handle.react-resizable-handle-se {
-                       bottom: 2px !important;
-                       right: 2px !important;
-                   }
                    .tab-close-button {
                        opacity: 0;
                        transition: opacity 0.2s;
@@ -932,13 +589,14 @@ const Dashboard = () => {
                 <div className="bg-yellow-100 p-2 text-xs">
                     <div className="flex justify-between items-center">
                         <div>
-                            <strong>Debug:</strong> EditMode: {isEditMode ? 'ON' : 'OFF'} | 
+                            <strong>Debug:</strong> 
                             ViewID: {currentViewId || 'None'} | 
                             Layout items: {layout.length} | 
                             Widgets: {widgetLibrary.length} |
                             Open tabs: {openTabs.length} |
                             Active tab: {activeTabId || 'None'} |
-                            Session: {openTabs.length > 0 ? 'Saved' : 'None'}
+                            Session: {openTabs.length > 0 ? 'Saved' : 'None'} |
+                            Session Loading: {isSessionLoading ? 'Yes' : 'No'}
                         </div>
                         {user.role === 'Administrator' && (
                             <>
@@ -970,54 +628,15 @@ const Dashboard = () => {
                         >
                             Session Info
                         </button>
-                        <button
-                            onClick={() => console.log('Grid debug - isEditMode:', isEditMode, 'layout:', layout, 'isDraggable:', isEditMode, 'isResizable:', isEditMode)}
-                            className="px-2 py-1 bg-orange-500 text-white text-xs rounded hover:bg-orange-600"
-                            title="Debug grid settings"
-                        >
-                            Debug Grid
-                        </button>
-                        <button
-                            onClick={testGridFunctionality}
-                            className="px-2 py-1 bg-pink-500 text-white text-xs rounded hover:bg-pink-600"
-                            title="Test grid functionality"
-                        >
-                            Test Grid
-                        </button>
-                        <button
-                            onClick={testMoveWidget}
-                            className="px-2 py-1 bg-indigo-500 text-white text-xs rounded hover:bg-indigo-600"
-                            title="Test moving a widget manually"
-                        >
-                            Test Move
-                        </button>
                     </div>
                 </div>
-
-                {/* Modals */}
-                {isSaveModalOpen && <SaveViewModal onSave={handleSaveNewView} onClose={() => setSaveModalOpen(false)} />}
 
                 <Navbar 
                     views={views}
                     onLoadView={loadView}
                     onOpenSearchResult={handleOpenSearchResult}
                     onOpenPageTab={handleOpenPageTab}
-                    isEditMode={isEditMode}
-                    onEditLayout={handleEditLayoutClick}
-                    onAddWidget={handleOpenAddModal}
-                    onUpdateView={handleUpdateView}
-                    onCancelEdit={handleCancelEdit}
-                    onSaveAsNewView={() => setSaveModalOpen(true)}
                     currentViewId={currentViewId}
-                    availableWidgets={availableWidgets}
-                    onWidgetUpload={handleWidgetUpload}
-                    isSaveModalOpen={isSaveModalOpen}
-                    onSaveModalClose={() => setSaveModalOpen(false)}
-                    isAddModalOpen={isAddModalOpen}
-                    onAddModalClose={handleCloseAddModal}
-                    isUploadModalOpen={isUploadModalOpen}
-                    onUploadModalClose={handleCloseUploadModal}
-                    onUploadModalOpen={handleOpenUploadModal}
                 />
 
                 <TabBar 
@@ -1031,17 +650,6 @@ const Dashboard = () => {
                 />
 
                 <main className="p-4">
-                    <EditLayoutControls 
-                        isEditMode={isEditMode}
-                        layout={layout}
-                        onDebugRemoveWidget={debugRemoveWidget}
-                        onAddWidget={handleOpenAddModal}
-                        onUpdateView={handleUpdateView}
-                        onCancelEdit={handleCancelEdit}
-                        onSaveAsNewView={() => setSaveModalOpen(true)}
-                        currentViewId={currentViewId}
-                    />
-
                     {/* No active tab message */}
                     {!activeTabId && (
                         <div className="text-center py-12">
@@ -1052,16 +660,14 @@ const Dashboard = () => {
                     )}
 
                     {/* Grid layout - only show if there's an active tab and layout is ready */}
-                    {console.log('Rendering grid - isEditMode:', isEditMode, 'layout length:', layout.length, 'isDraggable:', isEditMode, 'isResizable:', isEditMode)}
                     {activeTabId && layout && (
                         <ResponsiveReactGridLayout
                             layouts={{ lg: layout }}
-                            onLayoutChange={handleLayoutChange}
                             className="layout"
                             cols={{ lg: 12, md: 10, sm: 6, xs: 4, xxs: 2 }}
                             rowHeight={100}
-                            isDraggable={isEditMode}
-                            isResizable={isEditMode}
+                            isDraggable={false}
+                            isResizable={false}
                             margin={[10, 10]}
                             containerPadding={[10, 10]}
                             style={{ minHeight: '400px' }}
@@ -1075,8 +681,6 @@ const Dashboard = () => {
                                         key={item.i}
                                         item={item}
                                         widget={widget}
-                                        isEditMode={isEditMode}
-                                        onRemoveWidget={handleRemoveWidget}
                                     />
                                 );
                             })}

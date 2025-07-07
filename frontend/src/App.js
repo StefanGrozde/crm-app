@@ -4,6 +4,7 @@ import { AuthProvider } from './context/AuthContext';
 import Login from './pages/Login';
 import LoginSuccess from './pages/LoginSuccess';
 import Dashboard from './pages/Dashboard';
+import EditLayout from './pages/EditLayout';
 import CreateCompany from './pages/CreateCompany';
 import EditCompany from './pages/EditCompany';
 import Contacts from './pages/Contacts';
@@ -20,6 +21,7 @@ function App() {
           
           {/* Protected Routes */}
           <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
+          <Route path="/edit-layout/:viewId" element={<PrivateRoute><EditLayout /></PrivateRoute>} />
           <Route path="/create-company" element={<PrivateRoute><CreateCompany /></PrivateRoute>} />
           <Route path="/contacts" element={<PrivateRoute><Contacts /></PrivateRoute>} />
 

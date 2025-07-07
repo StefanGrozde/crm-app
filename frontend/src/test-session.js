@@ -80,4 +80,57 @@ function testSessionExpiration() {
 console.log('=== Session Storage Tests ===');
 testSessionStorage();
 console.log('\n=== Session Expiration Tests ===');
-testSessionExpiration(); 
+testSessionExpiration();
+
+// Test file to verify session loading behavior
+// This can be run in the browser console to test session functionality
+
+const testSessionLoading = () => {
+    console.log('Testing session loading...');
+    
+    // Simulate the session data structure
+    const testSessionData = {
+        openTabs: [
+            { id: 1, name: 'Test View 1', isDefault: false },
+            { id: 2, name: 'Test View 2', isDefault: true }
+        ],
+        activeTabId: 1,
+        tabLayouts: {
+            1: [{ i: 'contacts-widget', x: 0, y: 0, w: 6, h: 2 }],
+            2: [{ i: 'leads-widget', x: 0, y: 0, w: 6, h: 2 }]
+        },
+        tabEditModes: {},
+        timestamp: Date.now()
+    };
+    
+    // Save test session
+    const sessionKey = 'dashboard_tab_session_test_user';
+    localStorage.setItem(sessionKey, JSON.stringify(testSessionData));
+    
+    console.log('Test session saved:', testSessionData);
+    
+    // Verify session exists
+    const savedSession = localStorage.getItem(sessionKey);
+    if (savedSession) {
+        const parsed = JSON.parse(savedSession);
+        console.log('Session verification successful:', parsed);
+        return true;
+    } else {
+        console.error('Session verification failed');
+        return false;
+    }
+};
+
+const clearTestSession = () => {
+    const sessionKey = 'dashboard_tab_session_test_user';
+    localStorage.removeItem(sessionKey);
+    console.log('Test session cleared');
+};
+
+// Export for use in browser console
+if (typeof window !== 'undefined') {
+    window.testSessionLoading = testSessionLoading;
+    window.clearTestSession = clearTestSession;
+}
+
+export { testSessionLoading, clearTestSession }; 
