@@ -130,6 +130,7 @@ const Dashboard = () => {
                 console.log('Widget library keys:', hybridWidgetLibrary.map(w => w.key));
                 setWidgetLibrary(hybridWidgetLibrary);
                 console.log('Widget library loaded:', hybridWidgetLibrary);
+                console.log('Widget library length:', hybridWidgetLibrary.length);
 
                 // Load views
                 console.log('Fetching views...');
@@ -423,17 +424,26 @@ const Dashboard = () => {
             return;
         }
 
-        // Create a proper deep copy of the layout
-        const layoutCopy = layout.map(item => ({ ...item }));
-        console.log('Creating layout copy:', layoutCopy);
+        if (isEditMode) {
+            // Exit edit mode
+            console.log('Exiting edit mode');
+            setIsEditMode(false);
+            setTabEditModes(prev => ({ ...prev, [currentViewId]: false }));
+        } else {
+            // Enter edit mode
+            console.log('Entering edit mode');
+            // Create a proper deep copy of the layout
+            const layoutCopy = layout.map(item => ({ ...item }));
+            console.log('Creating layout copy:', layoutCopy);
+            
+            setOriginalLayout(layoutCopy);
+            setIsEditMode(true);
+            
+            // Update the tab's edit mode
+            setTabEditModes(prev => ({ ...prev, [currentViewId]: true }));
+        }
         
-        setOriginalLayout(layoutCopy);
-        setIsEditMode(true);
-        
-        // Update the tab's edit mode
-        setTabEditModes(prev => ({ ...prev, [currentViewId]: true }));
-        
-        console.log('Edit mode should now be active');
+        console.log('Edit mode should now be:', !isEditMode);
     };
 
     const handleSaveNewView = async (viewName) => {
@@ -582,6 +592,7 @@ const Dashboard = () => {
     const handleLayoutChange = useCallback((newLayout) => {
         console.log('Layout changed:', newLayout);
         console.log('Current edit mode:', isEditMode);
+        console.log('Layout change detected - dragging/resizing should work');
         setLayout(newLayout);
         
         // Update the tab's layout
@@ -754,6 +765,34 @@ const Dashboard = () => {
         alert(`Session Info:\nExists: ${sessionInfo.exists}\nTab Count: ${sessionInfo.tabCount || 0}\nActive Tab: ${sessionInfo.activeTab || 'None'} (${typeof sessionInfo.activeTab})\nCurrent Active Tab: ${activeTabId || 'None'} (${typeof activeTabId})\nAge: ${sessionInfo.age ? Math.round(sessionInfo.age / 1000 / 60) + ' minutes' : 'N/A'}\nExpires In: ${sessionInfo.expiresIn ? Math.round(sessionInfo.expiresIn / 1000 / 60) + ' minutes' : 'N/A'}`);
     };
 
+    // Test grid functionality
+    const testGridFunctionality = () => {
+        console.log('Testing grid functionality...');
+        console.log('Current edit mode:', isEditMode);
+        console.log('Current layout:', layout);
+        console.log('Widget library:', widgetLibrary);
+        
+        // Create a test layout if none exists
+        if (layout.length === 0 && widgetLibrary.length > 0) {
+            const testLayout = [
+                { i: widgetLibrary[0].key, x: 0, y: 0, w: 6, h: 2 },
+                { i: widgetLibrary[1]?.key || 'test-widget', x: 6, y: 0, w: 6, h: 2 }
+            ];
+            console.log('Creating test layout:', testLayout);
+            setLayout(testLayout);
+            setTabLayouts(prev => ({ ...prev, [currentViewId]: testLayout }));
+        }
+        
+        // Toggle edit mode if not in edit mode
+        if (!isEditMode) {
+            console.log('Enabling edit mode for testing');
+            setIsEditMode(true);
+            setTabEditModes(prev => ({ ...prev, [currentViewId]: true }));
+        }
+        
+        alert('Grid test completed. Check console for details. Edit mode should be enabled and widgets should be draggable/resizable.');
+    };
+
     // Derived state - memoized to prevent unnecessary re-renders
     const currentWidgetKeys = useMemo(() => layout.map(item => item.i), [layout]);
     const availableWidgets = useMemo(() => {
@@ -872,15 +911,28 @@ const Dashboard = () => {
                         transition: none !important;
                         z-index: 3 !important;
                     }
+                    .react-grid-item.react-draggable-dragging {
+                        transition: none !important;
+                        z-index: 3 !important;
+                        opacity: 0.8 !important;
+                    }
+                    .layout .react-grid-item {
+                        border: 2px solid transparent !important;
+                        transition: border-color 0.2s ease !important;
+                    }
+                    .layout .react-grid-item:hover {
+                        border-color: #3b82f6 !important;
+                    }
                     .react-resizable-handle {
                         background-image: none !important;
                         background-color: #3b82f6 !important;
                         border-radius: 2px !important;
-                        width: 8px !important;
-                        height: 8px !important;
+                        width: 12px !important;
+                        height: 12px !important;
                         position: absolute !important;
                         z-index: 10 !important;
-                        border: 1px solid #2563eb !important;
+                        border: 2px solid #2563eb !important;
+                        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2) !important;
                     }
                     .react-resizable-handle:hover {
                         background-color: #2563eb !important;
@@ -908,6 +960,24 @@ const Dashboard = () => {
                     }
                     .tab:hover .tab-close-button {
                         opacity: 1;
+                    }
+                    /* Ensure grid items are properly styled */
+                    .react-grid-item {
+                        background: white !important;
+                        border-radius: 8px !important;
+                        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+                    }
+                    /* Make sure resize handles are visible */
+                    .react-resizable-handle-se {
+                        background-color: #3b82f6 !important;
+                        border: 2px solid #2563eb !important;
+                        border-radius: 2px !important;
+                        width: 12px !important;
+                        height: 12px !important;
+                        right: 2px !important;
+                        bottom: 2px !important;
+                        cursor: se-resize !important;
+                        z-index: 10 !important;
                     }
                 `}
             </style>
@@ -953,6 +1023,20 @@ const Dashboard = () => {
                             title="Show session debug info"
                         >
                             Session Info
+                        </button>
+                        <button
+                            onClick={() => console.log('Grid debug - isEditMode:', isEditMode, 'layout:', layout, 'isDraggable:', isEditMode, 'isResizable:', isEditMode)}
+                            className="px-2 py-1 bg-orange-500 text-white text-xs rounded hover:bg-orange-600"
+                            title="Debug grid settings"
+                        >
+                            Debug Grid
+                        </button>
+                        <button
+                            onClick={testGridFunctionality}
+                            className="px-2 py-1 bg-pink-500 text-white text-xs rounded hover:bg-pink-600"
+                            title="Test grid functionality"
+                        >
+                            Test Grid
                         </button>
                     </div>
                 </div>
@@ -1017,7 +1101,7 @@ const Dashboard = () => {
                     )}
 
                     {/* Grid layout - only show if there's an active tab and layout is ready */}
-                    {console.log('Rendering grid - isEditMode:', isEditMode, 'layout length:', layout.length)}
+                    {console.log('Rendering grid - isEditMode:', isEditMode, 'layout length:', layout.length, 'isDraggable:', isEditMode, 'isResizable:', isEditMode)}
                     {activeTabId && layout && (
                         <ResponsiveReactGridLayout
                             key={`grid-${activeTabId}-${isEditMode}`}
@@ -1030,7 +1114,7 @@ const Dashboard = () => {
                             isResizable={isEditMode}
                             margin={[10, 10]}
                             containerPadding={[10, 10]}
-                            style={{ minHeight: '400px' }}
+                            style={{ minHeight: '400px', border: '1px solid #ccc', padding: '10px' }}
                             useCSSTransforms={false}
                             preventCollision={true}
                             compactType={null}
