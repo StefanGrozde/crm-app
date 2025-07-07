@@ -331,7 +331,7 @@ export const getWidgetSecurityConfig = (widgetKey) => {
     };
 };
 
-export default {
+const widgetConfig = {
     DEFAULT_WIDGET_CONFIG,
     WIDGET_TYPE_CONFIG,
     WIDGET_REGISTRY_CONFIG,
@@ -343,4 +343,6 @@ export default {
     validateWidgetConfig,
     getWidgetPerformanceConfig,
     getWidgetSecurityConfig
-}; 
+};
+
+export default widgetConfig; 

@@ -35,13 +35,14 @@ const WidgetRenderer = memo(({
     const lastRenderTimeRef = useRef(0);
     
     // Memoize widget props to prevent unnecessary re-renders
+    const propsString = useMemo(() => JSON.stringify(props), [props]);
     const memoizedProps = useMemo(() => ({
         widgetKey,
         widgetPath,
         type,
         resultData,
         ...props
-    }), [widgetKey, widgetPath, type, resultData, JSON.stringify(props)]);
+    }), [widgetKey, widgetPath, type, resultData, propsString]);
     
     // Handle widget ready state
     const handleWidgetReady = useCallback(() => {
@@ -160,25 +161,8 @@ const WidgetRenderer = memo(({
 
 // Widget Manager for handling multiple widgets
 const WidgetManager = memo(({ widgets, activeTabId, onWidgetEvent }) => {
-    const [widgetStates, setWidgetStates] = useState({});
-    const [widgetMetrics, setWidgetMetrics] = useState({});
-    
     // Handle widget ready event
     const handleWidgetReady = useCallback((widgetKey, loadTime) => {
-        setWidgetStates(prev => ({
-            ...prev,
-            [widgetKey]: WIDGET_STATES.READY
-        }));
-        
-        setWidgetMetrics(prev => ({
-            ...prev,
-            [widgetKey]: {
-                ...prev[widgetKey],
-                loadTime,
-                lastReady: Date.now()
-            }
-        }));
-        
         if (onWidgetEvent) {
             onWidgetEvent('ready', { widgetKey, loadTime });
         }
@@ -186,18 +170,14 @@ const WidgetManager = memo(({ widgets, activeTabId, onWidgetEvent }) => {
     
     // Handle widget error event
     const handleWidgetError = useCallback((widgetKey, error) => {
-        setWidgetStates(prev => ({
-            ...prev,
-            [widgetKey]: WIDGET_STATES.ERROR
-        }));
-        
         if (onWidgetEvent) {
             onWidgetEvent('error', { widgetKey, error });
         }
     }, [onWidgetEvent]);
     
     // Memoize widgets to prevent unnecessary re-renders
-    const memoizedWidgets = useMemo(() => widgets, [JSON.stringify(widgets)]);
+    const widgetsString = useMemo(() => JSON.stringify(widgets), [widgets]);
+    const memoizedWidgets = useMemo(() => widgets, [widgetsString]);
     
     return (
         <div className="widget-manager">

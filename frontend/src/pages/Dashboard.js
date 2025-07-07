@@ -12,7 +12,7 @@ import SaveViewModal from '../components/SaveViewModal';
 import Navbar from '../components/Navbar';
 import TabBar from '../components/TabBar';
 import EditLayoutControls from '../components/EditLayoutControls';
-import { WidgetRenderer, WidgetManager, WIDGET_STATES } from '../components/WidgetRenderer';
+import { WidgetRenderer } from '../components/WidgetRenderer';
 import { useTabSession } from '../hooks/useTabSession';
 
 const ResponsiveReactGridLayout = WidthProvider(Responsive);
@@ -511,6 +511,7 @@ const Dashboard = () => {
         }
     };
 
+    // eslint-disable-next-line no-unused-vars
     const handleAddWidget = (widgetKey) => {
         console.log('Adding widget:', widgetKey);
         const widgetToAdd = widgetLibrary.find(w => w.key === widgetKey);
@@ -707,13 +708,6 @@ const Dashboard = () => {
         // Small delay to ensure state updates are processed
         setTimeout(() => setIsTabSwitching(false), 50);
     };
-
-    // Convenience functions for specific pages
-    const handleOpenContactsTab = () => handleOpenPageTab('contacts', 'Contacts', 'contacts-widget');
-    const handleOpenLeadsTab = () => handleOpenPageTab('leads', 'Leads', 'leads-widget');
-    const handleOpenOpportunitiesTab = () => handleOpenPageTab('opportunities', 'Opportunities', 'opportunities-widget');
-    const handleOpenCompaniesTab = () => handleOpenPageTab('companies', 'Companies', 'companies-widget');
-    const handleOpenUsersTab = () => handleOpenPageTab('users', 'Users', 'users-widget');
 
     // Create sample data for testing
     const createSampleData = async () => {
