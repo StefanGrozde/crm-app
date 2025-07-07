@@ -115,6 +115,8 @@ router.get('/', protect, async (req, res) => {
     }
 });
 
+
+
 // GET /api/contacts/:id - Get a specific contact
 router.get('/:id', protect, async (req, res) => {
     try {
