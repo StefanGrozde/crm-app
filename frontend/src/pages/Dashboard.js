@@ -1,7 +1,7 @@
 // frontend/src/pages/Dashboard.js
 import React, { useState, useEffect, useContext, useRef } from 'react';
 import axios from 'axios';
-import { Responsive, WidthProvider } from 'react-grid-layout';
+import { Responsive, WidthProvider, GridLayout } from 'react-grid-layout';
 import { arrayMove } from '@dnd-kit/sortable';
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
@@ -27,7 +27,7 @@ const Dashboard = () => {
     const [currentViewId, setCurrentViewId] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isTabSwitching, setIsTabSwitching] = useState(false);
-    const [currentBreakpoint, setCurrentBreakpoint] = useState('lg');
+
     
     // Tab management state with session persistence
     const {
@@ -637,8 +637,21 @@ const Dashboard = () => {
     // Enhanced widget component with robust rendering
     const MemoizedWidget = ({ item, widget }) => {
         console.log('MemoizedWidget rendering:', item.i, 'with item data:', item);
+        
+        // Add ref to inspect the DOM element
+        const widgetRef = useRef(null);
+        
+        useEffect(() => {
+            if (widgetRef.current) {
+                console.log('Widget DOM element:', item.i, widgetRef.current);
+                console.log('Widget classes:', item.i, widgetRef.current.className);
+                console.log('Widget computed styles:', item.i, window.getComputedStyle(widgetRef.current));
+            }
+        }, [item.i]);
+        
         return (
             <div 
+                ref={widgetRef}
                 key={item.i} 
                 className="bg-white rounded-lg shadow-lg p-2 overflow-hidden transition-all duration-200 relative"
                 data-widget-key={item.i}
@@ -791,13 +804,7 @@ const Dashboard = () => {
                        transition: none;
                    }
                    
-                   /* Force grid positioning */
-                   .react-grid-layout .react-grid-item {
-                       position: absolute !important;
-                       box-sizing: border-box !important;
-                   }
-                   
-                   /* Debug grid positioning */
+                   /* Debug grid positioning - let react-grid-layout handle positioning */
                    .react-grid-layout {
                        position: relative !important;
                        width: 100% !important;
@@ -807,6 +814,17 @@ const Dashboard = () => {
                    .react-grid-item {
                        min-height: 100px !important;
                        min-width: 100px !important;
+                   }
+                   
+                   /* Debug: Add border to see grid items */
+                   .react-grid-item {
+                       border: 2px solid red !important;
+                   }
+                   
+                   /* Debug: Add border to see grid layout */
+                   .react-grid-layout {
+                       border: 2px solid blue !important;
+                       min-height: 500px !important;
                    }
                `}
             </style>
@@ -823,8 +841,7 @@ const Dashboard = () => {
                             Active tab: {activeTabId || 'None'} |
                             Session: {openTabs.length > 0 ? 'Saved' : 'None'} |
                             Session Loading: {isSessionLoading ? 'Yes' : 'No'} |
-                            Grid: 12 cols (lg/md/sm/xs/xxs) |
-                            Breakpoint: {currentBreakpoint} |
+                            Grid: 12 cols (GridLayout) |
                             Layout: {layout.length > 0 ? `${layout.length} items` : 'Empty'}
                         </div>
                         {user.role === 'Administrator' && (
@@ -925,10 +942,10 @@ const Dashboard = () => {
                         </>
                     )}
                     {activeTabId && layout && (
-                        <ResponsiveReactGridLayout
-                            layouts={{ lg: layout }}
+                        <GridLayout
+                            layout={layout}
                             className="layout"
-                            cols={{ lg: 12, md: 12, sm: 12, xs: 12, xxs: 12 }}
+                            cols={12}
                             rowHeight={100}
                             isDraggable={false}
                             isResizable={false}
@@ -942,11 +959,6 @@ const Dashboard = () => {
                             autoSize={true}
                             verticalCompact={true}
                             allowOverlap={false}
-                            breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 }}
-                            onBreakpointChange={(newBreakpoint) => {
-                                console.log('Dashboard breakpoint changed to:', newBreakpoint);
-                                setCurrentBreakpoint(newBreakpoint);
-                            }}
                         >
                             {layout.map(item => {
                                 console.log('Rendering layout item:', item);
@@ -984,7 +996,7 @@ const Dashboard = () => {
                                     />
                                 );
                             })}
-                        </ResponsiveReactGridLayout>
+                        </GridLayout>
                     )}
                     
                     {/* Loading state for active tab */}
