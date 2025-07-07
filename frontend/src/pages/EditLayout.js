@@ -171,6 +171,12 @@ const EditLayout = () => {
             console.log("View updated successfully:", response.data);
             
             setOriginalLayout([...layout]); // Update original layout to current
+            
+            // Set a flag to indicate that the view has been updated
+            localStorage.setItem('dashboard_view_updated', 'true');
+            localStorage.setItem('dashboard_view_updated_id', currentView.id);
+            localStorage.setItem('dashboard_view_updated_timestamp', Date.now().toString());
+            
             alert('View saved successfully!');
             
         } catch (error) { 
@@ -200,6 +206,11 @@ const EditLayout = () => {
             }, { withCredentials: true });
 
             console.log("New view saved successfully:", response.data);
+            
+            // Set a flag to indicate that a new view has been created
+            localStorage.setItem('dashboard_view_updated', 'true');
+            localStorage.setItem('dashboard_view_updated_id', response.data.id);
+            localStorage.setItem('dashboard_view_updated_timestamp', Date.now().toString());
             
             setSaveModalOpen(false);
             alert('New view saved successfully!');

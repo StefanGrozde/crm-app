@@ -60,6 +60,50 @@ const Dashboard = () => {
         console.log('Active tab:', activeTabId);
     }, [layout, openTabs, activeTabId]);
 
+    // Check if we need to refresh view data on mount (e.g., returning from EditLayout)
+    useEffect(() => {
+        if (activeTabId && !activeTabId.includes('-page') && !activeTabId.includes('search-')) {
+            console.log('Dashboard mounted with active view tab - checking if refresh is needed');
+            
+            // Check if there's a flag indicating a view was updated
+            const viewUpdated = localStorage.getItem('dashboard_view_updated');
+            const viewUpdatedId = localStorage.getItem('dashboard_view_updated_id');
+            const viewUpdatedTimestamp = localStorage.getItem('dashboard_view_updated_timestamp');
+            
+            if (viewUpdated === 'true' && viewUpdatedId && viewUpdatedTimestamp) {
+                const timestamp = parseInt(viewUpdatedTimestamp);
+                const now = Date.now();
+                const timeDiff = now - timestamp;
+                
+                // Only refresh if the update was recent (within last 30 seconds)
+                if (timeDiff < 30000) {
+                    console.log('View update detected - refreshing view data');
+                    
+                    // Clear the flag
+                    localStorage.removeItem('dashboard_view_updated');
+                    localStorage.removeItem('dashboard_view_updated_id');
+                    localStorage.removeItem('dashboard_view_updated_timestamp');
+                    
+                    // Refresh both the views list and the current view data
+                    setTimeout(async () => {
+                        await refreshViewsList();
+                        await refreshCurrentView();
+                    }, 100);
+                } else {
+                    // Clear old flags
+                    localStorage.removeItem('dashboard_view_updated');
+                    localStorage.removeItem('dashboard_view_updated_id');
+                    localStorage.removeItem('dashboard_view_updated_timestamp');
+                }
+            } else {
+                // Add a delay to ensure everything is loaded
+                setTimeout(() => {
+                    refreshCurrentView();
+                }, 500);
+            }
+        }
+    }, []); // eslint-disable-next-line react-hooks/exhaustive-deps
+
     // Load initial data
     useEffect(() => {
         const loadInitialData = async () => {
@@ -376,6 +420,55 @@ const Dashboard = () => {
         }
     };
 
+    // Refresh current view data from backend
+    const refreshCurrentView = async () => {
+        if (!activeTabId || activeTabId.includes('-page') || activeTabId.includes('search-')) {
+            console.log('Skipping refresh for non-view tab:', activeTabId);
+            return;
+        }
+
+        try {
+            console.log('Refreshing current view from backend:', activeTabId);
+            const { data } = await axios.get(`${API_URL}/api/dashboard/views/${activeTabId}`, { withCredentials: true });
+            
+            // Convert widgets to layout format
+            let refreshedLayout = [];
+            if (data.widgets && data.widgets.length > 0) {
+                refreshedLayout = data.widgets.map(w => ({ 
+                    i: w.widgetKey, 
+                    x: w.x || 0, 
+                    y: w.y || 0, 
+                    w: w.w || 6, 
+                    h: w.h || 2 
+                }));
+            }
+            
+            // Update the tab's layout in session
+            setTabLayouts(prev => ({ ...prev, [activeTabId]: refreshedLayout }));
+            
+            // Update the current layout if this is the active tab
+            if (activeTabId === currentViewId) {
+                setLayout(refreshedLayout);
+            }
+            
+            console.log('View refreshed successfully:', data.name, 'Layout:', refreshedLayout);
+        } catch (error) {
+            console.error("Failed to refresh view", error);
+        }
+    };
+
+    // Refresh views list from backend
+    const refreshViewsList = async () => {
+        try {
+            console.log('Refreshing views list from backend');
+            const { data } = await axios.get(`${API_URL}/api/dashboard/views`, { withCredentials: true });
+            setViews(data);
+            console.log('Views list refreshed successfully:', data.length, 'views');
+        } catch (error) {
+            console.error("Failed to refresh views list", error);
+        }
+    };
+
     // Handle opening search results as new tabs
     const handleOpenSearchResult = (result) => {
         console.log('Opening search result as tab:', result);
@@ -569,6 +662,65 @@ const Dashboard = () => {
         };
     }, []);
 
+    // Refresh view data when returning from EditLayout
+    useEffect(() => {
+        let previousUrl = window.location.pathname;
+        
+        const handleFocus = () => {
+            console.log('Dashboard focused - checking if refresh is needed');
+            // Add a small delay to ensure we're back from EditLayout
+            setTimeout(() => {
+                refreshCurrentView();
+            }, 100);
+        };
+
+        const handleVisibilityChange = () => {
+            if (!document.hidden) {
+                console.log('Dashboard became visible - checking if refresh is needed');
+                // Add a small delay to ensure we're back from EditLayout
+                setTimeout(() => {
+                    refreshCurrentView();
+                }, 100);
+            }
+        };
+
+        const handleUrlChange = () => {
+            const currentUrl = window.location.pathname;
+            console.log('URL changed from:', previousUrl, 'to:', currentUrl);
+            
+            // If we're returning from EditLayout to Dashboard
+            if (previousUrl.includes('/edit-layout/') && currentUrl === '/dashboard') {
+                console.log('Returning from EditLayout - refreshing view data');
+                setTimeout(() => {
+                    refreshCurrentView();
+                }, 100);
+            }
+            
+            previousUrl = currentUrl;
+        };
+
+        // Listen for focus, visibility changes, and URL changes
+        window.addEventListener('focus', handleFocus);
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+        
+        // Use popstate to detect navigation changes
+        window.addEventListener('popstate', handleUrlChange);
+        
+        // Also check on mount if we're coming from EditLayout
+        if (previousUrl.includes('/edit-layout/')) {
+            console.log('Dashboard mounted after EditLayout - refreshing view data');
+            setTimeout(() => {
+                refreshCurrentView();
+            }, 100);
+        }
+
+        return () => {
+            window.removeEventListener('focus', handleFocus);
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
+            window.removeEventListener('popstate', handleUrlChange);
+        };
+    }, [activeTabId, currentViewId]); // eslint-disable-next-line react-hooks/exhaustive-deps
+
     if (!user) return <div>Loading...</div>;
     if (isLoading || isSessionLoading) return <div className="min-h-screen bg-gray-100 flex items-center justify-center">Loading dashboard...</div>;
 
@@ -624,10 +776,24 @@ const Dashboard = () => {
                         </button>
                         <button
                             onClick={debugSessionInfo}
-                            className="px-2 py-1 bg-purple-500 text-white text-xs rounded hover:bg-purple-600"
+                            className="px-2 py-1 bg-purple-500 text-white text-xs rounded hover:bg-purple-600 mr-2"
                             title="Show session debug info"
                         >
                             Session Info
+                        </button>
+                        <button
+                            onClick={refreshCurrentView}
+                            className="px-2 py-1 bg-orange-500 text-white text-xs rounded hover:bg-orange-600 mr-2"
+                            title="Refresh current view from backend"
+                        >
+                            Refresh View
+                        </button>
+                        <button
+                            onClick={refreshViewsList}
+                            className="px-2 py-1 bg-teal-500 text-white text-xs rounded hover:bg-teal-600"
+                            title="Refresh views list from backend"
+                        >
+                            Refresh Views
                         </button>
                     </div>
                 </div>
