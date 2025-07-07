@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, memo } from 'react';
 import SearchResultWidget from './SearchResultWidget';
 import ContactsWidget from './ContactsWidget';
 
@@ -188,4 +188,4 @@ const DynamicWidget = ({ widgetKey, widgetPath, type, resultData, ...props }) =>
     );
 };
 
-export default DynamicWidget;
+export default memo(DynamicWidget);

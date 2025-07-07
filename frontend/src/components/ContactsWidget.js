@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useContext, useCallback, useMemo, memo } from 'react';
 import axios from 'axios';
 import { AuthContext } from '../context/AuthContext';
 
@@ -1184,4 +1184,4 @@ const ContactsWidget = () => {
     );
 };
 
-export default ContactsWidget; 
+export default memo(ContactsWidget); 

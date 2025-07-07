@@ -1,5 +1,5 @@
 // frontend/src/pages/Dashboard.js
-import React, { useState, useEffect, useContext, useRef } from 'react';
+import React, { useState, useEffect, useContext, useRef, useMemo, useCallback } from 'react';
 import axios from 'axios';
 import { Responsive, WidthProvider } from 'react-grid-layout';
 import { arrayMove } from '@dnd-kit/sortable';
@@ -556,13 +556,13 @@ const Dashboard = () => {
 
 
     // Handle layout changes during edit mode
-    const handleLayoutChange = (newLayout) => {
+    const handleLayoutChange = useCallback((newLayout) => {
         console.log('Layout changed:', newLayout);
         setLayout(newLayout);
         
         // Update the tab's layout
         setTabLayouts(prev => ({ ...prev, [currentViewId]: newLayout }));
-    };
+    }, [currentViewId]);
 
     // Debug function to test remove functionality
     const debugRemoveWidget = (widgetKey) => {
@@ -730,9 +730,12 @@ const Dashboard = () => {
         alert(`Session Info:\nExists: ${sessionInfo.exists}\nTab Count: ${sessionInfo.tabCount || 0}\nActive Tab: ${sessionInfo.activeTab || 'None'} (${typeof sessionInfo.activeTab})\nCurrent Active Tab: ${activeTabId || 'None'} (${typeof activeTabId})\nAge: ${sessionInfo.age ? Math.round(sessionInfo.age / 1000 / 60) + ' minutes' : 'N/A'}\nExpires In: ${sessionInfo.expiresIn ? Math.round(sessionInfo.expiresIn / 1000 / 60) + ' minutes' : 'N/A'}`);
     };
 
-    // Derived state
-    const currentWidgetKeys = layout.map(item => item.i);
-    const availableWidgets = widgetLibrary.filter(widget => !currentWidgetKeys.includes(widget.key));
+    // Derived state - memoized to prevent unnecessary re-renders
+    const currentWidgetKeys = useMemo(() => layout.map(item => item.i), [layout]);
+    const availableWidgets = useMemo(() => 
+        widgetLibrary.filter(widget => !currentWidgetKeys.includes(widget.key)), 
+        [widgetLibrary, currentWidgetKeys]
+    );
 
     // Handle tab drag end
     const handleTabDragEnd = (event) => {
@@ -753,9 +756,55 @@ const Dashboard = () => {
     };
 
     // Handle tab drag start
-    const handleTabDragStart = () => {
+    const handleTabDragStart = useCallback(() => {
         setIsDraggingTab(true);
-    };
+    }, []);
+
+    // Memoized widget component to prevent unnecessary re-renders
+    const MemoizedWidget = useCallback(({ item, widget, isEditMode, onRemoveWidget }) => {
+        return (
+            <div 
+                key={item.i} 
+                className={`bg-white rounded-lg shadow-lg p-2 overflow-hidden transition-all duration-200 relative ${
+                    isEditMode ? 'ring-2 ring-blue-500 ring-offset-2 cursor-move' : ''
+                }`}
+                data-widget-key={item.i}
+            >
+                {/* Remove button - only shown in edit mode */}
+                {isEditMode && (
+                    <button
+                        data-remove-widget={item.i}
+                        className="absolute top-2 right-2 z-50 bg-red-500 hover:bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center transition-colors duration-200 shadow-lg"
+                        style={{ zIndex: 9999 }}
+                        title="Remove widget"
+                    >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                )}
+                
+                {/* Widget content */}
+                <div className={isEditMode ? 'pt-6' : ''}>
+                    <DynamicWidget 
+                        widgetKey={item.i} 
+                        widgetPath={widget?.path} 
+                        type={widget?.type}
+                        resultData={item.i.startsWith('search-result-') ? item.resultData : undefined}
+                    />
+                </div>
+                
+                {/* Widget info overlay in edit mode */}
+                {isEditMode && (
+                    <div className="absolute bottom-1 left-1 z-10">
+                        <span className="bg-blue-500 text-white text-xs px-2 py-1 rounded opacity-75">
+                            {item.w}×{item.h}
+                        </span>
+                    </div>
+                )}
+            </div>
+        );
+    }, []);
 
     // Cleanup timeout on unmount
     useEffect(() => {
@@ -868,6 +917,7 @@ const Dashboard = () => {
                     onAddModalClose={handleCloseAddModal}
                     isUploadModalOpen={isUploadModalOpen}
                     onUploadModalClose={handleCloseUploadModal}
+                    onUploadModalOpen={handleOpenUploadModal}
                 />
 
                 <TabBar 
@@ -906,6 +956,7 @@ const Dashboard = () => {
                     {/* Grid layout - only show if there's an active tab and layout is ready */}
                     {activeTabId && layout && (
                         <ResponsiveReactGridLayout
+                            key={`grid-${activeTabId}-${isEditMode}`}
                             layouts={{ lg: Array.isArray(layout) ? layout : [] }}
                             onLayoutChange={handleLayoutChange}
                             className="layout"
@@ -916,50 +967,18 @@ const Dashboard = () => {
                             margin={[10, 10]}
                             containerPadding={[10, 10]}
                             style={{ minHeight: '400px' }}
+                            useCSSTransforms={false}
+                            preventCollision={true}
                         >
                             {layout.map(item => {
                                 const widget = widgetLibrary.find(w => w.key === item.i);
                                 return (
-                                    <div 
-                                        key={item.i} 
-                                        className={`bg-white rounded-lg shadow-lg p-2 overflow-hidden transition-all duration-200 relative ${
-                                            isEditMode ? 'ring-2 ring-blue-500 ring-offset-2 cursor-move' : ''
-                                        }`}
-                                        data-widget-key={item.i}
-                                    >
-                                        {/* Remove button - only shown in edit mode */}
-                                        {isEditMode && (
-                                            <button
-                                                data-remove-widget={item.i}
-                                                className="absolute top-2 right-2 z-50 bg-red-500 hover:bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center transition-colors duration-200 shadow-lg"
-                                                style={{ zIndex: 9999 }}
-                                                title="Remove widget"
-                                            >
-                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                                </svg>
-                                            </button>
-                                        )}
-                                        
-                                        {/* Widget content */}
-                                        <div className={isEditMode ? 'pt-6' : ''}>
-                                            <DynamicWidget 
-                                                widgetKey={item.i} 
-                                                widgetPath={widget?.path} 
-                                                type={widget?.type}
-                                                resultData={item.i.startsWith('search-result-') ? item.resultData : undefined}
-                                            />
-                                        </div>
-                                        
-                                        {/* Widget info overlay in edit mode */}
-                                        {isEditMode && (
-                                            <div className="absolute bottom-1 left-1 z-10">
-                                                <span className="bg-blue-500 text-white text-xs px-2 py-1 rounded opacity-75">
-                                                    {item.w}×{item.h}
-                                                </span>
-                                            </div>
-                                        )}
-                                    </div>
+                                    <MemoizedWidget
+                                        key={item.i}
+                                        item={item}
+                                        widget={widget}
+                                        isEditMode={isEditMode}
+                                    />
                                 );
                             })}
                         </ResponsiveReactGridLayout>

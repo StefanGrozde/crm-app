@@ -25,7 +25,8 @@ const Navbar = ({
     isAddModalOpen,
     onAddModalClose,
     isUploadModalOpen,
-    onUploadModalClose
+    onUploadModalClose,
+    onUploadModalOpen
 }) => {
     // Debug logging
     console.log('Navbar render - currentViewId:', currentViewId, 'type:', typeof currentViewId);
@@ -259,7 +260,7 @@ const Navbar = ({
                                     <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10">
                                         {user.role === 'Administrator' && (
                                             <button 
-                                                onClick={() => { onUploadModalClose(); setMenuOpen(false); }} 
+                                                onClick={() => { onUploadModalOpen(); setMenuOpen(false); }} 
                                                 className="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                                             >
                                                 Upload Widget

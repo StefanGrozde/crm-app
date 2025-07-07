@@ -1,60 +1,60 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, memo, useCallback, useMemo } from 'react';
 import axios from 'axios';
 
 const API_URL = process.env.REACT_APP_API_URL;
 
-const SearchResultWidget = ({ resultData }) => {
+const SearchResultWidget = memo(({ resultData }) => {
   const [details, setDetails] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    const fetchDetails = async () => {
-      if (!resultData) return;
+  const fetchDetails = useCallback(async () => {
+    if (!resultData) return;
+    
+    try {
+      setLoading(true);
+      setError(null);
       
-      try {
-        setLoading(true);
-        setError(null);
-        
-        // Fetch detailed information based on the result type
-        let endpoint = '';
-        switch (resultData.type) {
-          case 'contact':
-            endpoint = `/api/contacts/${resultData.id}`;
-            break;
-          case 'lead':
-            endpoint = `/api/leads/${resultData.id}`;
-            break;
-          case 'opportunity':
-            endpoint = `/api/opportunities/${resultData.id}`;
-            break;
-          case 'company':
-            endpoint = `/api/companies/${resultData.id}`;
-            break;
-          case 'user':
-            endpoint = `/api/users/${resultData.id}`;
-            break;
-          default:
-            throw new Error('Unknown result type');
-        }
-        
-        const response = await axios.get(`${API_URL}${endpoint}`, {
-          withCredentials: true
-        });
-        
-        setDetails(response.data);
-      } catch (err) {
-        console.error('Failed to fetch details:', err);
-        setError('Failed to load details. Using search result data instead.');
-        // Fallback to the search result data
-        setDetails(resultData);
-      } finally {
-        setLoading(false);
+      // Fetch detailed information based on the result type
+      let endpoint = '';
+      switch (resultData.type) {
+        case 'contact':
+          endpoint = `/api/contacts/${resultData.id}`;
+          break;
+        case 'lead':
+          endpoint = `/api/leads/${resultData.id}`;
+          break;
+        case 'opportunity':
+          endpoint = `/api/opportunities/${resultData.id}`;
+          break;
+        case 'company':
+          endpoint = `/api/companies/${resultData.id}`;
+          break;
+        case 'user':
+          endpoint = `/api/users/${resultData.id}`;
+          break;
+        default:
+          throw new Error('Unknown result type');
       }
-    };
-
-    fetchDetails();
+      
+      const response = await axios.get(`${API_URL}${endpoint}`, {
+        withCredentials: true
+      });
+      
+      setDetails(response.data);
+    } catch (err) {
+      console.error('Failed to fetch details:', err);
+      setError('Failed to load details. Using search result data instead.');
+      // Fallback to the search result data
+      setDetails(resultData);
+    } finally {
+      setLoading(false);
+    }
   }, [resultData]);
+
+  useEffect(() => {
+    fetchDetails();
+  }, [fetchDetails]);
 
   if (loading) {
     return (
@@ -84,9 +84,9 @@ const SearchResultWidget = ({ resultData }) => {
   }
 
   return <SearchResultDisplay result={details || resultData} />;
-};
+});
 
-const SearchResultDisplay = ({ result }) => {
+const SearchResultDisplay = memo(({ result }) => {
   if (!result) {
     return (
       <div className="p-4 text-center text-gray-500">
@@ -95,7 +95,7 @@ const SearchResultDisplay = ({ result }) => {
     );
   }
 
-  const getTypeIcon = (type) => {
+  const getTypeIcon = useCallback((type) => {
     switch (type) {
       case 'contact':
         return (
@@ -134,9 +134,9 @@ const SearchResultDisplay = ({ result }) => {
           </svg>
         );
     }
-  };
+  }, []);
 
-  const getStatusBadge = (status) => {
+  const getStatusBadge = useCallback((status) => {
     if (!status) return null;
 
     const statusColors = {
@@ -158,7 +158,7 @@ const SearchResultDisplay = ({ result }) => {
         {status.replace('_', ' ')}
       </span>
     );
-  };
+  }, []);
 
   const renderContactDetails = () => (
     <div className="space-y-4">
