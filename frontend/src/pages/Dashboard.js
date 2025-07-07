@@ -62,8 +62,6 @@ const Dashboard = () => {
     // Track previous openTabs length
     const prevTabsLengthRef = useRef(openTabs.length);
 
-
-
     // Debug: Log state changes
     useEffect(() => {
         console.log('Edit mode changed:', isEditMode);
@@ -577,8 +575,6 @@ const Dashboard = () => {
         }
     };
 
-
-
     // Handle layout changes during edit mode
     const handleLayoutChange = (newLayout) => {
         console.log('Layout changed:', newLayout);
@@ -1051,8 +1047,6 @@ const Dashboard = () => {
                         onSaveAsNewView={() => setSaveModalOpen(true)}
                         currentViewId={currentViewId}
                     />
-
-
 
                     {/* No active tab message */}
                     {!activeTabId && (
