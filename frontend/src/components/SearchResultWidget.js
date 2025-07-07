@@ -391,6 +391,6 @@ const SearchResultDisplay = memo(({ result }) => {
       {renderDetails()}
     </div>
   );
-};
+});
 
 export default SearchResultWidget; 
