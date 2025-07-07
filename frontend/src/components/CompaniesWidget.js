@@ -55,12 +55,7 @@ const CompaniesWidget = () => {
         status: 'active'
     });
     
-    // Filter options
-    const [filterOptions, setFilterOptions] = useState({
-        industries: [],
-        sizes: [],
-        statuses: []
-    });
+
 
     // Load companies
     const loadCompanies = useCallback(async (page = 1) => {
@@ -86,25 +81,10 @@ const CompaniesWidget = () => {
         }
     }, [filters, pagination.itemsPerPage]);
 
-    // Load filter options
-    const loadFilterOptions = useCallback(async () => {
-        try {
-            const response = await axios.get(`${API_URL}/api/companies/filter-options`, {
-                withCredentials: true
-            });
-            setFilterOptions(response.data);
-        } catch (error) {
-            console.error('Error loading filter options:', error);
-        }
-    }, []);
-
     useEffect(() => {
         const initializeComponent = async () => {
             try {
-                await Promise.all([
-                    loadCompanies(),
-                    loadFilterOptions()
-                ]);
+                await loadCompanies();
             } catch (error) {
                 console.error('Error initializing CompaniesWidget:', error);
                 setError('Failed to initialize companies widget');
@@ -118,7 +98,7 @@ const CompaniesWidget = () => {
                 clearTimeout(window.searchTimeout);
             }
         };
-    }, [loadCompanies, loadFilterOptions]);
+    }, [loadCompanies]);
 
     // Handle search input changes
     const handleSearchInputChange = useCallback((value) => {
@@ -277,17 +257,14 @@ const CompaniesWidget = () => {
                     <div className="space-y-4">
                         <div>
                             <label className="block text-sm font-medium text-gray-700">Industry</label>
-                            <select
+                            <input
+                                type="text"
                                 name="industry"
                                 value={filterFormData.industry}
                                 onChange={handleFilterInputChange}
+                                placeholder="Enter industry to filter"
                                 className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
-                            >
-                                <option value="">All Industries</option>
-                                {filterOptions.industries?.map(industry => (
-                                    <option key={industry} value={industry}>{industry}</option>
-                                ))}
-                            </select>
+                            />
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-gray-700">Size</label>
@@ -298,9 +275,12 @@ const CompaniesWidget = () => {
                                 className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
                             >
                                 <option value="">All Sizes</option>
-                                {filterOptions.sizes?.map(size => (
-                                    <option key={size} value={size}>{size}</option>
-                                ))}
+                                <option value="1-10">1-10 employees</option>
+                                <option value="11-50">11-50 employees</option>
+                                <option value="51-200">51-200 employees</option>
+                                <option value="201-500">201-500 employees</option>
+                                <option value="501-1000">501-1000 employees</option>
+                                <option value="1000+">1000+ employees</option>
                             </select>
                         </div>
                         <div>

@@ -64,11 +64,7 @@ const OpportunitiesWidget = () => {
     const [users, setUsers] = useState([]);
     const [companies, setCompanies] = useState([]);
     const [contacts, setContacts] = useState([]);
-    const [filterOptions, setFilterOptions] = useState({
-        types: [],
-        sources: [],
-        companies: []
-    });
+
 
     // Load opportunities
     const loadOpportunities = useCallback(async (page = 1) => {
@@ -97,17 +93,15 @@ const OpportunitiesWidget = () => {
     // Load dropdown data
     const loadDropdownData = useCallback(async () => {
         try {
-            const [usersResponse, companiesResponse, contactsResponse, filterOptionsResponse] = await Promise.all([
+            const [usersResponse, companiesResponse, contactsResponse] = await Promise.all([
                 axios.get(`${API_URL}/api/users`, { withCredentials: true }),
                 axios.get(`${API_URL}/api/companies`, { withCredentials: true }),
-                axios.get(`${API_URL}/api/contacts`, { withCredentials: true }),
-                axios.get(`${API_URL}/api/opportunities/filter-options`, { withCredentials: true })
+                axios.get(`${API_URL}/api/contacts`, { withCredentials: true })
             ]);
             
             setUsers(usersResponse.data);
             setCompanies(companiesResponse.data);
             setContacts(contactsResponse.data);
-            setFilterOptions(filterOptionsResponse.data);
         } catch (error) {
             console.error('Error loading dropdown data:', error);
         }
@@ -358,15 +352,28 @@ const OpportunitiesWidget = () => {
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-gray-700">Type</label>
-                            <select
+                            <input
+                                type="text"
                                 name="type"
                                 value={filterFormData.type}
                                 onChange={handleFilterInputChange}
+                                placeholder="Enter type to filter"
+                                className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">Company</label>
+                            <select
+                                name="company"
+                                value={filterFormData.company}
+                                onChange={handleFilterInputChange}
                                 className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
                             >
-                                <option value="">All Types</option>
-                                {filterOptions.types?.map(type => (
-                                    <option key={type} value={type}>{type}</option>
+                                <option value="">All Companies</option>
+                                {companies.map(company => (
+                                    <option key={company.id} value={company.id}>
+                                        {company.name}
+                                    </option>
                                 ))}
                             </select>
                         </div>

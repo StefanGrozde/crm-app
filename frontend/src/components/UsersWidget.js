@@ -47,10 +47,6 @@ const UsersWidget = () => {
     
     // Additional data for dropdowns
     const [companies, setCompanies] = useState([]);
-    const [filterOptions, setFilterOptions] = useState({
-        roles: [],
-        companies: []
-    });
 
     // Load users
     const loadUsers = useCallback(async (page = 1) => {
@@ -79,13 +75,8 @@ const UsersWidget = () => {
     // Load dropdown data
     const loadDropdownData = useCallback(async () => {
         try {
-            const [companiesResponse, filterOptionsResponse] = await Promise.all([
-                axios.get(`${API_URL}/api/companies`, { withCredentials: true }),
-                axios.get(`${API_URL}/api/users/filter-options`, { withCredentials: true })
-            ]);
-            
+            const companiesResponse = await axios.get(`${API_URL}/api/companies`, { withCredentials: true });
             setCompanies(companiesResponse.data);
-            setFilterOptions(filterOptionsResponse.data);
         } catch (error) {
             console.error('Error loading dropdown data:', error);
         }
@@ -261,9 +252,11 @@ const UsersWidget = () => {
                                 className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
                             >
                                 <option value="">All Roles</option>
-                                {filterOptions.roles?.map(role => (
-                                    <option key={role} value={role}>{role}</option>
-                                ))}
+                                <option value="Sales Representative">Sales Representative</option>
+                                <option value="Sales Manager">Sales Manager</option>
+                                <option value="Marketing Manager">Marketing Manager</option>
+                                <option value="Support Representative">Support Representative</option>
+                                <option value="Administrator">Administrator</option>
                             </select>
                         </div>
                         <div>
@@ -275,7 +268,7 @@ const UsersWidget = () => {
                                 className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
                             >
                                 <option value="">All Companies</option>
-                                {filterOptions.companies?.map(company => (
+                                {companies.map(company => (
                                     <option key={company.id} value={company.id}>{company.name}</option>
                                 ))}
                             </select>

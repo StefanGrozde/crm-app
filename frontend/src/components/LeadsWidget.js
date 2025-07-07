@@ -62,10 +62,7 @@ const LeadsWidget = () => {
     const [users, setUsers] = useState([]);
     const [companies, setCompanies] = useState([]);
     const [contacts, setContacts] = useState([]);
-    const [filterOptions, setFilterOptions] = useState({
-        sources: [],
-        companies: []
-    });
+
 
     // Load leads
     const loadLeads = useCallback(async (page = 1) => {
@@ -94,17 +91,15 @@ const LeadsWidget = () => {
     // Load dropdown data
     const loadDropdownData = useCallback(async () => {
         try {
-            const [usersResponse, companiesResponse, contactsResponse, filterOptionsResponse] = await Promise.all([
+            const [usersResponse, companiesResponse, contactsResponse] = await Promise.all([
                 axios.get(`${API_URL}/api/users`, { withCredentials: true }),
                 axios.get(`${API_URL}/api/companies`, { withCredentials: true }),
-                axios.get(`${API_URL}/api/contacts`, { withCredentials: true }),
-                axios.get(`${API_URL}/api/leads/filter-options`, { withCredentials: true })
+                axios.get(`${API_URL}/api/contacts`, { withCredentials: true })
             ]);
             
             setUsers(usersResponse.data);
             setCompanies(companiesResponse.data);
             setContacts(contactsResponse.data);
-            setFilterOptions(filterOptionsResponse.data);
         } catch (error) {
             console.error('Error loading dropdown data:', error);
         }
@@ -355,15 +350,28 @@ const LeadsWidget = () => {
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-gray-700">Source</label>
-                            <select
+                            <input
+                                type="text"
                                 name="source"
                                 value={filterFormData.source}
                                 onChange={handleFilterInputChange}
+                                placeholder="Enter source to filter"
+                                className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">Company</label>
+                            <select
+                                name="company"
+                                value={filterFormData.company}
+                                onChange={handleFilterInputChange}
                                 className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
                             >
-                                <option value="">All Sources</option>
-                                {filterOptions.sources?.map(source => (
-                                    <option key={source} value={source}>{source}</option>
+                                <option value="">All Companies</option>
+                                {companies.map(company => (
+                                    <option key={company.id} value={company.id}>
+                                        {company.name}
+                                    </option>
                                 ))}
                             </select>
                         </div>
