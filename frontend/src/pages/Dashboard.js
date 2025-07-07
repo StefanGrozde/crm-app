@@ -394,27 +394,7 @@ const Dashboard = () => {
         await openViewAsTab(view);
     };
 
-    // Handle widget removal
-    useEffect(() => {
-        const handleWidgetRemove = (event) => {
-            // Check if the clicked element is a remove button or its child
-            const removeButton = event.target.closest('[data-remove-widget]');
-            if (removeButton && isEditMode) {
-                event.preventDefault();
-                event.stopPropagation();
-                const widgetKey = removeButton.getAttribute('data-remove-widget');
-                console.log('Remove button clicked for widget:', widgetKey);
-                handleRemoveWidget(widgetKey, event);
-            }
-        };
-
-        document.addEventListener('click', handleWidgetRemove);
-        
-        return () => {
-            document.removeEventListener('click', handleWidgetRemove);
-        };
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [isEditMode]);
+    // Handle widget removal - now handled directly in the widget component
 
     // Load specific view (now opens as tab)
     const loadView = async (viewId) => {
@@ -601,11 +581,12 @@ const Dashboard = () => {
     // Handle layout changes during edit mode
     const handleLayoutChange = useCallback((newLayout) => {
         console.log('Layout changed:', newLayout);
+        console.log('Current edit mode:', isEditMode);
         setLayout(newLayout);
         
         // Update the tab's layout
         setTabLayouts(prev => ({ ...prev, [currentViewId]: newLayout }));
-    }, [currentViewId]);
+    }, [currentViewId, isEditMode]);
 
     // Debug function to test remove functionality
     const debugRemoveWidget = (widgetKey) => {
@@ -775,10 +756,13 @@ const Dashboard = () => {
 
     // Derived state - memoized to prevent unnecessary re-renders
     const currentWidgetKeys = useMemo(() => layout.map(item => item.i), [layout]);
-    const availableWidgets = useMemo(() => 
-        widgetLibrary.filter(widget => !currentWidgetKeys.includes(widget.key)), 
-        [widgetLibrary, currentWidgetKeys]
-    );
+    const availableWidgets = useMemo(() => {
+        const filtered = widgetLibrary.filter(widget => !currentWidgetKeys.includes(widget.key));
+        console.log('Available widgets:', filtered);
+        console.log('Current widget keys:', currentWidgetKeys);
+        console.log('Widget library:', widgetLibrary);
+        return filtered;
+    }, [widgetLibrary, currentWidgetKeys]);
 
     // Handle tab drag end
     const handleTabDragEnd = (event) => {
@@ -816,7 +800,7 @@ const Dashboard = () => {
                 {/* Remove button - only shown in edit mode */}
                 {isEditMode && (
                     <button
-                        data-remove-widget={item.i}
+                        onClick={(e) => onRemoveWidget(item.i, e)}
                         className="absolute top-2 right-2 z-50 bg-red-500 hover:bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center transition-colors duration-200 shadow-lg"
                         style={{ zIndex: 9999 }}
                         title="Remove widget"
@@ -876,12 +860,27 @@ const Dashboard = () => {
                         border: 2px dashed #718096 !important;
                         border-radius: 8px !important;
                     }
+                    .react-grid-item {
+                        transition: all 200ms ease;
+                        transition-property: left, top, width, height;
+                    }
+                    .react-grid-item.react-draggable-dragging {
+                        transition: none !important;
+                        z-index: 3 !important;
+                    }
+                    .react-grid-item.react-resizable-resizing {
+                        transition: none !important;
+                        z-index: 3 !important;
+                    }
                     .react-resizable-handle {
                         background-image: none !important;
                         background-color: #3b82f6 !important;
                         border-radius: 2px !important;
                         width: 8px !important;
                         height: 8px !important;
+                        position: absolute !important;
+                        z-index: 10 !important;
+                        border: 1px solid #2563eb !important;
                     }
                     .react-resizable-handle:hover {
                         background-color: #2563eb !important;
@@ -889,6 +888,19 @@ const Dashboard = () => {
                     .react-resizable-handle.react-resizable-handle-se {
                         bottom: 2px !important;
                         right: 2px !important;
+                        cursor: se-resize !important;
+                    }
+                    .react-resizable-handle.react-resizable-handle-e {
+                        cursor: e-resize !important;
+                        right: 2px !important;
+                        top: 50% !important;
+                        transform: translateY(-50%) !important;
+                    }
+                    .react-resizable-handle.react-resizable-handle-s {
+                        cursor: s-resize !important;
+                        bottom: 2px !important;
+                        left: 50% !important;
+                        transform: translateX(-50%) !important;
                     }
                     .tab-close-button {
                         opacity: 0;
@@ -1005,6 +1017,7 @@ const Dashboard = () => {
                     )}
 
                     {/* Grid layout - only show if there's an active tab and layout is ready */}
+                    {console.log('Rendering grid - isEditMode:', isEditMode, 'layout length:', layout.length)}
                     {activeTabId && layout && (
                         <ResponsiveReactGridLayout
                             key={`grid-${activeTabId}-${isEditMode}`}
@@ -1020,6 +1033,8 @@ const Dashboard = () => {
                             style={{ minHeight: '400px' }}
                             useCSSTransforms={false}
                             preventCollision={true}
+                            compactType={null}
+                            allowOverlap={false}
                         >
                             {layout.map(item => {
                                 console.log('Looking for widget:', item.i, 'in library:', widgetLibrary);
@@ -1031,6 +1046,7 @@ const Dashboard = () => {
                                         item={item}
                                         widget={widget}
                                         isEditMode={isEditMode}
+                                        onRemoveWidget={handleRemoveWidget}
                                     />
                                 );
                             })}
