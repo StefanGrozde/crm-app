@@ -27,6 +27,7 @@ const EditLayout = () => {
     const [currentView, setCurrentView] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
+    const [currentBreakpoint, setCurrentBreakpoint] = useState('lg');
 
     // Modal states
     const [isSaveModalOpen, setSaveModalOpen] = useState(false);
@@ -461,6 +462,8 @@ const EditLayout = () => {
                         <div>Layout items: {layout.length}</div>
                         <div>Widget library: {widgetLibrary.length} widgets</div>
                         <div>Current view: {currentView?.name || 'None'}</div>
+                        <div>Current breakpoint: {currentBreakpoint}</div>
+                        <div>Grid: 12 cols (lg/md/sm/xs/xxs)</div>
                         <div>Layout: {JSON.stringify(layout.map(item => ({ i: item.i, x: item.x, y: item.y, w: item.w, h: item.h })))}</div>
                     </div>
                     
@@ -469,7 +472,7 @@ const EditLayout = () => {
                         layouts={{ lg: layout }}
                         onLayoutChange={handleLayoutChange}
                         className="layout"
-                        cols={{ lg: 12, md: 10, sm: 6, xs: 4, xxs: 2 }}
+                        cols={{ lg: 12, md: 12, sm: 12, xs: 12, xxs: 12 }}
                         rowHeight={100}
                         isDraggable={true}
                         isResizable={true}
@@ -483,6 +486,11 @@ const EditLayout = () => {
                         autoSize={true}
                         verticalCompact={true}
                         allowOverlap={false}
+                        breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 }}
+                        onBreakpointChange={(newBreakpoint) => {
+                            console.log('EditLayout breakpoint changed to:', newBreakpoint);
+                            setCurrentBreakpoint(newBreakpoint);
+                        }}
                     >
                         {layout.map(item => {
                             console.log('Looking for widget:', item.i, 'in library:', widgetLibrary);

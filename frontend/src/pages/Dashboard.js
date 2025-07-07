@@ -27,6 +27,7 @@ const Dashboard = () => {
     const [currentViewId, setCurrentViewId] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isTabSwitching, setIsTabSwitching] = useState(false);
+    const [currentBreakpoint, setCurrentBreakpoint] = useState('lg');
     
     // Tab management state with session persistence
     const {
@@ -756,7 +757,9 @@ const Dashboard = () => {
                             Open tabs: {openTabs.length} |
                             Active tab: {activeTabId || 'None'} |
                             Session: {openTabs.length > 0 ? 'Saved' : 'None'} |
-                            Session Loading: {isSessionLoading ? 'Yes' : 'No'}
+                            Session Loading: {isSessionLoading ? 'Yes' : 'No'} |
+                            Grid: 12 cols (lg/md/sm/xs/xxs) |
+                            Breakpoint: {currentBreakpoint}
                         </div>
                         {user.role === 'Administrator' && (
                             <>
@@ -838,13 +841,18 @@ const Dashboard = () => {
                         <ResponsiveReactGridLayout
                             layouts={{ lg: layout }}
                             className="layout"
-                            cols={{ lg: 12, md: 10, sm: 6, xs: 4, xxs: 2 }}
+                            cols={{ lg: 12, md: 12, sm: 12, xs: 12, xxs: 12 }}
                             rowHeight={100}
                             isDraggable={false}
                             isResizable={false}
                             margin={[10, 10]}
                             containerPadding={[10, 10]}
                             style={{ minHeight: '400px' }}
+                            breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 }}
+                            onBreakpointChange={(newBreakpoint) => {
+                                console.log('Dashboard breakpoint changed to:', newBreakpoint);
+                                setCurrentBreakpoint(newBreakpoint);
+                            }}
                         >
                             {layout.map(item => {
                                 console.log('Looking for widget:', item.i, 'in library:', widgetLibrary);
