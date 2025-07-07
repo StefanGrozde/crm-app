@@ -593,11 +593,13 @@ const Dashboard = () => {
         console.log('Layout changed:', newLayout);
         console.log('Current edit mode:', isEditMode);
         console.log('Layout change detected - dragging/resizing should work');
+        console.log('Previous layout:', layout);
+        console.log('New layout:', newLayout);
         setLayout(newLayout);
         
         // Update the tab's layout
         setTabLayouts(prev => ({ ...prev, [currentViewId]: newLayout }));
-    }, [currentViewId, isEditMode]);
+    }, [currentViewId, isEditMode, layout]);
 
     // Debug function to test remove functionality
     const debugRemoveWidget = (widgetKey) => {
@@ -780,7 +782,11 @@ const Dashboard = () => {
             ];
             console.log('Creating test layout:', testLayout);
             setLayout(testLayout);
+            setOriginalLayout([...testLayout]);
             setTabLayouts(prev => ({ ...prev, [currentViewId]: testLayout }));
+        } else if (layout.length > 0) {
+            // If layout exists, just enable edit mode
+            console.log('Layout already exists, enabling edit mode');
         }
         
         // Toggle edit mode if not in edit mode
@@ -790,7 +796,24 @@ const Dashboard = () => {
             setTabEditModes(prev => ({ ...prev, [currentViewId]: true }));
         }
         
-        alert('Grid test completed. Check console for details. Edit mode should be enabled and widgets should be draggable/resizable.');
+        alert('Grid test completed. Check console for details. Edit mode should be enabled and widgets should be draggable/resizable. Try clicking on widgets to see if they respond.');
+    };
+
+    // Manual test to move a widget
+    const testMoveWidget = () => {
+        if (layout.length > 0 && isEditMode) {
+            const newLayout = layout.map(item => {
+                if (item.i === layout[0].i) {
+                    return { ...item, x: item.x + 1, y: item.y + 1 };
+                }
+                return item;
+            });
+            console.log('Manually moving widget:', newLayout);
+            setLayout(newLayout);
+            setTabLayouts(prev => ({ ...prev, [currentViewId]: newLayout }));
+        } else {
+            alert('No widgets to move or not in edit mode');
+        }
     };
 
     // Derived state - memoized to prevent unnecessary re-renders
@@ -835,6 +858,11 @@ const Dashboard = () => {
                     isEditMode ? 'ring-2 ring-blue-500 ring-offset-2 cursor-move' : ''
                 }`}
                 data-widget-key={item.i}
+                onClick={() => {
+                    if (isEditMode) {
+                        console.log('Widget clicked in edit mode:', item.i);
+                    }
+                }}
             >
                 {/* Remove button - only shown in edit mode */}
                 {isEditMode && (
@@ -966,6 +994,18 @@ const Dashboard = () => {
                         background: white !important;
                         border-radius: 8px !important;
                         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+                        border: 2px solid transparent !important;
+                        transition: border-color 0.2s ease !important;
+                    }
+                    .react-grid-item:hover {
+                        border-color: #3b82f6 !important;
+                    }
+                    .react-grid-item.react-draggable-dragging {
+                        opacity: 0.8 !important;
+                        z-index: 3 !important;
+                    }
+                    .react-grid-item.react-resizable-resizing {
+                        z-index: 3 !important;
                     }
                     /* Make sure resize handles are visible */
                     .react-resizable-handle-se {
@@ -978,6 +1018,29 @@ const Dashboard = () => {
                         bottom: 2px !important;
                         cursor: se-resize !important;
                         z-index: 10 !important;
+                        position: absolute !important;
+                        display: block !important;
+                    }
+                    /* Override any default react-grid-layout styles */
+                    .react-resizable-handle {
+                        background-image: none !important;
+                        background-color: #3b82f6 !important;
+                        border: 2px solid #2563eb !important;
+                        border-radius: 2px !important;
+                        width: 12px !important;
+                        height: 12px !important;
+                        position: absolute !important;
+                        z-index: 10 !important;
+                        display: block !important;
+                        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2) !important;
+                        opacity: 1 !important;
+                        visibility: visible !important;
+                    }
+                    /* Ensure resize handles are always visible in edit mode */
+                    .react-grid-item .react-resizable-handle {
+                        display: block !important;
+                        opacity: 1 !important;
+                        visibility: visible !important;
                     }
                 `}
             </style>
@@ -1037,6 +1100,13 @@ const Dashboard = () => {
                             title="Test grid functionality"
                         >
                             Test Grid
+                        </button>
+                        <button
+                            onClick={testMoveWidget}
+                            className="px-2 py-1 bg-indigo-500 text-white text-xs rounded hover:bg-indigo-600"
+                            title="Test moving a widget manually"
+                        >
+                            Test Move
                         </button>
                     </div>
                 </div>
@@ -1114,11 +1184,17 @@ const Dashboard = () => {
                             isResizable={isEditMode}
                             margin={[10, 10]}
                             containerPadding={[10, 10]}
-                            style={{ minHeight: '400px', border: '1px solid #ccc', padding: '10px' }}
+                            style={{ 
+                                minHeight: '400px', 
+                                border: '1px solid #ccc', 
+                                padding: '10px',
+                                backgroundColor: isEditMode ? '#f0f8ff' : 'transparent'
+                            }}
                             useCSSTransforms={false}
-                            preventCollision={true}
-                            compactType={null}
+                            preventCollision={false}
+                            compactType="vertical"
                             allowOverlap={false}
+                            transformScale={1}
                         >
                             {layout.map(item => {
                                 console.log('Looking for widget:', item.i, 'in library:', widgetLibrary);
