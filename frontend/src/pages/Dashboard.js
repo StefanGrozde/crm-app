@@ -1,19 +1,15 @@
 // frontend/src/pages/Dashboard.js
 import React, { useState, useEffect, useContext, useRef } from 'react';
 import axios from 'axios';
-import { Responsive, WidthProvider } from 'react-grid-layout';
 import { arrayMove } from '@dnd-kit/sortable';
-import 'react-grid-layout/css/styles.css';
-import 'react-resizable/css/styles.css';
 
 // Component Imports
 import { AuthContext } from '../context/AuthContext';
 import Navbar from '../components/Navbar';
 import TabBar from '../components/TabBar';
-import { WidgetRenderer } from '../components/WidgetRenderer';
+import DashboardGrid from '../components/DashboardGrid';
 import { useTabSession } from '../hooks/useTabSession';
 
-const ResponsiveReactGridLayout = WidthProvider(Responsive);
 const API_URL = process.env.REACT_APP_API_URL;
 
 const Dashboard = () => {
@@ -634,40 +630,7 @@ const Dashboard = () => {
         setIsDraggingTab(true);
     };
 
-    // Enhanced widget component with robust rendering
-    const MemoizedWidget = ({ item, widget }) => {
-        console.log('MemoizedWidget rendering:', item.i, 'with item data:', item);
-        
-        return (
-            <div 
-                key={item.i} 
-                className="bg-white rounded-lg shadow-lg p-2 overflow-hidden transition-all duration-200 relative"
-                data-widget-key={item.i}
-                data-grid-x={item.x}
-                data-grid-y={item.y}
-                data-grid-w={item.w}
-                data-grid-h={item.h}
-            >
-                {/* Widget content with robust rendering */}
-                <div>
-                    {console.log('Rendering widget:', item.i, 'widget data:', widget, 'type:', widget?.type)}
-                    <WidgetRenderer 
-                        widgetKey={item.i} 
-                        widgetPath={widget?.path} 
-                        type={widget?.type}
-                        resultData={item.i.startsWith('search-result-') ? item.resultData : undefined}
-                        isVisible={!isTabSwitching}
-                        onWidgetReady={(widgetKey, loadTime) => {
-                            console.log(`Widget ${widgetKey} ready in ${loadTime}ms`);
-                        }}
-                        onWidgetError={(widgetKey, error) => {
-                            console.error(`Widget ${widgetKey} error:`, error);
-                        }}
-                    />
-                </div>
-            </div>
-        );
-    };
+
 
     // Cleanup timeout on unmount
     useEffect(() => {
@@ -750,69 +713,7 @@ const Dashboard = () => {
                        opacity: 1;
                    }
                    
-                   /* React Grid Layout Styles */
-                   .react-grid-layout {
-                       position: relative;
-                       transition: height 200ms ease;
-                   }
-                   .react-grid-item {
-                       transition: all 200ms ease;
-                       transition-property: left, top, width, height;
-                       position: absolute;
-                       box-sizing: border-box;
-                   }
-                   .react-grid-item.cssTransforms {
-                       transition-property: transform, width, height;
-                   }
-                   .react-grid-item.resizing {
-                       z-index: 1;
-                       will-change: width, height;
-                   }
-                   .react-grid-item.react-draggable-dragging {
-                       transition: none !important;
-                       z-index: 3 !important;
-                       will-change: transform;
-                   }
-                   .react-grid-item.react-grid-placeholder {
-                       background: #cbd5e0 !important;
-                       border: 2px dashed #718096 !important;
-                       border-radius: 8px !important;
-                       transition-duration: 100ms;
-                       z-index: 2;
-                       -webkit-user-select: none;
-                       -moz-user-select: none;
-                       -ms-user-select: none;
-                       -o-user-select: none;
-                       user-select: none;
-                   }
-                   .react-grid-item.react-grid-item.react-draggable.react-resizable {
-                       transition: all 200ms ease;
-                   }
-                   .react-grid-item.react-grid-item.react-draggable.react-resizable.react-resizable-handle {
-                       transition: none;
-                   }
-                   
-                   /* Debug grid positioning - let react-grid-layout handle positioning */
-                   .react-grid-layout {
-                       position: relative !important;
-                       width: 100% !important;
-                       background: #f0f0f0 !important;
-                       min-height: 400px !important;
-                   }
-                   
-                   /* Ensure grid items are visible */
-                   .react-grid-item {
-                       min-height: 100px !important;
-                       min-width: 100px !important;
-                       background: white !important;
-                       border: 1px solid #ccc !important;
-                   }
-                   
-                   /* Force grid layout to work */
-                   .layout {
-                       position: relative !important;
-                       width: 100% !important;
-                   }
+
                    
 
                `}
@@ -931,65 +832,17 @@ const Dashboard = () => {
                         </>
                     )}
                     {activeTabId && layout && (
-                        <ResponsiveReactGridLayout
-                            layouts={{ lg: layout }}
-                            className="layout"
-                            cols={{ lg: 12, md: 12, sm: 12, xs: 12, xxs: 12 }}
-                            rowHeight={100}
-                            isDraggable={false}
-                            isResizable={false}
-                            margin={[10, 10]}
-                            containerPadding={[10, 10]}
-                            style={{ minHeight: '400px' }}
-                            useCSSTransforms={true}
-                            compactType="vertical"
-                            preventCollision={false}
-                            isBounded={false}
-                            autoSize={true}
-                            verticalCompact={true}
-                            allowOverlap={false}
-                            breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 }}
-                            onBreakpointChange={(newBreakpoint) => {
-                                console.log('Dashboard breakpoint changed to:', newBreakpoint);
+                        <DashboardGrid
+                            layout={layout}
+                            widgetLibrary={widgetLibrary}
+                            isVisible={!isTabSwitching}
+                            onWidgetReady={(widgetKey, loadTime) => {
+                                console.log(`Widget ${widgetKey} ready in ${loadTime}ms`);
                             }}
-                        >
-                            {layout.map(item => {
-                                console.log('Rendering layout item:', item);
-                                console.log('Looking for widget:', item.i, 'in library:', widgetLibrary);
-                                const widget = widgetLibrary.find(w => w.key === item.i);
-                                console.log('Found widget:', widget);
-                                
-                                if (!widget) {
-                                    return (
-                                        <div 
-                                            key={item.i} 
-                                            className="bg-white rounded-lg shadow-lg p-4 overflow-hidden transition-all duration-200 relative"
-                                            data-widget-key={item.i}
-                                        >
-                                            <div className="text-center">
-                                                <div className="text-red-600 text-sm font-medium">
-                                                    Widget not found: {item.i}
-                                                </div>
-                                                <div className="text-xs text-gray-400 mt-1">
-                                                    This widget may have been removed or renamed.
-                                                </div>
-                                                <div className="text-xs text-gray-400 mt-1">
-                                                    Size: {item.w}x{item.h} | Position: ({item.x}, {item.y})
-                                                </div>
-                                            </div>
-                                        </div>
-                                    );
-                                }
-                                
-                                return (
-                                    <MemoizedWidget
-                                        key={item.i}
-                                        item={item}
-                                        widget={widget}
-                                    />
-                                );
-                            })}
-                        </ResponsiveReactGridLayout>
+                            onWidgetError={(widgetKey, error) => {
+                                console.error(`Widget ${widgetKey} error:`, error);
+                            }}
+                        />
                     )}
                     
                     {/* Loading state for active tab */}
