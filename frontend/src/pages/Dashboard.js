@@ -1,5 +1,5 @@
 // frontend/src/pages/Dashboard.js
-import React, { useState, useEffect, useContext, useRef, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useContext, useRef, useMemo } from 'react';
 import axios from 'axios';
 import { Responsive, WidthProvider } from 'react-grid-layout';
 import { arrayMove } from '@dnd-kit/sortable';
@@ -424,26 +424,17 @@ const Dashboard = () => {
             return;
         }
 
-        if (isEditMode) {
-            // Exit edit mode
-            console.log('Exiting edit mode');
-            setIsEditMode(false);
-            setTabEditModes(prev => ({ ...prev, [currentViewId]: false }));
-        } else {
-            // Enter edit mode
-            console.log('Entering edit mode');
-            // Create a proper deep copy of the layout
-            const layoutCopy = layout.map(item => ({ ...item }));
-            console.log('Creating layout copy:', layoutCopy);
-            
-            setOriginalLayout(layoutCopy);
-            setIsEditMode(true);
-            
-            // Update the tab's edit mode
-            setTabEditModes(prev => ({ ...prev, [currentViewId]: true }));
-        }
+        // Create a proper deep copy of the layout
+        const layoutCopy = layout.map(item => ({ ...item }));
+        console.log('Creating layout copy:', layoutCopy);
         
-        console.log('Edit mode should now be:', !isEditMode);
+        setOriginalLayout(layoutCopy);
+        setIsEditMode(true);
+        
+        // Update the tab's edit mode
+        setTabEditModes(prev => ({ ...prev, [currentViewId]: true }));
+        
+        console.log('Edit mode should now be active');
     };
 
     const handleSaveNewView = async (viewName) => {
@@ -589,17 +580,13 @@ const Dashboard = () => {
 
 
     // Handle layout changes during edit mode
-    const handleLayoutChange = useCallback((newLayout) => {
+    const handleLayoutChange = (newLayout) => {
         console.log('Layout changed:', newLayout);
-        console.log('Current edit mode:', isEditMode);
-        console.log('Layout change detected - dragging/resizing should work');
-        console.log('Previous layout:', layout);
-        console.log('New layout:', newLayout);
         setLayout(newLayout);
         
         // Update the tab's layout
         setTabLayouts(prev => ({ ...prev, [currentViewId]: newLayout }));
-    }, [currentViewId, isEditMode, layout]);
+    };
 
     // Debug function to test remove functionality
     const debugRemoveWidget = (widgetKey) => {
@@ -850,7 +837,7 @@ const Dashboard = () => {
     }, []);
 
     // Enhanced widget component with robust rendering
-    const MemoizedWidget = useCallback(({ item, widget, isEditMode, onRemoveWidget }) => {
+    const MemoizedWidget = ({ item, widget, isEditMode, onRemoveWidget }) => {
         return (
             <div 
                 key={item.i} 
@@ -906,7 +893,7 @@ const Dashboard = () => {
                 )}
             </div>
         );
-    }, [isTabSwitching]);
+    };
 
     // Cleanup timeout on unmount
     useEffect(() => {
@@ -922,127 +909,33 @@ const Dashboard = () => {
         <>
             <style>
                 {`
-                    .react-grid-item.react-grid-placeholder {
-                        background: #cbd5e0 !important;
-                        border: 2px dashed #718096 !important;
-                        border-radius: 8px !important;
-                    }
-                    .react-grid-item {
-                        transition: all 200ms ease;
-                        transition-property: left, top, width, height;
-                    }
-                    .react-grid-item.react-draggable-dragging {
-                        transition: none !important;
-                        z-index: 3 !important;
-                    }
-                    .react-grid-item.react-resizable-resizing {
-                        transition: none !important;
-                        z-index: 3 !important;
-                    }
-                    .react-grid-item.react-draggable-dragging {
-                        transition: none !important;
-                        z-index: 3 !important;
-                        opacity: 0.8 !important;
-                    }
-                    .layout .react-grid-item {
-                        border: 2px solid transparent !important;
-                        transition: border-color 0.2s ease !important;
-                    }
-                    .layout .react-grid-item:hover {
-                        border-color: #3b82f6 !important;
-                    }
-                    .react-resizable-handle {
-                        background-image: none !important;
-                        background-color: #3b82f6 !important;
-                        border-radius: 2px !important;
-                        width: 12px !important;
-                        height: 12px !important;
-                        position: absolute !important;
-                        z-index: 10 !important;
-                        border: 2px solid #2563eb !important;
-                        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2) !important;
-                    }
-                    .react-resizable-handle:hover {
-                        background-color: #2563eb !important;
-                    }
-                    .react-resizable-handle.react-resizable-handle-se {
-                        bottom: 2px !important;
-                        right: 2px !important;
-                        cursor: se-resize !important;
-                    }
-                    .react-resizable-handle.react-resizable-handle-e {
-                        cursor: e-resize !important;
-                        right: 2px !important;
-                        top: 50% !important;
-                        transform: translateY(-50%) !important;
-                    }
-                    .react-resizable-handle.react-resizable-handle-s {
-                        cursor: s-resize !important;
-                        bottom: 2px !important;
-                        left: 50% !important;
-                        transform: translateX(-50%) !important;
-                    }
-                    .tab-close-button {
-                        opacity: 0;
-                        transition: opacity 0.2s;
-                    }
-                    .tab:hover .tab-close-button {
-                        opacity: 1;
-                    }
-                    /* Ensure grid items are properly styled */
-                    .react-grid-item {
-                        background: white !important;
-                        border-radius: 8px !important;
-                        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
-                        border: 2px solid transparent !important;
-                        transition: border-color 0.2s ease !important;
-                    }
-                    .react-grid-item:hover {
-                        border-color: #3b82f6 !important;
-                    }
-                    .react-grid-item.react-draggable-dragging {
-                        opacity: 0.8 !important;
-                        z-index: 3 !important;
-                    }
-                    .react-grid-item.react-resizable-resizing {
-                        z-index: 3 !important;
-                    }
-                    /* Make sure resize handles are visible */
-                    .react-resizable-handle-se {
-                        background-color: #3b82f6 !important;
-                        border: 2px solid #2563eb !important;
-                        border-radius: 2px !important;
-                        width: 12px !important;
-                        height: 12px !important;
-                        right: 2px !important;
-                        bottom: 2px !important;
-                        cursor: se-resize !important;
-                        z-index: 10 !important;
-                        position: absolute !important;
-                        display: block !important;
-                    }
-                    /* Override any default react-grid-layout styles */
-                    .react-resizable-handle {
-                        background-image: none !important;
-                        background-color: #3b82f6 !important;
-                        border: 2px solid #2563eb !important;
-                        border-radius: 2px !important;
-                        width: 12px !important;
-                        height: 12px !important;
-                        position: absolute !important;
-                        z-index: 10 !important;
-                        display: block !important;
-                        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2) !important;
-                        opacity: 1 !important;
-                        visibility: visible !important;
-                    }
-                    /* Ensure resize handles are always visible in edit mode */
-                    .react-grid-item .react-resizable-handle {
-                        display: block !important;
-                        opacity: 1 !important;
-                        visibility: visible !important;
-                    }
-                `}
+                   .react-grid-item.react-grid-placeholder {
+                       background: #cbd5e0 !important;
+                       border: 2px dashed #718096 !important;
+                       border-radius: 8px !important;
+                   }
+                   .react-resizable-handle {
+                       background-image: none !important;
+                       background-color: #3b82f6 !important;
+                       border-radius: 2px !important;
+                       width: 8px !important;
+                       height: 8px !important;
+                   }
+                   .react-resizable-handle:hover {
+                       background-color: #2563eb !important;
+                   }
+                   .react-resizable-handle.react-resizable-handle-se {
+                       bottom: 2px !important;
+                       right: 2px !important;
+                   }
+                   .tab-close-button {
+                       opacity: 0;
+                       transition: opacity 0.2s;
+                   }
+                   .tab:hover .tab-close-button {
+                       opacity: 1;
+                   }
+               `}
             </style>
             <div className="min-h-screen bg-gray-100">
                 {/* Debug info - Remove in production */}
@@ -1174,8 +1067,7 @@ const Dashboard = () => {
                     {console.log('Rendering grid - isEditMode:', isEditMode, 'layout length:', layout.length, 'isDraggable:', isEditMode, 'isResizable:', isEditMode)}
                     {activeTabId && layout && (
                         <ResponsiveReactGridLayout
-                            key={`grid-${activeTabId}-${isEditMode}`}
-                            layouts={{ lg: Array.isArray(layout) ? layout : [] }}
+                            layouts={{ lg: layout }}
                             onLayoutChange={handleLayoutChange}
                             className="layout"
                             cols={{ lg: 12, md: 10, sm: 6, xs: 4, xxs: 2 }}
@@ -1184,17 +1076,7 @@ const Dashboard = () => {
                             isResizable={isEditMode}
                             margin={[10, 10]}
                             containerPadding={[10, 10]}
-                            style={{ 
-                                minHeight: '400px', 
-                                border: '1px solid #ccc', 
-                                padding: '10px',
-                                backgroundColor: isEditMode ? '#f0f8ff' : 'transparent'
-                            }}
-                            useCSSTransforms={false}
-                            preventCollision={false}
-                            compactType="vertical"
-                            allowOverlap={false}
-                            transformScale={1}
+                            style={{ minHeight: '400px' }}
                         >
                             {layout.map(item => {
                                 console.log('Looking for widget:', item.i, 'in library:', widgetLibrary);
