@@ -636,11 +636,16 @@ const Dashboard = () => {
 
     // Enhanced widget component with robust rendering
     const MemoizedWidget = ({ item, widget }) => {
+        console.log('MemoizedWidget rendering:', item.i, 'with item data:', item);
         return (
             <div 
                 key={item.i} 
                 className="bg-white rounded-lg shadow-lg p-2 overflow-hidden transition-all duration-200 relative"
                 data-widget-key={item.i}
+                data-grid-x={item.x}
+                data-grid-y={item.y}
+                data-grid-w={item.w}
+                data-grid-h={item.h}
             >
                 {/* Widget content with robust rendering */}
                 <div>
@@ -743,6 +748,66 @@ const Dashboard = () => {
                    .tab:hover .tab-close-button {
                        opacity: 1;
                    }
+                   
+                   /* React Grid Layout Styles */
+                   .react-grid-layout {
+                       position: relative;
+                       transition: height 200ms ease;
+                   }
+                   .react-grid-item {
+                       transition: all 200ms ease;
+                       transition-property: left, top, width, height;
+                       position: absolute;
+                       box-sizing: border-box;
+                   }
+                   .react-grid-item.cssTransforms {
+                       transition-property: transform, width, height;
+                   }
+                   .react-grid-item.resizing {
+                       z-index: 1;
+                       will-change: width, height;
+                   }
+                   .react-grid-item.react-draggable-dragging {
+                       transition: none !important;
+                       z-index: 3 !important;
+                       will-change: transform;
+                   }
+                   .react-grid-item.react-grid-placeholder {
+                       background: #cbd5e0 !important;
+                       border: 2px dashed #718096 !important;
+                       border-radius: 8px !important;
+                       transition-duration: 100ms;
+                       z-index: 2;
+                       -webkit-user-select: none;
+                       -moz-user-select: none;
+                       -ms-user-select: none;
+                       -o-user-select: none;
+                       user-select: none;
+                   }
+                   .react-grid-item.react-grid-item.react-draggable.react-resizable {
+                       transition: all 200ms ease;
+                   }
+                   .react-grid-item.react-grid-item.react-draggable.react-resizable.react-resizable-handle {
+                       transition: none;
+                   }
+                   
+                   /* Force grid positioning */
+                   .react-grid-layout .react-grid-item {
+                       position: absolute !important;
+                       box-sizing: border-box !important;
+                   }
+                   
+                   /* Debug grid positioning */
+                   .react-grid-layout {
+                       position: relative !important;
+                       width: 100% !important;
+                   }
+                   
+                   /* Ensure grid items are visible */
+                   .react-grid-item {
+                       min-height: 100px !important;
+                       min-width: 100px !important;
+                   }
                `}
             </style>
             <div className="min-h-screen bg-gray-100">
@@ -759,7 +824,8 @@ const Dashboard = () => {
                             Session: {openTabs.length > 0 ? 'Saved' : 'None'} |
                             Session Loading: {isSessionLoading ? 'Yes' : 'No'} |
                             Grid: 12 cols (lg/md/sm/xs/xxs) |
-                            Breakpoint: {currentBreakpoint}
+                            Breakpoint: {currentBreakpoint} |
+                            Layout: {layout.length > 0 ? `${layout.length} items` : 'Empty'}
                         </div>
                         {user.role === 'Administrator' && (
                             <>
@@ -808,6 +874,15 @@ const Dashboard = () => {
                     </div>
                 </div>
 
+                {/* Layout Debug Info */}
+                {layout.length > 0 && (
+                    <div className="bg-blue-100 p-2 text-xs">
+                        <strong>Layout Debug:</strong> {layout.map(item => 
+                            `${item.i}: ${item.w}x${item.h}@(${item.x},${item.y})`
+                        ).join(' | ')}
+                    </div>
+                )}
+
                 <Navbar 
                     views={views}
                     onLoadView={loadView}
@@ -838,6 +913,18 @@ const Dashboard = () => {
 
                     {/* Grid layout - only show if there's an active tab and layout is ready */}
                     {activeTabId && layout && (
+                        <>
+                            {/* Layout Debug */}
+                            <div className="mb-4 p-2 bg-green-100 rounded text-xs">
+                                <strong>Grid Layout Debug:</strong>
+                                <div>Layout length: {layout.length}</div>
+                                <div>Layout data: {JSON.stringify(layout)}</div>
+                                <div>Active tab: {activeTabId}</div>
+                                <div>Current view ID: {currentViewId}</div>
+                            </div>
+                        </>
+                    )}
+                    {activeTabId && layout && (
                         <ResponsiveReactGridLayout
                             layouts={{ lg: layout }}
                             className="layout"
@@ -848,6 +935,13 @@ const Dashboard = () => {
                             margin={[10, 10]}
                             containerPadding={[10, 10]}
                             style={{ minHeight: '400px' }}
+                            useCSSTransforms={true}
+                            compactType="vertical"
+                            preventCollision={false}
+                            isBounded={false}
+                            autoSize={true}
+                            verticalCompact={true}
+                            allowOverlap={false}
                             breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 }}
                             onBreakpointChange={(newBreakpoint) => {
                                 console.log('Dashboard breakpoint changed to:', newBreakpoint);
@@ -855,6 +949,7 @@ const Dashboard = () => {
                             }}
                         >
                             {layout.map(item => {
+                                console.log('Rendering layout item:', item);
                                 console.log('Looking for widget:', item.i, 'in library:', widgetLibrary);
                                 const widget = widgetLibrary.find(w => w.key === item.i);
                                 console.log('Found widget:', widget);
