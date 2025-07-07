@@ -101,7 +101,11 @@ const EditLayout = () => {
                             x: w.x || 0, 
                             y: w.y || 0, 
                             w: w.w || 6, 
-                            h: w.h || 2 
+                            h: w.h || 2,
+                            minW: 2,
+                            minH: 1,
+                            maxW: 12,
+                            maxH: 12
                         }));
                         setLayout(viewLayout);
                         setOriginalLayout([...viewLayout]);
@@ -221,6 +225,10 @@ const EditLayout = () => {
             y: Infinity,
             w: 6, // Default width
             h: 2, // Default height
+            minW: 2,
+            minH: 1,
+            maxW: 12,
+            maxH: 12
         };
 
         console.log('Adding new layout item:', newLayoutItem);
@@ -243,7 +251,19 @@ const EditLayout = () => {
     // Handle layout changes during edit mode
     const handleLayoutChange = (newLayout) => {
         console.log('Layout changed:', newLayout);
-        setLayout(newLayout);
+        console.log('Previous layout:', layout);
+        console.log('New layout:', newLayout);
+        
+        // Ensure all layout items have proper constraints
+        const validatedLayout = newLayout.map(item => ({
+            ...item,
+            minW: item.minW || 2,
+            minH: item.minH || 1,
+            maxW: item.maxW || 12,
+            maxH: item.maxH || 12
+        }));
+        
+        setLayout(validatedLayout);
     };
 
     // Handle widget removal
@@ -265,55 +285,7 @@ const EditLayout = () => {
         return filtered;
     }, [widgetLibrary, currentWidgetKeys]);
 
-    // Enhanced widget component with robust rendering
-    const MemoizedWidget = ({ item, widget, onRemoveWidget }) => {
-        return (
-            <div 
-                key={item.i} 
-                className="bg-white rounded-lg shadow-lg p-2 overflow-hidden transition-all duration-200 relative ring-2 ring-blue-500 ring-offset-2 cursor-move"
-                data-widget-key={item.i}
-                onClick={() => {
-                    console.log('Widget clicked in edit mode:', item.i);
-                }}
-            >
-                {/* Remove button - always shown in edit mode */}
-                <button
-                    onClick={(e) => onRemoveWidget(item.i, e)}
-                    className="absolute top-2 right-2 z-50 bg-red-500 hover:bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center transition-colors duration-200 shadow-lg"
-                    style={{ zIndex: 9999 }}
-                    title="Remove widget"
-                >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                </button>
-                
-                {/* Widget content with robust rendering */}
-                <div className="pt-6">
-                    {console.log('Rendering widget:', item.i, 'widget data:', widget, 'type:', widget?.type)}
-                    <WidgetRenderer 
-                        widgetKey={item.i} 
-                        widgetPath={widget?.path} 
-                        type={widget?.type}
-                        isVisible={true}
-                        onWidgetReady={(widgetKey, loadTime) => {
-                            console.log(`Widget ${widgetKey} ready in ${loadTime}ms`);
-                        }}
-                        onWidgetError={(widgetKey, error) => {
-                            console.error(`Widget ${widgetKey} error:`, error);
-                        }}
-                    />
-                </div>
-                
-                {/* Widget info overlay */}
-                <div className="absolute bottom-1 left-1 z-10">
-                    <span className="bg-blue-500 text-white text-xs px-2 py-1 rounded opacity-75">
-                        {item.w}×{item.h}
-                    </span>
-                </div>
-            </div>
-        );
-    };
+
 
     if (!user) return <div>Loading...</div>;
     if (isLoading) return <div className="min-h-screen bg-gray-100 flex items-center justify-center">Loading edit layout...</div>;
@@ -340,6 +312,59 @@ const EditLayout = () => {
                    .react-resizable-handle.react-resizable-handle-se {
                        bottom: 2px !important;
                        right: 2px !important;
+                   }
+                   .react-grid-item {
+                       transition: all 200ms ease;
+                       transition-property: left, top, width, height;
+                   }
+                   .react-grid-item.react-draggable-dragging {
+                       transition: none !important;
+                       z-index: 3 !important;
+                       will-change: transform;
+                   }
+                   .react-grid-item.react-grid-item.resizing {
+                       z-index: 1 !important;
+                       will-change: width, height;
+                   }
+                   .react-grid-item.react-grid-item.react-draggable.react-resizable {
+                       transition: all 200ms ease;
+                   }
+                   .react-grid-item.react-grid-item.react-draggable.react-resizable.react-resizable-handle {
+                       transition: none;
+                   }
+                   .react-grid-layout {
+                       position: relative;
+                       transition: height 200ms ease;
+                   }
+                   .react-grid-item {
+                       transition: all 200ms ease;
+                       transition-property: left, top, width, height;
+                       position: absolute;
+                       box-sizing: border-box;
+                   }
+                   .react-grid-item.cssTransforms {
+                       transition-property: transform, width, height;
+                   }
+                   .react-grid-item.resizing {
+                       z-index: 1;
+                       will-change: width, height;
+                   }
+                   .react-grid-item.react-draggable-dragging {
+                       transition: none !important;
+                       z-index: 3 !important;
+                       will-change: transform;
+                   }
+                   .react-grid-item.react-grid-placeholder {
+                       background: #cbd5e0 !important;
+                       border: 2px dashed #718096 !important;
+                       border-radius: 8px !important;
+                       transition-duration: 100ms;
+                       z-index: 2;
+                       -webkit-user-select: none;
+                       -moz-user-select: none;
+                       -ms-user-select: none;
+                       -o-user-select: none;
+                       user-select: none;
                    }
                `}
             </style>
@@ -413,6 +438,14 @@ const EditLayout = () => {
                 {isAddModalOpen && <AddWidgetModal availableWidgets={availableWidgets} onAddWidget={handleAddWidget} onClose={() => setAddModalOpen(false)} />}
 
                 <main className="p-4">
+                    {/* Debug info */}
+                    <div className="mb-4 p-2 bg-gray-100 rounded text-xs">
+                        <div>Layout items: {layout.length}</div>
+                        <div>Widget library: {widgetLibrary.length} widgets</div>
+                        <div>Current view: {currentView?.name || 'None'}</div>
+                        <div>Layout: {JSON.stringify(layout.map(item => ({ i: item.i, x: item.x, y: item.y, w: item.w, h: item.h })))}</div>
+                    </div>
+                    
                     {/* Grid layout */}
                     <ResponsiveReactGridLayout
                         layouts={{ lg: layout }}
@@ -425,18 +458,81 @@ const EditLayout = () => {
                         margin={[10, 10]}
                         containerPadding={[10, 10]}
                         style={{ minHeight: '400px' }}
+                        useCSSTransforms={true}
+                        compactType="vertical"
+                        preventCollision={false}
+                        isBounded={false}
+                        autoSize={true}
+                        verticalCompact={true}
+                        allowOverlap={false}
                     >
                         {layout.map(item => {
                             console.log('Looking for widget:', item.i, 'in library:', widgetLibrary);
                             const widget = widgetLibrary.find(w => w.key === item.i);
-                            console.log('Found widget:', widget);
+                            console.log('Found widget:', widget, 'for item:', item);
+                            
+                            // Skip rendering if widget library is not loaded yet
+                            if (widgetLibrary.length === 0) {
+                                return (
+                                    <div key={item.i} className="bg-white rounded-lg shadow-lg p-4">
+                                        <div className="text-gray-500">Loading widget library...</div>
+                                    </div>
+                                );
+                            }
+                            
                             return (
-                                <MemoizedWidget
-                                    key={item.i}
-                                    item={item}
-                                    widget={widget}
-                                    onRemoveWidget={handleRemoveWidget}
-                                />
+                                <div 
+                                    key={item.i} 
+                                    className="bg-white rounded-lg shadow-lg p-2 overflow-hidden transition-all duration-200 relative ring-2 ring-blue-500 ring-offset-2 cursor-move"
+                                    data-widget-key={item.i}
+                                >
+                                    {/* Remove button - always shown in edit mode */}
+                                    <button
+                                        onClick={(e) => handleRemoveWidget(item.i, e)}
+                                        className="absolute top-2 right-2 z-50 bg-red-500 hover:bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center transition-colors duration-200 shadow-lg"
+                                        style={{ zIndex: 9999 }}
+                                        title="Remove widget"
+                                    >
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                        </svg>
+                                    </button>
+                                    
+                                    {/* Widget content with robust rendering */}
+                                    <div className="pt-6">
+                                        {console.log('Rendering widget:', item.i, 'widget data:', widget, 'type:', widget?.type)}
+                                        {widget ? (
+                                            <WidgetRenderer 
+                                                widgetKey={item.i} 
+                                                widgetPath={widget?.path} 
+                                                type={widget?.type}
+                                                isVisible={true}
+                                                onWidgetReady={(widgetKey, loadTime) => {
+                                                    console.log(`Widget ${widgetKey} ready in ${loadTime}ms`);
+                                                }}
+                                                onWidgetError={(widgetKey, error) => {
+                                                    console.error(`Widget ${widgetKey} error:`, error);
+                                                }}
+                                            />
+                                        ) : (
+                                            <div className="text-center p-4">
+                                                <div className="text-gray-600 text-sm">
+                                                    Widget not found: {item.i}
+                                                </div>
+                                                <div className="text-xs text-gray-400 mt-1">
+                                                    Size: {item.w}x{item.h} | Position: ({item.x}, {item.y})
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                    
+                                    {/* Widget info overlay */}
+                                    <div className="absolute bottom-1 left-1 z-10">
+                                        <span className="bg-blue-500 text-white text-xs px-2 py-1 rounded opacity-75">
+                                            {item.w}×{item.h}
+                                        </span>
+                                    </div>
+                                </div>
                             );
                         })}
                     </ResponsiveReactGridLayout>
