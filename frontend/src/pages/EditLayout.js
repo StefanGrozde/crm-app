@@ -156,6 +156,9 @@ const EditLayout = () => {
             
             setOriginalLayout([...layout]); // Update original layout to current
             
+            // Set a flag to indicate we're returning from EditLayout with changes
+            localStorage.setItem('returningFromEditLayout', Date.now().toString());
+            
             alert('View saved successfully!');
             
         } catch (error) { 
@@ -243,6 +246,8 @@ const EditLayout = () => {
         }
         
         console.log('Navigating back to Dashboard');
+        // Set a flag to indicate we're returning from EditLayout
+        localStorage.setItem('returningFromEditLayout', Date.now().toString());
         navigate('/dashboard');
     };
 

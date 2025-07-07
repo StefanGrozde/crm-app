@@ -53,6 +53,11 @@ const Dashboard = () => {
     // Track previous openTabs length
     const prevTabsLengthRef = useRef(openTabs.length);
     const prevLocationRef = useRef(location.pathname);
+    
+    // Track last refresh time and navigation state
+    const lastRefreshTimeRef = useRef(0);
+    const lastNavigationTimeRef = useRef(0);
+    const isReturningFromEditLayoutRef = useRef(false);
 
     // Debug: Log state changes
     useEffect(() => {
@@ -61,37 +66,130 @@ const Dashboard = () => {
         console.log('Active tab:', activeTabId);
     }, [layout, openTabs, activeTabId]);
 
-    // Track location changes to detect returning from EditLayout
+    // Enhanced location change detection with timestamp tracking
     useEffect(() => {
         const currentPath = location.pathname;
         const previousPath = prevLocationRef.current;
+        const currentTime = Date.now();
         
         console.log('Location changed from:', previousPath, 'to:', currentPath);
+        console.log('Time since last navigation:', currentTime - lastNavigationTimeRef.current, 'ms');
+        
+        // Update navigation timestamp
+        lastNavigationTimeRef.current = currentTime;
         
         // If we're returning from EditLayout to Dashboard
         if (previousPath.includes('/edit-layout/') && currentPath === '/dashboard') {
             console.log('Returning from EditLayout - triggering refresh');
-            // Add a small delay to ensure everything is loaded
+            isReturningFromEditLayoutRef.current = true;
+            
+            // Add a delay to ensure everything is loaded
             setTimeout(() => {
                 if (activeTabId && !String(activeTabId).includes('-page') && !String(activeTabId).includes('search-')) {
                     console.log('Refreshing view after returning from EditLayout');
                     refreshCurrentView();
                 }
-            }, 500);
+            }, 1000); // Increased delay to ensure session is fully loaded
+        }
+        
+        // Also check if we're on dashboard and recently navigated (fallback for cases where location doesn't change)
+        if (currentPath === '/dashboard' && currentTime - lastNavigationTimeRef.current < 5000) {
+            console.log('Recent navigation to dashboard detected - checking if refresh is needed');
+            setTimeout(() => {
+                if (activeTabId && !String(activeTabId).includes('-page') && !String(activeTabId).includes('search-')) {
+                    console.log('Refreshing view after recent navigation to dashboard');
+                    refreshCurrentView();
+                }
+            }, 2000);
         }
         
         prevLocationRef.current = currentPath;
     }, [location.pathname, activeTabId]); // eslint-disable-next-line react-hooks/exhaustive-deps
+
+    // Enhanced refresh trigger when session is loaded and we're returning from EditLayout
+    useEffect(() => {
+        if (isReturningFromEditLayoutRef.current && !isSessionLoading && activeTabId) {
+            console.log('Session loaded after returning from EditLayout - triggering refresh');
+            isReturningFromEditLayoutRef.current = false;
+            
+            // Add a delay to ensure everything is fully loaded
+            setTimeout(() => {
+                if (activeTabId && !String(activeTabId).includes('-page') && !String(activeTabId).includes('search-')) {
+                    console.log('Refreshing view after session load');
+                    refreshCurrentView();
+                }
+            }, 500);
+        }
+    }, [isSessionLoading, activeTabId]); // eslint-disable-next-line react-hooks/exhaustive-deps
+
+    // Fallback refresh mechanism when session is loaded and we have an active view tab
+    useEffect(() => {
+        if (!isSessionLoading && !isLoading && activeTabId && !String(activeTabId).includes('-page') && !String(activeTabId).includes('search-')) {
+            const timeSinceNavigation = Date.now() - lastNavigationTimeRef.current;
+            
+            // If we recently navigated (within last 15 seconds) and haven't refreshed yet
+            if (timeSinceNavigation < 15000 && timeSinceNavigation > 2000) {
+                console.log('Fallback refresh mechanism - session loaded with recent navigation');
+                setTimeout(() => {
+                    console.log('Performing fallback refresh');
+                    refreshCurrentView();
+                }, 1000);
+            }
+        }
+    }, [isSessionLoading, isLoading, activeTabId]); // eslint-disable-next-line react-hooks/exhaustive-deps
+
+    // Aggressive refresh when layout is loaded from session but might be stale
+    useEffect(() => {
+        if (layout.length > 0 && activeTabId && !String(activeTabId).includes('-page') && !String(activeTabId).includes('search-')) {
+            const timeSinceNavigation = Date.now() - lastNavigationTimeRef.current;
+            
+            // If we recently navigated (within last 10 seconds) and the layout was loaded from session
+            if (timeSinceNavigation < 10000 && timeSinceNavigation > 1000) {
+                console.log('Layout loaded from session - checking if refresh is needed');
+                setTimeout(() => {
+                    console.log('Performing layout-based refresh');
+                    refreshCurrentView();
+                }, 1500);
+            }
+        }
+    }, [layout, activeTabId]); // eslint-disable-next-line react-hooks/exhaustive-deps
+
+    // Check for EditLayout return flag
+    useEffect(() => {
+        const returningFromEditLayout = localStorage.getItem('returningFromEditLayout');
+        if (returningFromEditLayout && !isSessionLoading && activeTabId) {
+            const flagTime = parseInt(returningFromEditLayout);
+            const timeSinceFlag = Date.now() - flagTime;
+            
+            // If the flag is recent (within last 30 seconds) and we have an active view tab
+            if (timeSinceFlag < 30000 && !String(activeTabId).includes('-page') && !String(activeTabId).includes('search-')) {
+                console.log('EditLayout return flag detected - triggering refresh');
+                localStorage.removeItem('returningFromEditLayout'); // Clear the flag
+                
+                setTimeout(() => {
+                    console.log('Performing EditLayout return refresh');
+                    refreshCurrentView();
+                }, 1000);
+            } else {
+                // Clear old flags
+                localStorage.removeItem('returningFromEditLayout');
+            }
+        }
+    }, [isSessionLoading, activeTabId]); // eslint-disable-next-line react-hooks/exhaustive-deps
 
     // Check if we need to refresh view data on mount (e.g., returning from EditLayout)
     useEffect(() => {
         if (activeTabId && !String(activeTabId).includes('-page') && !String(activeTabId).includes('search-')) {
             console.log('Dashboard mounted with active view tab - checking if refresh is needed');
             
-            // Add a delay to ensure everything is loaded
-            setTimeout(() => {
-                refreshCurrentView();
-            }, 500);
+            // Check if we recently navigated (within last 5 seconds)
+            const timeSinceNavigation = Date.now() - lastNavigationTimeRef.current;
+            if (timeSinceNavigation < 5000) {
+                console.log('Recent navigation detected, refreshing view');
+                setTimeout(() => {
+                    refreshCurrentView();
+                }, 1000);
+            }
         }
     }, []); // eslint-disable-next-line react-hooks/exhaustive-deps
 
@@ -684,39 +782,56 @@ const Dashboard = () => {
         };
     }, []);
 
-    // Refresh view data when returning from EditLayout
+    // Enhanced refresh mechanism with multiple triggers
     useEffect(() => {
         let lastRefreshTime = 0;
         const REFRESH_DEBOUNCE = 2000; // 2 seconds debounce
         
-        const handleFocus = () => {
-            console.log('Dashboard focused - checking if refresh is needed');
+        const shouldRefresh = () => {
             const now = Date.now();
-            if (now - lastRefreshTime > REFRESH_DEBOUNCE) {
-                console.log('Dashboard focused - refreshing view data');
-                lastRefreshTime = now;
-                // Use the same logic as the manual refresh button
+            const timeSinceLastRefresh = now - lastRefreshTime;
+            const timeSinceLastNavigation = now - lastNavigationTimeRef.current;
+            
+            // Refresh if enough time has passed since last refresh
+            if (timeSinceLastRefresh < REFRESH_DEBOUNCE) {
+                console.log('Skipping refresh due to debounce');
+                return false;
+            }
+            
+            // Refresh if we have an active view tab and it's not a special tab
+            if (!activeTabId || String(activeTabId).includes('-page') || String(activeTabId).includes('search-')) {
+                console.log('Skipping refresh - no valid active view tab');
+                return false;
+            }
+            
+            // Refresh if we recently navigated (within last 10 seconds) or if it's been a while
+            if (timeSinceLastNavigation < 10000 || timeSinceLastRefresh > 30000) {
+                console.log('Triggering refresh - recent navigation or long time since last refresh');
+                return true;
+            }
+            
+            return false;
+        };
+        
+        const performRefresh = () => {
+            if (shouldRefresh()) {
+                console.log('Performing automatic refresh');
+                lastRefreshTime = Date.now();
                 setTimeout(() => {
                     refreshCurrentView();
                 }, 100);
-            } else {
-                console.log('Skipping refresh due to debounce');
             }
+        };
+        
+        const handleFocus = () => {
+            console.log('Dashboard focused - checking if refresh is needed');
+            performRefresh();
         };
 
         const handleVisibilityChange = () => {
             if (!document.hidden) {
                 console.log('Dashboard became visible - checking if refresh is needed');
-                const now = Date.now();
-                if (now - lastRefreshTime > REFRESH_DEBOUNCE) {
-                    console.log('Dashboard became visible - refreshing view data');
-                    lastRefreshTime = now;
-                    setTimeout(() => {
-                        refreshCurrentView();
-                    }, 100);
-                } else {
-                    console.log('Skipping refresh due to debounce');
-                }
+                performRefresh();
             }
         };
 
@@ -764,6 +879,8 @@ const Dashboard = () => {
                             Session: {openTabs.length > 0 ? 'Saved' : 'None'} |
                             Session Loading: {isSessionLoading ? 'Yes' : 'No'} |
                             Refreshing: {isRefreshing ? 'Yes' : 'No'} |
+                            Nav Time: {Math.round((Date.now() - lastNavigationTimeRef.current) / 1000)}s |
+                            EditLayout Flag: {localStorage.getItem('returningFromEditLayout') ? 'Yes' : 'No'} |
                             Grid: 12 cols (Responsive) |
                             Layout: {layout.length > 0 ? `${layout.length} items` : 'Empty'}
                         </div>
@@ -806,10 +923,20 @@ const Dashboard = () => {
                         </button>
                         <button
                             onClick={refreshViewsList}
-                            className="px-2 py-1 bg-teal-500 text-white text-xs rounded hover:bg-teal-600"
+                            className="px-2 py-1 bg-teal-500 text-white text-xs rounded hover:bg-teal-600 mr-2"
                             title="Refresh views list from backend"
                         >
                             Refresh Views
+                        </button>
+                        <button
+                            onClick={() => {
+                                console.log('Manual refresh trigger - navigation time:', Date.now() - lastNavigationTimeRef.current);
+                                refreshCurrentView();
+                            }}
+                            className="px-2 py-1 bg-pink-500 text-white text-xs rounded hover:bg-pink-600"
+                            title="Force refresh current view"
+                        >
+                            Force Refresh
                         </button>
                     </div>
                 </div>
