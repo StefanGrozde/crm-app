@@ -21,7 +21,27 @@ const ContactsWidget = () => {
     const [filters, setFilters] = useState({
         search: '',
         status: '',
-        assignedTo: ''
+        assignedTo: '',
+        source: '',
+        department: '',
+        city: '',
+        state: '',
+        country: ''
+    });
+    
+    // Separate state for search input to prevent re-rendering
+    const [searchInput, setSearchInput] = useState('');
+    
+    // Filter modal state
+    const [showFilterModal, setShowFilterModal] = useState(false);
+    const [filterFormData, setFilterFormData] = useState({
+        status: '',
+        assignedTo: '',
+        source: '',
+        department: '',
+        city: '',
+        state: '',
+        country: ''
     });
     
     // Form states
@@ -93,11 +113,66 @@ const ContactsWidget = () => {
         loadContacts();
         loadDropdownData();
         // eslint-disable-next-line react-hooks/exhaustive-deps
+        
+        // Cleanup function to clear timeout when component unmounts
+        return () => {
+            if (window.searchTimeout) {
+                clearTimeout(window.searchTimeout);
+            }
+        };
     }, []);
 
-    // Handle filter changes
-    const handleFilterChange = (key, value) => {
-        setFilters(prev => ({ ...prev, [key]: value }));
+    // Handle search input changes (separate from API filters)
+    const handleSearchInputChange = (value) => {
+        setSearchInput(value);
+        
+        // Clear existing timeout
+        if (window.searchTimeout) {
+            clearTimeout(window.searchTimeout);
+        }
+        
+        // Set new timeout for search
+        window.searchTimeout = setTimeout(() => {
+            setFilters(prev => ({ ...prev, search: value }));
+            loadContacts(1);
+        }, 300); // Shorter delay for more responsive feel
+    };
+
+    // Handle filter form input changes
+    const handleFilterInputChange = (e) => {
+        const { name, value } = e.target;
+        setFilterFormData(prev => ({ ...prev, [name]: value }));
+    };
+
+    // Apply filters
+    const applyFilters = () => {
+        setFilters(prev => ({ ...prev, ...filterFormData }));
+        setShowFilterModal(false);
+        loadContacts(1);
+    };
+
+    // Clear filters
+    const clearFilters = () => {
+        const clearedFilters = {
+            search: filters.search, // Keep search term
+            status: '',
+            assignedTo: '',
+            source: '',
+            department: '',
+            city: '',
+            state: '',
+            country: ''
+        };
+        setFilters(clearedFilters);
+        setFilterFormData({
+            status: '',
+            assignedTo: '',
+            source: '',
+            department: '',
+            city: '',
+            state: '',
+            country: ''
+        });
         loadContacts(1);
     };
 
@@ -156,6 +231,21 @@ const ContactsWidget = () => {
     const openAddModal = () => {
         resetForm();
         setShowAddModal(true);
+    };
+
+    // Open filter modal
+    const openFilterModal = () => {
+        // Initialize filter form data with current filters
+        setFilterFormData({
+            status: filters.status || '',
+            assignedTo: filters.assignedTo || '',
+            source: filters.source || '',
+            department: filters.department || '',
+            city: filters.city || '',
+            state: filters.state || '',
+            country: filters.country || ''
+        });
+        setShowFilterModal(true);
     };
 
     // Open edit modal
@@ -253,6 +343,149 @@ const ContactsWidget = () => {
             console.error('Error undoing deletion:', error);
             alert('Failed to restore contact');
         }
+    };
+
+    // Filter Modal component
+    const FilterModal = ({ isOpen, onClose }) => {
+        if (!isOpen) return null;
+
+        return (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+                    <div className="flex justify-between items-center mb-4">
+                        <h2 className="text-xl font-bold">Filter Contacts</h2>
+                        <button
+                            onClick={onClose}
+                            className="text-gray-500 hover:text-gray-700"
+                        >
+                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
+                    
+                    <div className="space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                                <select
+                                    name="status"
+                                    value={filterFormData.status}
+                                    onChange={handleFilterInputChange}
+                                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                >
+                                    <option value="">All Statuses</option>
+                                    <option value="active">Active</option>
+                                    <option value="inactive">Inactive</option>
+                                    <option value="prospect">Prospect</option>
+                                </select>
+                            </div>
+                            
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Assigned To</label>
+                                <select
+                                    name="assignedTo"
+                                    value={filterFormData.assignedTo}
+                                    onChange={handleFilterInputChange}
+                                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                >
+                                    <option value="">All Users</option>
+                                    {users.map(user => (
+                                        <option key={user.id} value={user.id}>
+                                            {user.firstName} {user.lastName}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                            
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Source</label>
+                                <input
+                                    type="text"
+                                    name="source"
+                                    value={filterFormData.source}
+                                    onChange={handleFilterInputChange}
+                                    placeholder="e.g., Website, Referral"
+                                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                />
+                            </div>
+                            
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Department</label>
+                                <input
+                                    type="text"
+                                    name="department"
+                                    value={filterFormData.department}
+                                    onChange={handleFilterInputChange}
+                                    placeholder="e.g., Sales, Marketing"
+                                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                />
+                            </div>
+                            
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">City</label>
+                                <input
+                                    type="text"
+                                    name="city"
+                                    value={filterFormData.city}
+                                    onChange={handleFilterInputChange}
+                                    placeholder="Enter city name"
+                                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                />
+                            </div>
+                            
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">State</label>
+                                <input
+                                    type="text"
+                                    name="state"
+                                    value={filterFormData.state}
+                                    onChange={handleFilterInputChange}
+                                    placeholder="Enter state name"
+                                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                />
+                            </div>
+                            
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Country</label>
+                                <input
+                                    type="text"
+                                    name="country"
+                                    value={filterFormData.country}
+                                    onChange={handleFilterInputChange}
+                                    placeholder="Enter country name"
+                                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                />
+                            </div>
+                        </div>
+                        
+                        <div className="flex justify-end space-x-3 pt-4">
+                            <button
+                                type="button"
+                                onClick={clearFilters}
+                                className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+                            >
+                                Clear All
+                            </button>
+                            <button
+                                type="button"
+                                onClick={onClose}
+                                className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="button"
+                                onClick={applyFilters}
+                                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                            >
+                                Apply Filters
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
     };
 
     // Modal component
@@ -561,45 +794,120 @@ const ContactsWidget = () => {
         );
     }
 
+    // Check if any filters are active
+    const hasActiveFilters = Object.values(filters).some(value => value && value !== '');
+
     return (
         <div className="h-full overflow-hidden">
             
             {/* Header */}
             <div className="flex justify-between items-center mb-4">
                 <h2 className="text-lg font-semibold text-gray-900">Contacts</h2>
-                <button
-                    onClick={openAddModal}
-                    className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 flex items-center space-x-1"
-                >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                    </svg>
-                    <span>Add</span>
-                </button>
+                <div className="flex space-x-2">
+                    <button
+                        onClick={openFilterModal}
+                        className={`px-3 py-1 text-sm rounded flex items-center space-x-1 ${
+                            hasActiveFilters 
+                                ? 'bg-blue-100 text-blue-700 border border-blue-300' 
+                                : 'bg-gray-100 text-gray-700 border border-gray-300'
+                        } hover:bg-gray-200`}
+                    >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.207A1 1 0 013 6.5V4z" />
+                        </svg>
+                        <span>Filter</span>
+                        {hasActiveFilters && (
+                            <span className="bg-blue-600 text-white text-xs rounded-full px-1.5 py-0.5">
+                                {Object.values(filters).filter(v => v && v !== '').length}
+                            </span>
+                        )}
+                    </button>
+                    <button
+                        onClick={openAddModal}
+                        className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 flex items-center space-x-1"
+                    >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                        </svg>
+                        <span>Add</span>
+                    </button>
+                </div>
             </div>
 
-            {/* Filters */}
-            <div className="mb-4 space-y-2">
+            {/* Search */}
+            <div className="mb-4">
                 <input
                     type="text"
                     placeholder="Search contacts..."
-                    value={filters.search}
-                    onChange={(e) => handleFilterChange('search', e.target.value)}
+                    value={searchInput}
+                    onChange={(e) => handleSearchInputChange(e.target.value)}
                     className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                 />
-                <div className="grid grid-cols-1 gap-2">
-                    <select
-                        value={filters.status}
-                        onChange={(e) => handleFilterChange('status', e.target.value)}
-                        className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                    >
-                        <option value="">All Statuses</option>
-                        <option value="active">Active</option>
-                        <option value="inactive">Inactive</option>
-                        <option value="prospect">Prospect</option>
-                    </select>
-                </div>
             </div>
+
+            {/* Active Filters Display */}
+            {hasActiveFilters && (
+                <div className="mb-4 p-2 bg-blue-50 border border-blue-200 rounded-md">
+                    <div className="flex items-center justify-between">
+                        <div className="flex flex-wrap gap-2">
+                            {Object.entries(filters).map(([key, value]) => {
+                                if (value && value !== '' && key !== 'search') {
+                                    // Get user-friendly label for filter key
+                                    const getFilterLabel = (filterKey) => {
+                                        const labels = {
+                                            status: 'Status',
+                                            assignedTo: 'Assigned To',
+                                            source: 'Source',
+                                            department: 'Department',
+                                            city: 'City',
+                                            state: 'State',
+                                            country: 'Country'
+                                        };
+                                        return labels[filterKey] || filterKey;
+                                    };
+
+                                    // Get display value for filter
+                                    const getDisplayValue = (filterKey, filterValue) => {
+                                        if (filterKey === 'assignedTo') {
+                                            const user = users.find(u => u.id.toString() === filterValue);
+                                            return user ? `${user.firstName} ${user.lastName}` : filterValue;
+                                        }
+                                        return filterValue;
+                                    };
+
+                                    return (
+                                        <span
+                                            key={key}
+                                            className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
+                                        >
+                                            {getFilterLabel(key)}: {getDisplayValue(key, value)}
+                                            <button
+                                                onClick={() => {
+                                                    setFilters(prev => ({ ...prev, [key]: '' }));
+                                                    setFilterFormData(prev => ({ ...prev, [key]: '' }));
+                                                    loadContacts(1);
+                                                }}
+                                                className="ml-1 inline-flex items-center justify-center w-4 h-4 rounded-full text-blue-400 hover:bg-blue-200 hover:text-blue-500"
+                                            >
+                                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                                </svg>
+                                            </button>
+                                        </span>
+                                    );
+                                }
+                                return null;
+                            })}
+                        </div>
+                        <button
+                            onClick={clearFilters}
+                            className="text-xs text-blue-600 hover:text-blue-800"
+                        >
+                            Clear All
+                        </button>
+                    </div>
+                </div>
+            )}
 
             {/* Contacts List */}
             <div className="overflow-y-auto" style={{ maxHeight: 'calc(100vh - 300px)' }}>
@@ -683,6 +991,11 @@ const ContactsWidget = () => {
             </div>
 
             {/* Modals */}
+            <FilterModal
+                isOpen={showFilterModal}
+                onClose={() => setShowFilterModal(false)}
+            />
+            
             <ContactModal
                 isOpen={showAddModal}
                 onClose={() => setShowAddModal(false)}

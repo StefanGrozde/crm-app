@@ -15,6 +15,11 @@ router.get('/', protect, async (req, res) => {
             search,
             status,
             assignedTo,
+            source,
+            department,
+            city,
+            state,
+            country,
             sortBy = 'created_at',
             sortOrder = 'DESC'
         } = req.query;
@@ -44,6 +49,31 @@ router.get('/', protect, async (req, res) => {
         // Filter by assigned user
         if (assignedTo) {
             whereClause.assignedTo = assignedTo;
+        }
+
+        // Filter by source
+        if (source) {
+            whereClause.source = { [Op.iLike]: `%${source}%` };
+        }
+
+        // Filter by department
+        if (department) {
+            whereClause.department = { [Op.iLike]: `%${department}%` };
+        }
+
+        // Filter by city
+        if (city) {
+            whereClause.city = { [Op.iLike]: `%${city}%` };
+        }
+
+        // Filter by state
+        if (state) {
+            whereClause.state = { [Op.iLike]: `%${state}%` };
+        }
+
+        // Filter by country
+        if (country) {
+            whereClause.country = { [Op.iLike]: `%${country}%` };
         }
 
         const { count, rows: contacts } = await Contact.findAndCountAll({
