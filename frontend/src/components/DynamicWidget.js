@@ -1,4 +1,4 @@
-import React, { useState, useEffect, memo, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, memo, useMemo } from 'react';
 import SearchResultWidget from './SearchResultWidget';
 import ContactsWidget from './ContactsWidget';
 
@@ -226,7 +226,7 @@ const DynamicWidget = memo(({ widgetKey, widgetPath, type, resultData, onLoad, o
                     }, 10);
                     return () => clearTimeout(timer);
                 }
-            }, [onLoad]);
+            }, []); // eslint-disable-line react-hooks/exhaustive-deps
             
             return <SearchResultWidget resultData={resultData} />;
         };
@@ -248,7 +248,7 @@ const DynamicWidget = memo(({ widgetKey, widgetPath, type, resultData, onLoad, o
                     }, 10);
                     return () => clearTimeout(timer);
                 }
-            }, [onLoad]);
+            }, []); // eslint-disable-line react-hooks/exhaustive-deps
             
             return <RegisteredWidget {...props} />;
         };
@@ -292,7 +292,7 @@ const DynamicWidget = memo(({ widgetKey, widgetPath, type, resultData, onLoad, o
                 } else {
                     console.log('BuiltinReactWrapper: no onLoad callback provided for:', memoizedWidgetKey);
                 }
-            }, [onLoad, memoizedWidgetKey]);
+            }, [memoizedWidgetKey]); // eslint-disable-line react-hooks/exhaustive-deps
             
             // Check if widget is in our registry
             const RegisteredWidget = WidgetRegistry[memoizedWidgetKey];
@@ -324,7 +324,7 @@ const DynamicWidget = memo(({ widgetKey, widgetPath, type, resultData, onLoad, o
                 }, 10);
                 return () => clearTimeout(timer);
             }
-        }, [onLoad]);
+        }, []); // eslint-disable-line react-hooks/exhaustive-deps
         
         return (
             <div className="p-4 text-yellow-500 border border-yellow-200 rounded-lg bg-yellow-50">

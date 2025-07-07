@@ -35,14 +35,13 @@ const WidgetRenderer = memo(({
     const lastRenderTimeRef = useRef(0);
     
     // Memoize widget props to prevent unnecessary re-renders
-    const propsString = useMemo(() => JSON.stringify(props), [props]);
     const memoizedProps = useMemo(() => ({
         widgetKey,
         widgetPath,
         type,
         resultData,
         ...props
-    }), [widgetKey, widgetPath, type, resultData, propsString]);
+    }), [widgetKey, widgetPath, type, resultData, props]);
     
     // Handle widget ready state
     const handleWidgetReady = useCallback(() => {
@@ -176,8 +175,7 @@ const WidgetManager = memo(({ widgets, activeTabId, onWidgetEvent }) => {
     }, [onWidgetEvent]);
     
     // Memoize widgets to prevent unnecessary re-renders
-    const widgetsString = useMemo(() => JSON.stringify(widgets), [widgets]);
-    const memoizedWidgets = useMemo(() => widgets, [widgetsString]);
+    const memoizedWidgets = useMemo(() => widgets, [widgets]);
     
     return (
         <div className="widget-manager">

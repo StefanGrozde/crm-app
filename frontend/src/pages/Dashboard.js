@@ -36,6 +36,7 @@ const Dashboard = () => {
         setActiveTabId,
         tabLayouts,
         setTabLayouts,
+        // eslint-disable-next-line no-unused-vars
         loadSession,
         // eslint-disable-next-line no-unused-vars
         saveSession,
