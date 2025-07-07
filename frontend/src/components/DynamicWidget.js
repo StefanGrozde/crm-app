@@ -252,21 +252,33 @@ const DynamicWidget = memo(({ widgetKey, widgetPath, type, resultData, onLoad, o
     
     // Handle builtin-react widgets (these are handled by the registry)
     if (type === 'builtin-react') {
+        console.log('Handling builtin-react widget:', memoizedWidgetKey);
+        console.log('onLoad callback:', onLoad);
+        console.log('Available registry keys:', Object.keys(WidgetRegistry));
+        
         // Create a wrapper component that calls onLoad after render
         const BuiltinReactWrapper = () => {
+            console.log('BuiltinReactWrapper mounting for:', memoizedWidgetKey);
+            
             useEffect(() => {
+                console.log('BuiltinReactWrapper useEffect running for:', memoizedWidgetKey);
                 if (onLoad) {
                     console.log('BuiltinReactWrapper calling onLoad for:', memoizedWidgetKey);
                     // Small delay to ensure the widget has rendered
                     const timer = setTimeout(() => {
+                        console.log('BuiltinReactWrapper executing onLoad for:', memoizedWidgetKey);
                         onLoad();
                     }, 10);
                     return () => clearTimeout(timer);
+                } else {
+                    console.log('BuiltinReactWrapper: no onLoad callback provided for:', memoizedWidgetKey);
                 }
-            }, [onLoad]);
+            }, [onLoad, memoizedWidgetKey]);
             
             // Check if widget is in our registry
             const RegisteredWidget = WidgetRegistry[memoizedWidgetKey];
+            console.log('Found RegisteredWidget for:', memoizedWidgetKey, ':', !!RegisteredWidget);
+            
             if (RegisteredWidget) {
                 return <RegisteredWidget {...props} />;
             } else {

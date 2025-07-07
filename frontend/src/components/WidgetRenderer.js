@@ -58,6 +58,8 @@ const WidgetRenderer = memo(({
         }
     }, [widgetKey, onWidgetReady]);
     
+    console.log(`WidgetRenderer for ${widgetKey} - onLoad callback:`, !!handleWidgetReady);
+    
     // Handle widget error
     const handleWidgetError = useCallback((error) => {
         console.error(`Widget ${widgetKey} error:`, error);
