@@ -126,9 +126,21 @@ const ContactsWidget = () => {
     };
 
     useEffect(() => {
-        loadContacts();
-        loadDropdownData();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
+        const initializeComponent = async () => {
+            try {
+                console.log('Initializing ContactsWidget...');
+                await Promise.all([
+                    loadContacts(),
+                    loadDropdownData()
+                ]);
+                console.log('ContactsWidget initialized successfully');
+            } catch (error) {
+                console.error('Error initializing ContactsWidget:', error);
+                setError('Failed to initialize contacts widget');
+            }
+        };
+
+        initializeComponent();
         
         // Cleanup function to clear timeout when component unmounts
         return () => {
@@ -136,7 +148,10 @@ const ContactsWidget = () => {
                 clearTimeout(window.searchTimeout);
             }
         };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
+
+
 
     // Handle search input changes (separate from API filters)
     const handleSearchInputChange = (value) => {
@@ -149,7 +164,17 @@ const ContactsWidget = () => {
         
         // Set new timeout for search
         window.searchTimeout = setTimeout(() => {
-            setFilters(prev => ({ ...prev, search: value }));
+            // Only update filters if the value has actually changed
+            setFilters(prev => {
+                const newFilters = { ...prev, search: value };
+                // If search is empty, ensure we still load contacts
+                if (!value.trim()) {
+                    // Remove search filter but keep other filters
+                    const { search, ...otherFilters } = newFilters;
+                    return otherFilters;
+                }
+                return newFilters;
+            });
             loadContacts(1);
         }, 300); // Shorter delay for more responsive feel
     };
@@ -170,7 +195,7 @@ const ContactsWidget = () => {
     // Clear filters
     const clearFilters = () => {
         const clearedFilters = {
-            search: filters.search, // Keep search term
+            search: searchInput, // Keep current search input
             status: '',
             assignedTo: '',
             source: '',
@@ -543,7 +568,7 @@ const ContactsWidget = () => {
 
         return (
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                <div className="bg-white rounded-lg p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+                <div className="bg-white rounded-lg p-6 w-full max-w-6xl max-h-[90vh] overflow-y-auto">
                     <div className="flex justify-between items-center mb-4">
                         <h2 className="text-xl font-bold">{title}</h2>
                         <button
@@ -557,189 +582,170 @@ const ContactsWidget = () => {
                     </div>
                     
                     <form onSubmit={onSubmit} className="space-y-4">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {/* Basic Information */}
-                            <div className="space-y-4">
-                                <h3 className="font-semibold text-gray-700">Basic Information</h3>
-                                
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700">First Name *</label>
-                                        <input
-                                            type="text"
-                                            name="firstName"
-                                            value={formData.firstName}
-                                            onChange={handleInputChange}
-                                            required
-                                            className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700">Last Name *</label>
-                                        <input
-                                            type="text"
-                                            name="lastName"
-                                            value={formData.lastName}
-                                            onChange={handleInputChange}
-                                            required
-                                            className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                                        />
-                                    </div>
-                                </div>
-                                
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700">Email</label>
-                                    <input
-                                        type="email"
-                                        name="email"
-                                        value={formData.email}
-                                        onChange={handleInputChange}
-                                        className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                                    />
-                                </div>
-                                
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700">Phone</label>
-                                        <input
-                                            type="tel"
-                                            name="phone"
-                                            value={formData.phone}
-                                            onChange={handleInputChange}
-                                            className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700">Mobile</label>
-                                        <input
-                                            type="tel"
-                                            name="mobile"
-                                            value={formData.mobile}
-                                            onChange={handleInputChange}
-                                            className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                                        />
-                                    </div>
-                                </div>
-                                
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700">Job Title</label>
-                                        <input
-                                            type="text"
-                                            name="jobTitle"
-                                            value={formData.jobTitle}
-                                            onChange={handleInputChange}
-                                            className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700">Department</label>
-                                        <input
-                                            type="text"
-                                            name="department"
-                                            value={formData.department}
-                                            onChange={handleInputChange}
-                                            className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                                        />
-                                    </div>
-                                </div>
+                        {/* Basic Information - 3 columns */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700">First Name *</label>
+                                <input
+                                    type="text"
+                                    name="firstName"
+                                    value={formData.firstName}
+                                    onChange={handleInputChange}
+                                    required
+                                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                />
                             </div>
-                            
-                            {/* Address Information */}
-                            <div className="space-y-4">
-                                <h3 className="font-semibold text-gray-700">Address Information</h3>
-                                
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700">Address</label>
-                                    <textarea
-                                        name="address"
-                                        value={formData.address}
-                                        onChange={handleInputChange}
-                                        rows="3"
-                                        className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                                    />
-                                </div>
-                                
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700">City</label>
-                                        <input
-                                            type="text"
-                                            name="city"
-                                            value={formData.city}
-                                            onChange={handleInputChange}
-                                            className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700">State</label>
-                                        <input
-                                            type="text"
-                                            name="state"
-                                            value={formData.state}
-                                            onChange={handleInputChange}
-                                            className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                                        />
-                                    </div>
-                                </div>
-                                
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700">ZIP Code</label>
-                                        <input
-                                            type="text"
-                                            name="zipCode"
-                                            value={formData.zipCode}
-                                            onChange={handleInputChange}
-                                            className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700">Country</label>
-                                        <input
-                                            type="text"
-                                            name="country"
-                                            value={formData.country}
-                                            onChange={handleInputChange}
-                                            className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                                        />
-                                    </div>
-                                </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700">Last Name *</label>
+                                <input
+                                    type="text"
+                                    name="lastName"
+                                    value={formData.lastName}
+                                    onChange={handleInputChange}
+                                    required
+                                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700">Email</label>
+                                <input
+                                    type="email"
+                                    name="email"
+                                    value={formData.email}
+                                    onChange={handleInputChange}
+                                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                />
                             </div>
                         </div>
                         
-                        {/* Additional Information */}
-                        <div className="space-y-4">
-                            <h3 className="font-semibold text-gray-700">Additional Information</h3>
-                            
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700">Status</label>
-                                    <select
-                                        name="status"
-                                        value={formData.status}
-                                        onChange={handleInputChange}
-                                        className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                                    >
-                                        <option value="active">Active</option>
-                                        <option value="inactive">Inactive</option>
-                                        <option value="prospect">Prospect</option>
-                                    </select>
-                                </div>
-                                
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700">Source</label>
-                                    <input
-                                        type="text"
-                                        name="source"
-                                        value={formData.source}
-                                        onChange={handleInputChange}
-                                        placeholder="e.g., Website, Referral, Trade Show"
-                                        className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                                    />
-                                </div>
+                        {/* Contact Information - 3 columns */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700">Phone</label>
+                                <input
+                                    type="tel"
+                                    name="phone"
+                                    value={formData.phone}
+                                    onChange={handleInputChange}
+                                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                />
                             </div>
-                            
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700">Mobile</label>
+                                <input
+                                    type="tel"
+                                    name="mobile"
+                                    value={formData.mobile}
+                                    onChange={handleInputChange}
+                                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700">Job Title</label>
+                                <input
+                                    type="text"
+                                    name="jobTitle"
+                                    value={formData.jobTitle}
+                                    onChange={handleInputChange}
+                                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                />
+                            </div>
+                        </div>
+                        
+                        {/* Professional Information - 3 columns */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700">Department</label>
+                                <input
+                                    type="text"
+                                    name="department"
+                                    value={formData.department}
+                                    onChange={handleInputChange}
+                                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700">Status</label>
+                                <select
+                                    name="status"
+                                    value={formData.status}
+                                    onChange={handleInputChange}
+                                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                >
+                                    <option value="active">Active</option>
+                                    <option value="inactive">Inactive</option>
+                                    <option value="prospect">Prospect</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700">Source</label>
+                                <input
+                                    type="text"
+                                    name="source"
+                                    value={formData.source}
+                                    onChange={handleInputChange}
+                                    placeholder="e.g., Website, Referral, Trade Show"
+                                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                />
+                            </div>
+                        </div>
+                        
+                        {/* Address Information - 3 columns */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700">Address</label>
+                                <textarea
+                                    name="address"
+                                    value={formData.address}
+                                    onChange={handleInputChange}
+                                    rows="2"
+                                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700">City</label>
+                                <input
+                                    type="text"
+                                    name="city"
+                                    value={formData.city}
+                                    onChange={handleInputChange}
+                                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700">State</label>
+                                <input
+                                    type="text"
+                                    name="state"
+                                    value={formData.state}
+                                    onChange={handleInputChange}
+                                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                />
+                            </div>
+                        </div>
+                        
+                        {/* Location Information - 3 columns */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700">ZIP Code</label>
+                                <input
+                                    type="text"
+                                    name="zipCode"
+                                    value={formData.zipCode}
+                                    onChange={handleInputChange}
+                                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700">Country</label>
+                                <input
+                                    type="text"
+                                    name="country"
+                                    value={formData.country}
+                                    onChange={handleInputChange}
+                                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                />
+                            </div>
                             <div>
                                 <label className="block text-sm font-medium text-gray-700">Assigned To</label>
                                 <select
@@ -756,7 +762,10 @@ const ContactsWidget = () => {
                                     ))}
                                 </select>
                             </div>
-                            
+                        </div>
+                        
+                        {/* Tags and Notes - 2 columns */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <label className="block text-sm font-medium text-gray-700">Tags</label>
                                 <input
@@ -787,14 +796,13 @@ const ContactsWidget = () => {
                                     </div>
                                 )}
                             </div>
-                            
                             <div>
                                 <label className="block text-sm font-medium text-gray-700">Notes</label>
                                 <textarea
                                     name="notes"
                                     value={formData.notes}
                                     onChange={handleInputChange}
-                                    rows="4"
+                                    rows="3"
                                     className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                                 />
                             </div>
@@ -846,6 +854,18 @@ const ContactsWidget = () => {
     // Check if any filters are active
     const hasActiveFilters = Object.values(filters).some(value => value && value !== '');
 
+    // Debug logging
+    console.log('ContactsWidget render state:', {
+        loading,
+        error,
+        contactsCount: contacts.length,
+        showAddModal,
+        showEditModal,
+        showFilterModal,
+        searchInput,
+        filters
+    });
+
     return (
         <div className="h-full overflow-hidden">
             
@@ -890,6 +910,10 @@ const ContactsWidget = () => {
                     placeholder="Search contacts..."
                     value={searchInput}
                     onChange={(e) => handleSearchInputChange(e.target.value)}
+                    onKeyDown={(e) => {
+                        // Prevent any key events from bubbling up to parent components
+                        e.stopPropagation();
+                    }}
                     className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                 />
             </div>
@@ -1125,11 +1149,13 @@ const ContactsWidget = () => {
 
             {/* Modals */}
             <FilterModal
+                key="filter-modal"
                 isOpen={showFilterModal}
                 onClose={() => setShowFilterModal(false)}
             />
             
             <ContactModal
+                key="add-modal"
                 isOpen={showAddModal}
                 onClose={() => setShowAddModal(false)}
                 title="Add New Contact"
@@ -1137,6 +1163,7 @@ const ContactsWidget = () => {
             />
             
             <ContactModal
+                key="edit-modal"
                 isOpen={showEditModal}
                 onClose={() => setShowEditModal(false)}
                 title="Edit Contact"
