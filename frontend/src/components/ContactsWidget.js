@@ -148,8 +148,11 @@ const ContactsWidget = () => {
         };
     }, [loadContacts, loadDropdownData]);
 
-    // Handle search input changes - memoized to prevent unnecessary re-renders
+    // Handle search input changes - optimized to prevent re-rendering
     const handleSearchInputChange = useCallback((value) => {
+        // Only update if the value actually changed
+        if (searchInput === value) return;
+        
         setSearchInput(value);
         
         // Clear existing timeout
@@ -172,7 +175,7 @@ const ContactsWidget = () => {
             });
             loadContacts(1);
         }, 300); // Shorter delay for more responsive feel
-    }, [loadContacts]);
+    }, [searchInput, loadContacts]);
 
     // Handle filter form input changes
     const handleFilterInputChange = useCallback((e) => {

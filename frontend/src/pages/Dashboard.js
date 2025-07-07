@@ -12,7 +12,7 @@ import SaveViewModal from '../components/SaveViewModal';
 import Navbar from '../components/Navbar';
 import TabBar from '../components/TabBar';
 import EditLayoutControls from '../components/EditLayoutControls';
-import DynamicWidget from '../components/DynamicWidget';
+import { WidgetRenderer, WidgetManager, WIDGET_STATES } from '../components/WidgetRenderer';
 import { useTabSession } from '../hooks/useTabSession';
 
 const ResponsiveReactGridLayout = WidthProvider(Responsive);
@@ -760,7 +760,7 @@ const Dashboard = () => {
         setIsDraggingTab(true);
     }, []);
 
-    // Memoized widget component to prevent unnecessary re-renders
+    // Enhanced widget component with robust rendering
     const MemoizedWidget = useCallback(({ item, widget, isEditMode, onRemoveWidget }) => {
         return (
             <div 
@@ -784,13 +784,20 @@ const Dashboard = () => {
                     </button>
                 )}
                 
-                {/* Widget content */}
+                {/* Widget content with robust rendering */}
                 <div className={isEditMode ? 'pt-6' : ''}>
-                    <DynamicWidget 
+                    <WidgetRenderer 
                         widgetKey={item.i} 
                         widgetPath={widget?.path} 
                         type={widget?.type}
                         resultData={item.i.startsWith('search-result-') ? item.resultData : undefined}
+                        isVisible={!isTabSwitching}
+                        onWidgetReady={(widgetKey, loadTime) => {
+                            console.log(`Widget ${widgetKey} ready in ${loadTime}ms`);
+                        }}
+                        onWidgetError={(widgetKey, error) => {
+                            console.error(`Widget ${widgetKey} error:`, error);
+                        }}
                     />
                 </div>
                 
@@ -804,7 +811,7 @@ const Dashboard = () => {
                 )}
             </div>
         );
-    }, []);
+    }, [isTabSwitching]);
 
     // Cleanup timeout on unmount
     useEffect(() => {
