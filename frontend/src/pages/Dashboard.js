@@ -786,6 +786,7 @@ const Dashboard = () => {
                 
                 {/* Widget content with robust rendering */}
                 <div className={isEditMode ? 'pt-6' : ''}>
+                    {console.log('Rendering widget:', item.i, 'widget data:', widget, 'type:', widget?.type)}
                     <WidgetRenderer 
                         widgetKey={item.i} 
                         widgetPath={widget?.path} 

@@ -22,7 +22,11 @@ const WidgetRenderer = memo(({
     ...props 
 }) => {
     // Get widget configuration
-    const widgetConfig = useMemo(() => getWidgetConfig(widgetKey), [widgetKey]);
+    const widgetConfig = useMemo(() => {
+        const config = getWidgetConfig(widgetKey);
+        console.log(`Widget ${widgetKey} config:`, config);
+        return config;
+    }, [widgetKey]);
     
     const [widgetState, setWidgetState] = useState(WIDGET_STATES.LOADING);
     const [error, setError] = useState(null);
@@ -104,6 +108,7 @@ const WidgetRenderer = memo(({
     
     // Render loading state
     if (widgetState === WIDGET_STATES.LOADING) {
+        console.log(`Widget ${widgetKey} is in LOADING state, showLoadingSpinner:`, widgetConfig.showLoadingSpinner);
         if (!widgetConfig.showLoadingSpinner) {
             return null; // Don't show loading state for widgets that don't want it
         }

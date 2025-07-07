@@ -162,12 +162,8 @@ const ExternalWidgetLoader = memo(({ widgetKey, widgetPath, type, onLoad, onErro
     };
 
     if (loading) {
-        return (
-            <div className="flex items-center justify-center p-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                <span className="ml-2 text-gray-600">Loading widget...</span>
-            </div>
-        );
+        // Don't show loading state here - let WidgetRenderer handle it
+        return null;
     }
     
     if (error) {
@@ -196,12 +192,15 @@ const DynamicWidget = memo(({ widgetKey, widgetPath, type, resultData, onLoad, o
     // Memoize the widget key to prevent unnecessary re-renders
     const memoizedWidgetKey = useMemo(() => widgetKey, [widgetKey]);
     
+    console.log('DynamicWidget render:', memoizedWidgetKey, 'type:', type, 'has onLoad:', !!onLoad);
+    
     // Handle search result widgets
     if (memoizedWidgetKey.startsWith('search-result-')) {
         // Create a wrapper component that calls onLoad after render
         const SearchResultWrapper = () => {
             useEffect(() => {
                 if (onLoad) {
+                    console.log('SearchResultWrapper calling onLoad for:', memoizedWidgetKey);
                     // Small delay to ensure the widget has rendered
                     const timer = setTimeout(() => {
                         onLoad();
@@ -223,6 +222,7 @@ const DynamicWidget = memo(({ widgetKey, widgetPath, type, resultData, onLoad, o
         const WidgetWrapper = () => {
             useEffect(() => {
                 if (onLoad) {
+                    console.log('WidgetWrapper calling onLoad for:', memoizedWidgetKey);
                     // Small delay to ensure the widget has rendered
                     const timer = setTimeout(() => {
                         onLoad();
