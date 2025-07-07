@@ -59,7 +59,7 @@ const WidgetRegistry = {
 };
 
 // Dynamic widget loader for external widgets
-const ExternalWidgetLoader = memo(({ widgetKey, widgetPath, type }) => {
+const ExternalWidgetLoader = memo(({ widgetKey, widgetPath, type, onLoad, onError }) => {
     const [Component, setComponent] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -82,12 +82,20 @@ const ExternalWidgetLoader = memo(({ widgetKey, widgetPath, type }) => {
                 
                 if (isMounted) {
                     setLoading(false);
+                    // Call onLoad when widget is successfully loaded
+                    if (onLoad) {
+                        onLoad();
+                    }
                 }
             } catch (err) {
                 console.error('Error loading widget:', err);
                 if (isMounted) {
                     setError(err.message);
                     setLoading(false);
+                    // Call onError when widget fails to load
+                    if (onError) {
+                        onError(err.message);
+                    }
                 }
             }
         };
@@ -97,7 +105,7 @@ const ExternalWidgetLoader = memo(({ widgetKey, widgetPath, type }) => {
         return () => {
             isMounted = false;
         };
-    }, [widgetKey, widgetPath, type]);
+    }, [widgetKey, widgetPath, type, onLoad, onError]);
 
     const loadScriptWidget = (key, path) => {
         return new Promise((resolve, reject) => {
@@ -184,19 +192,49 @@ const ExternalWidgetLoader = memo(({ widgetKey, widgetPath, type }) => {
 });
 
 // Main DynamicWidget component
-const DynamicWidget = memo(({ widgetKey, widgetPath, type, resultData, ...props }) => {
+const DynamicWidget = memo(({ widgetKey, widgetPath, type, resultData, onLoad, onError, ...props }) => {
     // Memoize the widget key to prevent unnecessary re-renders
     const memoizedWidgetKey = useMemo(() => widgetKey, [widgetKey]);
     
     // Handle search result widgets
     if (memoizedWidgetKey.startsWith('search-result-')) {
-        return <SearchResultWidget resultData={resultData} />;
+        // Create a wrapper component that calls onLoad after render
+        const SearchResultWrapper = () => {
+            useEffect(() => {
+                if (onLoad) {
+                    // Small delay to ensure the widget has rendered
+                    const timer = setTimeout(() => {
+                        onLoad();
+                    }, 10);
+                    return () => clearTimeout(timer);
+                }
+            }, [onLoad]);
+            
+            return <SearchResultWidget resultData={resultData} />;
+        };
+        
+        return <SearchResultWrapper />;
     }
 
     // Check if widget is in our registry
     const RegisteredWidget = WidgetRegistry[memoizedWidgetKey];
     if (RegisteredWidget) {
-        return <RegisteredWidget {...props} />;
+        // Create a wrapper component that calls onLoad after render
+        const WidgetWrapper = () => {
+            useEffect(() => {
+                if (onLoad) {
+                    // Small delay to ensure the widget has rendered
+                    const timer = setTimeout(() => {
+                        onLoad();
+                    }, 10);
+                    return () => clearTimeout(timer);
+                }
+            }, [onLoad]);
+            
+            return <RegisteredWidget {...props} />;
+        };
+        
+        return <WidgetWrapper />;
     }
 
     // Handle external widgets (uploaded or builtin)
@@ -206,19 +244,35 @@ const DynamicWidget = memo(({ widgetKey, widgetPath, type, resultData, ...props 
                 widgetKey={memoizedWidgetKey}
                 widgetPath={widgetPath}
                 type={type}
+                onLoad={onLoad}
+                onError={onError}
             />
         );
     }
 
     // Fallback for unknown widgets
-    return (
-        <div className="p-4 text-yellow-500 border border-yellow-200 rounded-lg bg-yellow-50">
-            <div className="font-medium">Unknown Widget</div>
-            <div className="text-sm">Widget type: {type}</div>
-            <div className="text-sm">Widget key: {memoizedWidgetKey}</div>
-            <div className="text-sm">Widget path: {widgetPath}</div>
-        </div>
-    );
+    const UnknownWidgetWrapper = () => {
+        useEffect(() => {
+            if (onLoad) {
+                // Small delay to ensure the widget has rendered
+                const timer = setTimeout(() => {
+                    onLoad();
+                }, 10);
+                return () => clearTimeout(timer);
+            }
+        }, [onLoad]);
+        
+        return (
+            <div className="p-4 text-yellow-500 border border-yellow-200 rounded-lg bg-yellow-50">
+                <div className="font-medium">Unknown Widget</div>
+                <div className="text-sm">Widget type: {type}</div>
+                <div className="text-sm">Widget key: {memoizedWidgetKey}</div>
+                <div className="text-sm">Widget path: {widgetPath}</div>
+            </div>
+        );
+    };
+    
+    return <UnknownWidgetWrapper />;
 });
 
 // Add display name for debugging
