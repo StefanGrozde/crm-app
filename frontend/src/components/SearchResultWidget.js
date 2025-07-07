@@ -87,14 +87,6 @@ const SearchResultWidget = memo(({ resultData }) => {
 });
 
 const SearchResultDisplay = memo(({ result }) => {
-  if (!result) {
-    return (
-      <div className="p-4 text-center text-gray-500">
-        No data available
-      </div>
-    );
-  }
-
   const getTypeIcon = useCallback((type) => {
     switch (type) {
       case 'contact':
