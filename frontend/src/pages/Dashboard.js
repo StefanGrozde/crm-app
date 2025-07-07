@@ -832,9 +832,9 @@ const Dashboard = () => {
     };
 
     // Handle tab drag start
-    const handleTabDragStart = useCallback(() => {
+    const handleTabDragStart = () => {
         setIsDraggingTab(true);
-    }, []);
+    };
 
     // Enhanced widget component with robust rendering
     const MemoizedWidget = ({ item, widget, isEditMode, onRemoveWidget }) => {
