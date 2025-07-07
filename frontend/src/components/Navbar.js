@@ -27,6 +27,9 @@ const Navbar = ({
     isUploadModalOpen,
     onUploadModalClose
 }) => {
+    // Debug logging
+    console.log('Navbar render - currentViewId:', currentViewId, 'type:', typeof currentViewId);
+    console.log('Navbar render - views:', views, 'type:', typeof views);
     const { user, logout } = useContext(AuthContext);
     const navigate = useNavigate();
     
@@ -190,13 +193,13 @@ const Navbar = ({
                                 className="px-3 py-2 border border-gray-300 rounded-md"
                             >
                                 <option value="">Open View...</option>
-                                {views.map(view => (
+                                {Array.isArray(views) && views.map(view => (
                                     <option key={view.id} value={view.id}>{view.name}</option>
                                 ))}
                             </select>
 
                             {/* Edit mode toggle - only show for dashboard views, not main pages */}
-                            {currentViewId && !currentViewId.includes('-page') && (
+                            {currentViewId && typeof currentViewId === 'string' && !currentViewId.includes('-page') && (
                                 !isEditMode ? (
                                     <button
                                         onClick={onEditLayout}
