@@ -1,6 +1,4 @@
 ---
-description:
-globs:
 alwaysApply: false
 ---
 # Cursor IDE Rules for CRM Widget Development
