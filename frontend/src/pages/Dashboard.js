@@ -23,6 +23,7 @@ const Dashboard = () => {
     const [currentViewId, setCurrentViewId] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isTabSwitching, setIsTabSwitching] = useState(false);
+    const [isRefreshing, setIsRefreshing] = useState(false);
 
     
     // Tab management state with session persistence
@@ -72,20 +73,25 @@ const Dashboard = () => {
                 const now = Date.now();
                 const timeDiff = now - timestamp;
                 
-                // Only refresh if the update was recent (within last 30 seconds)
-                if (timeDiff < 30000) {
+                // Only refresh if the update was recent (within last 60 seconds)
+                if (timeDiff < 60000) {
                     console.log('View update detected - refreshing view data');
                     
-                    // Clear the flag
+                    // Clear the flag immediately to prevent duplicate refreshes
                     localStorage.removeItem('dashboard_view_updated');
                     localStorage.removeItem('dashboard_view_updated_id');
                     localStorage.removeItem('dashboard_view_updated_timestamp');
                     
                     // Refresh both the views list and the current view data
                     setTimeout(async () => {
-                        await refreshViewsList();
-                        await refreshCurrentView();
-                    }, 100);
+                        try {
+                            await refreshViewsList();
+                            await refreshCurrentView();
+                            console.log('Dashboard view refreshed successfully after EditLayout');
+                        } catch (error) {
+                            console.error('Failed to refresh dashboard view after EditLayout:', error);
+                        }
+                    }, 200);
                 } else {
                     // Clear old flags
                     localStorage.removeItem('dashboard_view_updated');
@@ -432,6 +438,7 @@ const Dashboard = () => {
         }
 
         try {
+            setIsRefreshing(true);
             console.log('Refreshing current view from backend:', activeTabId);
             const { data } = await axios.get(`${API_URL}/api/dashboard/views/${activeTabId}`, { withCredentials: true });
             
@@ -453,11 +460,35 @@ const Dashboard = () => {
             // Update the current layout if this is the active tab
             if (activeTabId === currentViewId) {
                 setLayout(refreshedLayout);
+                console.log('Current layout updated with refreshed data:', refreshedLayout);
+            }
+            
+            // Update the tab name if it changed
+            const currentTab = openTabs.find(tab => tab.id === activeTabId);
+            if (currentTab && currentTab.name !== data.name) {
+                setOpenTabs(prev => prev.map(tab => 
+                    tab.id === activeTabId ? { ...tab, name: data.name } : tab
+                ));
+                console.log('Tab name updated:', data.name);
             }
             
             console.log('View refreshed successfully:', data.name, 'Layout:', refreshedLayout);
         } catch (error) {
             console.error("Failed to refresh view", error);
+            console.error("Error details:", error.response?.data);
+            console.error("Error status:", error.response?.status);
+            
+            // Show user-friendly error message
+            if (error.response?.status === 404) {
+                console.log('View not found, it may have been deleted');
+                // Optionally close the tab or show a message
+            } else if (error.response?.status === 403) {
+                console.log('Access denied to view');
+            } else {
+                console.log('Network or server error occurred');
+            }
+        } finally {
+            setIsRefreshing(false);
         }
     };
 
@@ -468,8 +499,36 @@ const Dashboard = () => {
             const { data } = await axios.get(`${API_URL}/api/dashboard/views`, { withCredentials: true });
             setViews(data);
             console.log('Views list refreshed successfully:', data.length, 'views');
+            
+            // Validate that current tabs still exist
+            const validTabs = openTabs.filter(tab => {
+                if (String(tab.id).startsWith('search-') || String(tab.id).includes('-page')) {
+                    return true; // Search result tabs and main page tabs are always valid
+                }
+                return data.some(view => String(view.id) === String(tab.id));
+            });
+            
+            if (validTabs.length !== openTabs.length) {
+                console.log('Some tabs are no longer valid, updating tab list');
+                setOpenTabs(validTabs);
+                
+                // If the active tab is no longer valid, switch to the first valid tab
+                if (activeTabId && !validTabs.some(tab => String(tab.id) === String(activeTabId))) {
+                    if (validTabs.length > 0) {
+                        console.log('Active tab no longer valid, switching to first valid tab');
+                        await switchToTab(validTabs[0].id);
+                    } else {
+                        console.log('No valid tabs remaining');
+                        setActiveTabId(null);
+                        setCurrentViewId(null);
+                        setLayout([]);
+                    }
+                }
+            }
         } catch (error) {
             console.error("Failed to refresh views list", error);
+            console.error("Error details:", error.response?.data);
+            console.error("Error status:", error.response?.status);
         }
     };
 
@@ -630,8 +689,6 @@ const Dashboard = () => {
         setIsDraggingTab(true);
     };
 
-
-
     // Cleanup timeout on unmount
     useEffect(() => {
         return () => {
@@ -731,6 +788,7 @@ const Dashboard = () => {
                             Active tab: {activeTabId || 'None'} |
                             Session: {openTabs.length > 0 ? 'Saved' : 'None'} |
                             Session Loading: {isSessionLoading ? 'Yes' : 'No'} |
+                            Refreshing: {isRefreshing ? 'Yes' : 'No'} |
                             Grid: 12 cols (Responsive) |
                             Layout: {layout.length > 0 ? `${layout.length} items` : 'Empty'}
                         </div>
@@ -787,6 +845,18 @@ const Dashboard = () => {
                         <strong>Layout Debug:</strong> {layout.map(item => 
                             `${item.i}: ${item.w}x${item.h}@(${item.x},${item.y})`
                         ).join(' | ')}
+                    </div>
+                )}
+
+                {/* Refresh indicator */}
+                {isRefreshing && (
+                    <div className="bg-green-100 border border-green-300 rounded-lg p-3 mx-4 mb-4">
+                        <div className="flex items-center space-x-2">
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-green-600"></div>
+                            <span className="text-green-800 font-medium">
+                                Refreshing dashboard view...
+                            </span>
+                        </div>
                     </div>
                 )}
 

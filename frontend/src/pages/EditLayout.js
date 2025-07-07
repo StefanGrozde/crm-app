@@ -104,6 +104,48 @@ const EditLayout = () => {
         }
     }, [user, viewId, navigate]);
 
+    // Handle page unload and navigation to ensure Dashboard refresh
+    useEffect(() => {
+        const handleBeforeUnload = (event) => {
+            // Check if there are unsaved changes
+            const hasChanges = JSON.stringify(layout) !== JSON.stringify(originalLayout);
+            if (hasChanges) {
+                console.log('Unsaved changes detected, setting refresh flag');
+                // Set a flag to indicate that the view might have been updated
+                localStorage.setItem('dashboard_view_updated', 'true');
+                localStorage.setItem('dashboard_view_updated_id', viewId);
+                localStorage.setItem('dashboard_view_updated_timestamp', Date.now().toString());
+                
+                // Show confirmation dialog
+                const message = 'You have unsaved changes. Are you sure you want to leave?';
+                event.preventDefault();
+                event.returnValue = message;
+                return message;
+            }
+        };
+
+        const handleVisibilityChange = () => {
+            if (document.hidden) {
+                console.log('EditLayout page hidden, checking for changes');
+                const hasChanges = JSON.stringify(layout) !== JSON.stringify(originalLayout);
+                if (hasChanges) {
+                    console.log('Changes detected when leaving page, setting refresh flag');
+                    localStorage.setItem('dashboard_view_updated', 'true');
+                    localStorage.setItem('dashboard_view_updated_id', viewId);
+                    localStorage.setItem('dashboard_view_updated_timestamp', Date.now().toString());
+                }
+            }
+        };
+
+        window.addEventListener('beforeunload', handleBeforeUnload);
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+
+        return () => {
+            window.removeEventListener('beforeunload', handleBeforeUnload);
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
+        };
+    }, [layout, originalLayout, viewId]);
+
     // Handlers
     const handleSaveView = async () => {
         try {
@@ -217,6 +259,23 @@ const EditLayout = () => {
     };
 
     const handleBackToDashboard = () => {
+        // Check if there are unsaved changes before navigating back
+        const hasChanges = JSON.stringify(layout) !== JSON.stringify(originalLayout);
+        if (hasChanges) {
+            const confirmLeave = window.confirm(
+                'You have unsaved changes. Are you sure you want to leave? Your changes will be lost.'
+            );
+            if (!confirmLeave) {
+                return; // Stay on the page
+            }
+            console.log('User confirmed leaving with unsaved changes, setting refresh flag');
+            // Set a flag to indicate that the view might have been updated
+            localStorage.setItem('dashboard_view_updated', 'true');
+            localStorage.setItem('dashboard_view_updated_id', viewId);
+            localStorage.setItem('dashboard_view_updated_timestamp', Date.now().toString());
+        }
+        
+        console.log('Navigating back to Dashboard');
         navigate('/dashboard');
     };
 
