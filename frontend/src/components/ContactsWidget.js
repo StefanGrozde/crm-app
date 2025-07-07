@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useCallback, useMemo } from 'react';
 import axios from 'axios';
 import { AuthContext } from '../context/AuthContext';
 
@@ -83,8 +83,8 @@ const ContactsWidget = () => {
         countries: []
     });
 
-    // Load contacts
-    const loadContacts = async (page = 1) => {
+    // Load contacts - memoized to prevent unnecessary re-renders
+    const loadContacts = useCallback(async (page = 1) => {
         try {
             setLoading(true);
             const params = new URLSearchParams({
@@ -105,10 +105,10 @@ const ContactsWidget = () => {
         } finally {
             setLoading(false);
         }
-    };
+    }, [filters, pagination.itemsPerPage]);
 
-    // Load users and filter options for dropdowns
-    const loadDropdownData = async () => {
+    // Load users and filter options for dropdowns - memoized
+    const loadDropdownData = useCallback(async () => {
         try {
             setFilterOptionsLoading(true);
             const [usersResponse, filterOptionsResponse] = await Promise.all([
@@ -123,17 +123,15 @@ const ContactsWidget = () => {
         } finally {
             setFilterOptionsLoading(false);
         }
-    };
+    }, []);
 
     useEffect(() => {
         const initializeComponent = async () => {
             try {
-                console.log('Initializing ContactsWidget...');
                 await Promise.all([
                     loadContacts(),
                     loadDropdownData()
                 ]);
-                console.log('ContactsWidget initialized successfully');
             } catch (error) {
                 console.error('Error initializing ContactsWidget:', error);
                 setError('Failed to initialize contacts widget');
@@ -148,13 +146,10 @@ const ContactsWidget = () => {
                 clearTimeout(window.searchTimeout);
             }
         };
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+    }, [loadContacts, loadDropdownData]);
 
-
-
-    // Handle search input changes (separate from API filters)
-    const handleSearchInputChange = (value) => {
+    // Handle search input changes - memoized to prevent unnecessary re-renders
+    const handleSearchInputChange = useCallback((value) => {
         setSearchInput(value);
         
         // Clear existing timeout
@@ -177,23 +172,23 @@ const ContactsWidget = () => {
             });
             loadContacts(1);
         }, 300); // Shorter delay for more responsive feel
-    };
+    }, [loadContacts]);
 
     // Handle filter form input changes
-    const handleFilterInputChange = (e) => {
+    const handleFilterInputChange = useCallback((e) => {
         const { name, value } = e.target;
         setFilterFormData(prev => ({ ...prev, [name]: value }));
-    };
+    }, []);
 
     // Apply filters
-    const applyFilters = () => {
+    const applyFilters = useCallback(() => {
         setFilters(prev => ({ ...prev, ...filterFormData }));
         setShowFilterModal(false);
         loadContacts(1);
-    };
+    }, [filterFormData, loadContacts]);
 
     // Clear filters
-    const clearFilters = () => {
+    const clearFilters = useCallback(() => {
         const clearedFilters = {
             search: searchInput, // Keep current search input
             status: '',
@@ -215,16 +210,16 @@ const ContactsWidget = () => {
             country: ''
         });
         loadContacts(1);
-    };
+    }, [searchInput, loadContacts]);
 
     // Handle form input changes
-    const handleInputChange = (e) => {
+    const handleInputChange = useCallback((e) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
-    };
+    }, []);
 
     // Handle tag input
-    const handleTagInput = (e) => {
+    const handleTagInput = useCallback((e) => {
         if (e.key === 'Enter' && e.target.value.trim()) {
             e.preventDefault();
             const newTag = e.target.value.trim();
@@ -234,18 +229,18 @@ const ContactsWidget = () => {
             }));
             e.target.value = '';
         }
-    };
+    }, []);
 
     // Remove tag
-    const removeTag = (tagToRemove) => {
+    const removeTag = useCallback((tagToRemove) => {
         setFormData(prev => ({
             ...prev,
             tags: prev.tags.filter(tag => tag !== tagToRemove)
         }));
-    };
+    }, []);
 
     // Reset form
-    const resetForm = () => {
+    const resetForm = useCallback(() => {
         setFormData({
             firstName: '',
             lastName: '',
@@ -266,16 +261,16 @@ const ContactsWidget = () => {
             companyId: '',
             assignedTo: ''
         });
-    };
+    }, []);
 
     // Open add modal
-    const openAddModal = () => {
+    const openAddModal = useCallback(() => {
         resetForm();
         setShowAddModal(true);
-    };
+    }, [resetForm]);
 
     // Open filter modal
-    const openFilterModal = () => {
+    const openFilterModal = useCallback(() => {
         // Initialize filter form data with current filters
         setFilterFormData({
             status: filters.status || '',
@@ -287,10 +282,10 @@ const ContactsWidget = () => {
             country: filters.country || ''
         });
         setShowFilterModal(true);
-    };
+    }, [filters]);
 
     // Open edit modal
-    const openEditModal = (contact) => {
+    const openEditModal = useCallback((contact) => {
         setEditingContact(contact);
         setFormData({
             firstName: contact.firstName,
@@ -312,10 +307,10 @@ const ContactsWidget = () => {
             assignedTo: contact.assignedTo || ''
         });
         setShowEditModal(true);
-    };
+    }, []);
 
     // Handle form submission
-    const handleSubmit = async (e) => {
+    const handleSubmit = useCallback(async (e) => {
         e.preventDefault();
         
         try {
@@ -339,10 +334,10 @@ const ContactsWidget = () => {
             console.error('Error saving contact:', error);
             alert(error.response?.data?.message || 'Failed to save contact');
         }
-    };
+    }, [showEditModal, editingContact, formData, resetForm, loadContacts, pagination.currentPage]);
 
     // Handle delete
-    const handleDelete = async (contactId) => {
+    const handleDelete = useCallback(async (contactId) => {
         if (!window.confirm('Are you sure you want to delete this contact?')) {
             return;
         }
@@ -366,10 +361,10 @@ const ContactsWidget = () => {
             console.error('Error deleting contact:', error);
             alert('Failed to delete contact');
         }
-    };
+    }, [loadContacts, pagination.currentPage]);
 
     // Handle undo
-    const handleUndo = async () => {
+    const handleUndo = useCallback(async () => {
         try {
             await axios.post(`${API_URL}/api/contacts/${deletedContact.id}/undo`, {
                 deletedContact
@@ -384,7 +379,23 @@ const ContactsWidget = () => {
             console.error('Error undoing deletion:', error);
             alert('Failed to restore contact');
         }
-    };
+    }, [deletedContact, loadContacts, pagination.currentPage]);
+
+    // Action button handlers
+    const handleStartLead = useCallback((contactId) => {
+        // TODO: Implement Start Lead functionality
+        console.log('Start Lead for:', contactId);
+    }, []);
+
+    const handleStartOpportunity = useCallback((contactId) => {
+        // TODO: Implement Start Opportunity functionality
+        console.log('Start Opportunity for:', contactId);
+    }, []);
+
+    const handleStartSale = useCallback((contactId) => {
+        // TODO: Implement Start Sale functionality
+        console.log('Start Sale for:', contactId);
+    }, []);
 
     // Filter Modal component
     const FilterModal = ({ isOpen, onClose }) => {
@@ -854,18 +865,6 @@ const ContactsWidget = () => {
     // Check if any filters are active
     const hasActiveFilters = Object.values(filters).some(value => value && value !== '');
 
-    // Debug logging
-    console.log('ContactsWidget render state:', {
-        loading,
-        error,
-        contactsCount: contacts.length,
-        showAddModal,
-        showEditModal,
-        showFilterModal,
-        searchInput,
-        filters
-    });
-
     return (
         <div className="h-full overflow-hidden">
             
@@ -1069,30 +1068,21 @@ const ContactsWidget = () => {
                                 <td className="px-4 py-3 whitespace-nowrap">
                                     <div className="flex space-x-1">
                                         <button
-                                            onClick={() => {
-                                                // TODO: Implement Start Lead functionality
-                                                console.log('Start Lead for:', contact.id);
-                                            }}
+                                            onClick={() => handleStartLead(contact.id)}
                                             className="px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
                                             title="Start Lead"
                                         >
                                             Lead
                                         </button>
                                         <button
-                                            onClick={() => {
-                                                // TODO: Implement Start Opportunity functionality
-                                                console.log('Start Opportunity for:', contact.id);
-                                            }}
+                                            onClick={() => handleStartOpportunity(contact.id)}
                                             className="px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
                                             title="Start Opportunity"
                                         >
                                             Opp
                                         </button>
                                         <button
-                                            onClick={() => {
-                                                // TODO: Implement Start Sale functionality
-                                                console.log('Start Sale for:', contact.id);
-                                            }}
+                                            onClick={() => handleStartSale(contact.id)}
                                             className="px-2 py-1 text-xs bg-purple-600 text-white rounded hover:bg-purple-700 transition-colors"
                                             title="Start Sale"
                                         >
