@@ -13,6 +13,8 @@ const dashboardRoutes = require('./routes/dashboardRoutes');
 const widgetRoutes = require('./routes/widgetRoutes');
 const searchRoutes = require('./routes/searchRoutes');
 const contactRoutes = require('./routes/contactRoutes');
+const leadRoutes = require('./routes/leadRoutes');
+const opportunityRoutes = require('./routes/opportunityRoutes');
 const path = require('path');
 
 console.log("Application starting...");
@@ -69,6 +71,8 @@ app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/widgets', widgetRoutes);
 app.use('/api/search', searchRoutes);
 app.use('/api/contacts', contactRoutes);
+app.use('/api/leads', leadRoutes);
+app.use('/api/opportunities', opportunityRoutes);
 app.use('/api/widgets/buildin', express.static(path.join(__dirname, 'widgets', 'buildin')));
 app.use('/api/widgets/custom', express.static(path.join(__dirname, 'widgets', 'custom')));
 // Test Route to check DB connection
@@ -133,11 +137,13 @@ const startServer = async () => {
     // Lead associations
     Lead.belongsTo(Company, { foreignKey: 'companyId', as: 'company' });
     Lead.belongsTo(Contact, { foreignKey: 'contactId', as: 'contact' });
+    Lead.belongsTo(User, { foreignKey: 'assignedTo', as: 'assignedUser' });
     Lead.belongsTo(User, { foreignKey: 'createdBy', as: 'creator' });
     
     // Opportunity associations
     Opportunity.belongsTo(Company, { foreignKey: 'companyId', as: 'company' });
     Opportunity.belongsTo(Contact, { foreignKey: 'contactId', as: 'contact' });
+    Opportunity.belongsTo(User, { foreignKey: 'assignedTo', as: 'assignedUser' });
     Opportunity.belongsTo(User, { foreignKey: 'createdBy', as: 'creator' });
     
     // Sync all models
