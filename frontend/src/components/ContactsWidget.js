@@ -43,6 +43,7 @@ const ContactsWidget = () => {
         state: '',
         country: ''
     });
+    const [filterOptionsLoading, setFilterOptionsLoading] = useState(false);
     
     // Form states
     const [showAddModal, setShowAddModal] = useState(false);
@@ -74,6 +75,13 @@ const ContactsWidget = () => {
     
     // Additional data for dropdowns
     const [users, setUsers] = useState([]);
+    const [filterOptions, setFilterOptions] = useState({
+        sources: [],
+        departments: [],
+        cities: [],
+        states: [],
+        countries: []
+    });
 
     // Load contacts
     const loadContacts = async (page = 1) => {
@@ -99,13 +107,21 @@ const ContactsWidget = () => {
         }
     };
 
-    // Load users for dropdown
+    // Load users and filter options for dropdowns
     const loadDropdownData = async () => {
         try {
-            const usersResponse = await axios.get(`${API_URL}/api/users`, { withCredentials: true });
+            setFilterOptionsLoading(true);
+            const [usersResponse, filterOptionsResponse] = await Promise.all([
+                axios.get(`${API_URL}/api/users`, { withCredentials: true }),
+                axios.get(`${API_URL}/api/contacts/filter-options`, { withCredentials: true })
+            ]);
+            
             setUsers(usersResponse.data);
+            setFilterOptions(filterOptionsResponse.data);
         } catch (error) {
             console.error('Error loading dropdown data:', error);
+        } finally {
+            setFilterOptionsLoading(false);
         }
     };
 
@@ -364,6 +380,13 @@ const ContactsWidget = () => {
                         </button>
                     </div>
                     
+                    {filterOptionsLoading ? (
+                        <div className="flex items-center justify-center py-8">
+                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                            <span className="ml-2 text-gray-600">Loading filter options...</span>
+                        </div>
+                    ) : (
+                    
                     <div className="space-y-4">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
@@ -400,62 +423,87 @@ const ContactsWidget = () => {
                             
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Source</label>
-                                <input
-                                    type="text"
+                                <select
                                     name="source"
                                     value={filterFormData.source}
                                     onChange={handleFilterInputChange}
-                                    placeholder="e.g., Website, Referral"
                                     className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                                />
+                                >
+                                    <option value="">All Sources</option>
+                                    {filterOptions.sources.map((source, index) => (
+                                        <option key={index} value={source.value}>
+                                            {source.value} ({source.count})
+                                        </option>
+                                    ))}
+                                </select>
                             </div>
                             
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Department</label>
-                                <input
-                                    type="text"
+                                <select
                                     name="department"
                                     value={filterFormData.department}
                                     onChange={handleFilterInputChange}
-                                    placeholder="e.g., Sales, Marketing"
                                     className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                                />
+                                >
+                                    <option value="">All Departments</option>
+                                    {filterOptions.departments.map((dept, index) => (
+                                        <option key={index} value={dept.value}>
+                                            {dept.value} ({dept.count})
+                                        </option>
+                                    ))}
+                                </select>
                             </div>
                             
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">City</label>
-                                <input
-                                    type="text"
+                                <select
                                     name="city"
                                     value={filterFormData.city}
                                     onChange={handleFilterInputChange}
-                                    placeholder="Enter city name"
                                     className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                                />
+                                >
+                                    <option value="">All Cities</option>
+                                    {filterOptions.cities.map((city, index) => (
+                                        <option key={index} value={city.value}>
+                                            {city.value} ({city.count})
+                                        </option>
+                                    ))}
+                                </select>
                             </div>
                             
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">State</label>
-                                <input
-                                    type="text"
+                                <select
                                     name="state"
                                     value={filterFormData.state}
                                     onChange={handleFilterInputChange}
-                                    placeholder="Enter state name"
                                     className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                                />
+                                >
+                                    <option value="">All States</option>
+                                    {filterOptions.states.map((state, index) => (
+                                        <option key={index} value={state.value}>
+                                            {state.value} ({state.count})
+                                        </option>
+                                    ))}
+                                </select>
                             </div>
                             
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Country</label>
-                                <input
-                                    type="text"
+                                <select
                                     name="country"
                                     value={filterFormData.country}
                                     onChange={handleFilterInputChange}
-                                    placeholder="Enter country name"
                                     className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                                />
+                                >
+                                    <option value="">All Countries</option>
+                                    {filterOptions.countries.map((country, index) => (
+                                        <option key={index} value={country.value}>
+                                            {country.value} ({country.count})
+                                        </option>
+                                    ))}
+                                </select>
                             </div>
                         </div>
                         
@@ -483,6 +531,7 @@ const ContactsWidget = () => {
                             </button>
                         </div>
                     </div>
+                    )}
                 </div>
             </div>
         );
@@ -872,7 +921,19 @@ const ContactsWidget = () => {
                                             const user = users.find(u => u.id.toString() === filterValue);
                                             return user ? `${user.firstName} ${user.lastName}` : filterValue;
                                         }
-                                        return filterValue;
+                                        
+                                        // Get count for filter options
+                                        const getCount = (filterKey, filterValue) => {
+                                            const options = filterOptions[filterKey + 's']; // Add 's' to match state key
+                                            if (options) {
+                                                const option = options.find(opt => opt.value === filterValue);
+                                                return option ? option.count : null;
+                                            }
+                                            return null;
+                                        };
+                                        
+                                        const count = getCount(filterKey, filterValue);
+                                        return count ? `${filterValue} (${count})` : filterValue;
                                     };
 
                                     return (
