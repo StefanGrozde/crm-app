@@ -1,5 +1,5 @@
 // frontend/src/pages/Dashboard.js
-import React, { useState, useEffect, useContext, useRef } from 'react';
+import React, { useState, useEffect, useContext, useRef, useCallback } from 'react';
 import axios from 'axios';
 import { arrayMove } from '@dnd-kit/sortable';
 import { useLocation } from 'react-router-dom';
@@ -54,8 +54,7 @@ const Dashboard = () => {
     const prevTabsLengthRef = useRef(openTabs.length);
     const prevLocationRef = useRef(location.pathname);
     
-    // Track last refresh time and navigation state
-    const lastRefreshTimeRef = useRef(0);
+    // Track navigation state
     const lastNavigationTimeRef = useRef(0);
     const isReturningFromEditLayoutRef = useRef(false);
 
@@ -104,7 +103,7 @@ const Dashboard = () => {
         }
         
         prevLocationRef.current = currentPath;
-    }, [location.pathname, activeTabId]); // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [location.pathname, activeTabId, refreshCurrentView]);
 
     // Enhanced refresh trigger when session is loaded and we're returning from EditLayout
     useEffect(() => {
@@ -120,7 +119,7 @@ const Dashboard = () => {
                 }
             }, 500);
         }
-    }, [isSessionLoading, activeTabId]); // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isSessionLoading, activeTabId, refreshCurrentView]);
 
     // Fallback refresh mechanism when session is loaded and we have an active view tab
     useEffect(() => {
@@ -136,7 +135,7 @@ const Dashboard = () => {
                 }, 1000);
             }
         }
-    }, [isSessionLoading, isLoading, activeTabId]); // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isSessionLoading, isLoading, activeTabId, refreshCurrentView]);
 
     // Aggressive refresh when layout is loaded from session but might be stale
     useEffect(() => {
@@ -152,7 +151,7 @@ const Dashboard = () => {
                 }, 1500);
             }
         }
-    }, [layout, activeTabId]); // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [layout, activeTabId, refreshCurrentView]);
 
     // Check for EditLayout return flag
     useEffect(() => {
@@ -175,7 +174,7 @@ const Dashboard = () => {
                 localStorage.removeItem('returningFromEditLayout');
             }
         }
-    }, [isSessionLoading, activeTabId]); // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isSessionLoading, activeTabId, refreshCurrentView]);
 
     // Check if we need to refresh view data on mount (e.g., returning from EditLayout)
     useEffect(() => {
@@ -191,7 +190,7 @@ const Dashboard = () => {
                 }, 1000);
             }
         }
-    }, []); // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [activeTabId, refreshCurrentView]);
 
     // Load initial data
     useEffect(() => {
@@ -517,7 +516,7 @@ const Dashboard = () => {
     };
 
     // Refresh current view data from backend
-    const refreshCurrentView = async () => {
+    const refreshCurrentView = useCallback(async () => {
         if (!activeTabId || String(activeTabId).includes('-page') || String(activeTabId).includes('search-')) {
             console.log('Skipping refresh for non-view tab:', activeTabId);
             return;
@@ -576,7 +575,7 @@ const Dashboard = () => {
         } finally {
             setIsRefreshing(false);
         }
-    };
+    }, [activeTabId, currentViewId, openTabs, setTabLayouts, setOpenTabs]);
 
     // Refresh views list from backend
     const refreshViewsList = async () => {
@@ -843,7 +842,7 @@ const Dashboard = () => {
             window.removeEventListener('focus', handleFocus);
             document.removeEventListener('visibilitychange', handleVisibilityChange);
         };
-    }, [activeTabId, currentViewId]); // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [activeTabId, currentViewId, refreshCurrentView]);
 
     if (!user) return <div>Loading...</div>;
     if (isLoading || isSessionLoading) return <div className="min-h-screen bg-gray-100 flex items-center justify-center">Loading dashboard...</div>;

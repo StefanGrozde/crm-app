@@ -6,6 +6,7 @@ const API_URL = process.env.REACT_APP_API_URL;
 
 const BusinessWidget = () => {
     // Context
+    // eslint-disable-next-line no-unused-vars
     const { user } = useContext(AuthContext);
     
     // Core data states

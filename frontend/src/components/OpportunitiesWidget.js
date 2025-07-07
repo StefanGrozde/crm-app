@@ -5,6 +5,7 @@ import { AuthContext } from '../context/AuthContext';
 const API_URL = process.env.REACT_APP_API_URL;
 
 const OpportunitiesWidget = () => {
+    // eslint-disable-next-line no-unused-vars
     const { user } = useContext(AuthContext);
     const [opportunities, setOpportunities] = useState([]);
     const [loading, setLoading] = useState(true);
