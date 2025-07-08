@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useContext, useCallback, memo, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import axios from 'axios';
 import { AuthContext } from '../context/AuthContext';
 
@@ -468,7 +469,7 @@ const ContactsWidget = () => {
     const FilterModal = ({ isOpen, onClose }) => {
         if (!isOpen) return null;
 
-        return (
+        return createPortal(
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
                 <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
                     <div className="flex justify-between items-center mb-4">
@@ -636,7 +637,8 @@ const ContactsWidget = () => {
                     </div>
                     )}
                 </div>
-            </div>
+            </div>,
+            document.body
         );
     };
 
@@ -644,7 +646,7 @@ const ContactsWidget = () => {
     const ContactModal = ({ isOpen, onClose, title, onSubmit }) => {
         if (!isOpen) return null;
 
-        return (
+        return createPortal(
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
                 <div className="bg-white rounded-lg p-6 w-full max-w-6xl max-h-[90vh] overflow-y-auto">
                     <div className="flex justify-between items-center mb-4">
@@ -888,7 +890,8 @@ const ContactsWidget = () => {
                         </div>
                     </form>
                 </div>
-            </div>
+            </div>,
+            document.body
         );
     };
 
@@ -1233,7 +1236,7 @@ const ContactsWidget = () => {
             />
 
             {/* Undo Notification */}
-            {showUndoNotification && deletedContact && (
+            {showUndoNotification && deletedContact && createPortal(
                 <div className="fixed bottom-4 right-4 bg-red-600 text-white px-4 py-2 rounded-lg shadow-lg flex items-center space-x-2 z-50">
                     <span className="text-sm">Contact deleted</span>
                     <button
@@ -1250,7 +1253,8 @@ const ContactsWidget = () => {
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                         </svg>
                     </button>
-                </div>
+                </div>,
+                document.body
             )}
         </div>
     );
