@@ -1,8 +1,8 @@
 // frontend/src/pages/Login.js
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import MicrosoftLogo from '../components/MicrosoftLogo';
 
 const API_URL = process.env.REACT_APP_API_URL;
@@ -10,14 +10,25 @@ const API_URL = process.env.REACT_APP_API_URL;
 const Login = () => {
     const { setUser } = useAuth();
     const navigate = useNavigate();
+    const location = useLocation();
     
     const [isRegistering, setIsRegistering] = useState(false);
     const [error, setError] = useState('');
+    const [successMessage, setSuccessMessage] = useState('');
     
     // --- UPDATED STATE ---
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [companyName, setCompanyName] = useState(''); // Added for registration
+
+    // Check for success message from invitation registration
+    useEffect(() => {
+        if (location.state?.message) {
+            setSuccessMessage(location.state.message);
+            // Clear the state to prevent showing the message again on refresh
+            navigate(location.pathname, { replace: true });
+        }
+    }, [location.state, navigate, location.pathname]);
 
     const handleMicrosoftLogin = () => {
         window.location.href = `${API_URL}/api/auth/microsoft/login`;
@@ -74,6 +85,7 @@ const Login = () => {
                 </div>
                 <form onSubmit={handleSubmit}>
                     {error && <p className="text-red-500 text-sm mb-4 text-center">{error}</p>}
+                    {successMessage && <p className="text-green-500 text-sm mb-4 text-center">{successMessage}</p>}
 
                     {/* --- UPDATED REGISTRATION FIELD --- */}
                     {isRegistering && (

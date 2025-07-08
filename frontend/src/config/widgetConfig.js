@@ -90,6 +90,13 @@ export const WIDGET_TYPE_CONFIG = {
         showLoadingSpinner: true,
     },
     
+    'invitations-widget': {
+        ...DEFAULT_WIDGET_CONFIG,
+        renderMode: 'lazy',
+        autoReload: false,
+        showLoadingSpinner: true,
+    },
+    
     'search-result-widget': {
         ...DEFAULT_WIDGET_CONFIG,
         renderMode: 'eager', // Search results should load immediately
@@ -127,6 +134,7 @@ export const WIDGET_REGISTRY_CONFIG = {
         'opportunities-widget',
         'business-widget',
         'users-widget',
+        'invitations-widget',
         'search-result-widget'
     ],
     

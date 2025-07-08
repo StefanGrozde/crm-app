@@ -8,6 +8,7 @@ import EditLayout from './pages/EditLayout';
 import CreateCompany from './pages/CreateCompany';
 import EditCompany from './pages/EditCompany';
 import Contacts from './pages/Contacts';
+import InviteRegistration from './pages/InviteRegistration';
 import PrivateRoute from './components/PrivateRoute';
 import AdminRoute from './components/AdminRoute';
 
@@ -18,6 +19,7 @@ function App() {
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/login/success" element={<LoginSuccess />} />
+          <Route path="/invite/:token" element={<InviteRegistration />} />
           
           {/* Protected Routes */}
           <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />

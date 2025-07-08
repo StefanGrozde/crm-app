@@ -5,6 +5,7 @@ import LeadsWidget from './LeadsWidget';
 import OpportunitiesWidget from './OpportunitiesWidget';
 import BusinessWidget from './BusinessWidget';
 import UsersWidget from './UsersWidget';
+import InvitationsWidget from './InvitationsWidget';
 import LeadConversionWidget from './LeadConversionWidget';
 
 // Widget Registry - Central place to register all widgets
@@ -16,6 +17,7 @@ const WidgetRegistry = {
     'opportunities-widget': OpportunitiesWidget,
     'business-widget': BusinessWidget,
     'users-widget': UsersWidget,
+    'invitations-widget': InvitationsWidget,
     'lead-conversion': LeadConversionWidget
 };
 

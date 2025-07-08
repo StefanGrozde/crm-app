@@ -32,6 +32,7 @@ const UsersWidget = () => {
     const [showFilterModal, setShowFilterModal] = useState(false);
     const [showAddModal, setShowAddModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
+    const [showInviteModal, setShowInviteModal] = useState(false);
     const [editingItem, setEditingItem] = useState(null);
     
     // Form states
@@ -42,6 +43,11 @@ const UsersWidget = () => {
         password: '',
         role: 'Sales Representative'
     });
+    const [inviteFormData, setInviteFormData] = useState({
+        email: '',
+        role: 'Sales Representative'
+    });
+    const [generatedInvitation, setGeneratedInvitation] = useState(null);
 
     // Logic: Load data
     const loadData = useCallback(async (page = 1) => {
@@ -141,6 +147,12 @@ const UsersWidget = () => {
         setFormData(prev => ({ ...prev, [name]: value }));
     }, []);
 
+    // Logic: Handle invite form input changes
+    const handleInviteInputChange = useCallback((e) => {
+        const { name, value } = e.target;
+        setInviteFormData(prev => ({ ...prev, [name]: value }));
+    }, []);
+
     // Logic: Reset form
     const resetForm = useCallback(() => {
         setFormData({
@@ -156,6 +168,16 @@ const UsersWidget = () => {
         resetForm();
         setShowAddModal(true);
     }, [resetForm]);
+
+    // Logic: Open invite modal
+    const openInviteModal = useCallback(() => {
+        setInviteFormData({
+            email: '',
+            role: 'Sales Representative'
+        });
+        setGeneratedInvitation(null);
+        setShowInviteModal(true);
+    }, []);
 
     // Logic: Open filter modal
     const openFilterModal = useCallback(() => {
@@ -205,6 +227,22 @@ const UsersWidget = () => {
             alert(error.response?.data?.message || 'Failed to save item');
         }
     }, [showEditModal, editingItem, formData, resetForm, loadData, pagination.currentPage]);
+
+    // Logic: Handle invitation generation
+    const handleGenerateInvitation = useCallback(async (e) => {
+        e.preventDefault();
+        
+        try {
+            const response = await axios.post(`${API_URL}/api/invitations`, inviteFormData, {
+                withCredentials: true
+            });
+            
+            setGeneratedInvitation(response.data.invitation);
+        } catch (error) {
+            console.error('Error generating invitation:', error);
+            alert(error.response?.data?.message || 'Failed to generate invitation');
+        }
+    }, [inviteFormData]);
 
     // Logic: Handle delete
     const handleDelete = useCallback(async (itemId) => {
@@ -295,6 +333,15 @@ const UsersWidget = () => {
                                 {Object.values(filters).filter(v => v && v !== '').length}
                             </span>
                         )}
+                    </button>
+                    <button
+                        onClick={openInviteModal}
+                        className="px-3 py-1 bg-green-600 text-white text-sm rounded hover:bg-green-700 flex items-center space-x-1 mr-2"
+                    >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                        </svg>
+                        <span>Invite</span>
                     </button>
                     <button
                         onClick={openAddModal}
@@ -581,6 +628,104 @@ const UsersWidget = () => {
                                 </button>
                             </div>
                         </form>
+                    </div>
+                </div>
+            )}
+
+            {/* Invitation Modal */}
+            {showInviteModal && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-lg p-6 w-full max-w-md">
+                        <h3 className="text-lg font-semibold mb-4">Invite New User</h3>
+                        
+                        {!generatedInvitation ? (
+                            <form onSubmit={handleGenerateInvitation} className="space-y-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700">Email *</label>
+                                    <input
+                                        type="email"
+                                        name="email"
+                                        value={inviteFormData.email}
+                                        onChange={handleInviteInputChange}
+                                        className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
+                                        required
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700">Role</label>
+                                    <select
+                                        name="role"
+                                        value={inviteFormData.role}
+                                        onChange={handleInviteInputChange}
+                                        className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
+                                    >
+                                        <option value="Sales Representative">Sales Representative</option>
+                                        <option value="Sales Manager">Sales Manager</option>
+                                        <option value="Marketing Manager">Marketing Manager</option>
+                                        <option value="Support Representative">Support Representative</option>
+                                        <option value="Administrator">Administrator</option>
+                                    </select>
+                                </div>
+                                <div className="flex justify-end space-x-3">
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowInviteModal(false)}
+                                        className="px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
+                                    >
+                                        Generate Invitation
+                                    </button>
+                                </div>
+                            </form>
+                        ) : (
+                            <div className="space-y-4">
+                                <div className="p-4 bg-green-50 border border-green-200 rounded-md">
+                                    <h4 className="text-sm font-medium text-green-800 mb-2">Invitation Generated Successfully!</h4>
+                                    <p className="text-sm text-green-700 mb-3">
+                                        Send this link to <strong>{generatedInvitation.email}</strong> to complete their registration.
+                                    </p>
+                                    <div className="bg-white p-3 border border-green-300 rounded">
+                                        <p className="text-xs text-gray-600 mb-2">Invitation URL:</p>
+                                        <div className="flex items-center space-x-2">
+                                            <input
+                                                type="text"
+                                                value={generatedInvitation.invitationUrl}
+                                                readOnly
+                                                className="flex-1 text-xs p-2 border border-gray-300 rounded bg-gray-50"
+                                            />
+                                            <button
+                                                onClick={() => {
+                                                    navigator.clipboard.writeText(generatedInvitation.invitationUrl);
+                                                    alert('URL copied to clipboard!');
+                                                }}
+                                                className="px-2 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700"
+                                            >
+                                                Copy
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <p className="text-xs text-green-600 mt-2">
+                                        Expires: {new Date(generatedInvitation.expiresAt).toLocaleDateString()}
+                                    </p>
+                                </div>
+                                <div className="flex justify-end space-x-3">
+                                    <button
+                                        onClick={() => {
+                                            setShowInviteModal(false);
+                                            setGeneratedInvitation(null);
+                                        }}
+                                        className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
+                                    >
+                                        Done
+                                    </button>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
             )}

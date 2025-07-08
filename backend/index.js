@@ -16,6 +16,7 @@ const contactRoutes = require('./routes/contactRoutes');
 const leadRoutes = require('./routes/leadRoutes');
 const opportunityRoutes = require('./routes/opportunityRoutes');
 const businessRoutes = require('./routes/businessRoutes');
+const invitationRoutes = require('./routes/invitationRoutes');
 const path = require('path');
 
 console.log("Application starting...");
@@ -75,6 +76,7 @@ app.use('/api/contacts', contactRoutes);
 app.use('/api/leads', leadRoutes);
 app.use('/api/opportunities', opportunityRoutes);
 app.use('/api/businesses', businessRoutes);
+app.use('/api/invitations', invitationRoutes);
 app.use('/api/widgets/buildin', express.static(path.join(__dirname, 'widgets', 'buildin')));
 app.use('/api/widgets/custom', express.static(path.join(__dirname, 'widgets', 'custom')));
 // Test Route to check DB connection
@@ -114,6 +116,7 @@ const startServer = async () => {
     const Company = require('./models/Company');
     const User = require('./models/User');
     const Widget = require('./models/Widget');
+    const UserInvitation = require('./models/UserInvitation');
     
     // Define associations
     // Company associations
@@ -128,6 +131,7 @@ const startServer = async () => {
     User.hasMany(Contact, { foreignKey: 'createdBy', as: 'createdContacts' });
     User.hasMany(Lead, { foreignKey: 'createdBy', as: 'createdLeads' });
     User.hasMany(Opportunity, { foreignKey: 'createdBy', as: 'createdOpportunities' });
+    User.hasMany(UserInvitation, { foreignKey: 'invitedBy', as: 'InvitedBy' });
     
     // Contact associations
     Contact.belongsTo(Company, { foreignKey: 'companyId', as: 'company' });
@@ -147,6 +151,10 @@ const startServer = async () => {
     Opportunity.belongsTo(Contact, { foreignKey: 'contactId', as: 'contact' });
     Opportunity.belongsTo(User, { foreignKey: 'assignedTo', as: 'assignedUser' });
     Opportunity.belongsTo(User, { foreignKey: 'createdBy', as: 'creator' });
+    
+    // UserInvitation associations
+    UserInvitation.belongsTo(Company, { foreignKey: 'companyId' });
+    UserInvitation.belongsTo(User, { foreignKey: 'invitedBy', as: 'InvitedBy' });
     
     // Sync all models
     // Use { force: true } only in development to drop and re-create tables
