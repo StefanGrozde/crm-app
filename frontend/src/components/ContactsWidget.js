@@ -516,7 +516,7 @@ const ContactsWidget = () => {
                                     className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                                 >
                                     <option value="">All Users</option>
-                                    {users.map(user => (
+                                    {Array.isArray(users) && users.map(user => (
                                         <option key={user.id} value={user.id}>
                                             {user.firstName} {user.lastName}
                                         </option>
@@ -533,7 +533,7 @@ const ContactsWidget = () => {
                                     className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                                 >
                                     <option value="">All Sources</option>
-                                    {filterOptions.sources.map((source, index) => (
+                                    {Array.isArray(filterOptions.sources) && filterOptions.sources.map((source, index) => (
                                         <option key={index} value={source.value}>
                                             {source.value} ({source.count})
                                         </option>
@@ -550,7 +550,7 @@ const ContactsWidget = () => {
                                     className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                                 >
                                     <option value="">All Departments</option>
-                                    {filterOptions.departments.map((dept, index) => (
+                                    {Array.isArray(filterOptions.departments) && filterOptions.departments.map((dept, index) => (
                                         <option key={index} value={dept.value}>
                                             {dept.value} ({dept.count})
                                         </option>
@@ -567,7 +567,7 @@ const ContactsWidget = () => {
                                     className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                                 >
                                     <option value="">All Cities</option>
-                                    {filterOptions.cities.map((city, index) => (
+                                    {Array.isArray(filterOptions.cities) && filterOptions.cities.map((city, index) => (
                                         <option key={index} value={city.value}>
                                             {city.value} ({city.count})
                                         </option>
@@ -584,7 +584,7 @@ const ContactsWidget = () => {
                                     className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                                 >
                                     <option value="">All States</option>
-                                    {filterOptions.states.map((state, index) => (
+                                    {Array.isArray(filterOptions.states) && filterOptions.states.map((state, index) => (
                                         <option key={index} value={state.value}>
                                             {state.value} ({state.count})
                                         </option>
@@ -601,7 +601,7 @@ const ContactsWidget = () => {
                                     className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                                 >
                                     <option value="">All Countries</option>
-                                    {filterOptions.countries.map((country, index) => (
+                                    {Array.isArray(filterOptions.countries) && filterOptions.countries.map((country, index) => (
                                         <option key={index} value={country.value}>
                                             {country.value} ({country.count})
                                         </option>
@@ -818,7 +818,7 @@ const ContactsWidget = () => {
                                     className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                                 >
                                     <option value="">Select User</option>
-                                    {users.map(user => (
+                                    {Array.isArray(users) && users.map(user => (
                                         <option key={user.id} value={user.id}>
                                             {user.firstName} {user.lastName}
                                         </option>
@@ -1020,7 +1020,7 @@ const ContactsWidget = () => {
                                         // Get count for filter options
                                         const getCount = (filterKey, filterValue) => {
                                             const options = filterOptions[filterKey + 's']; // Add 's' to match state key
-                                            if (options) {
+                                            if (options && Array.isArray(options)) {
                                                 const option = options.find(opt => opt.value === filterValue);
                                                 return option ? option.count : null;
                                             }
@@ -1097,7 +1097,7 @@ const ContactsWidget = () => {
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200">
-                        {contacts.map((contact) => (
+                        {Array.isArray(contacts) && contacts.map((contact) => (
                             <tr key={contact.id} className="hover:bg-gray-50 transition-colors">
                                 <td className="px-4 py-3 whitespace-nowrap">
                                     <div className="flex items-center">
