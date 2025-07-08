@@ -629,19 +629,34 @@ const Dashboard = () => {
         // Create a new tab for the search result
         const newTab = {
             id: tabId,
-            name: `${result.title} (${result.type})`,
+            name: result.type === 'contact' ? result.title : `${result.title} (${result.type})`,
             isDefault: false
         };
         
         // Create a simple layout for the search result
-        const resultLayout = [{
-            i: `search-result-${result.id}`,
-            x: 0,
-            y: 0,
-            w: 12,
-            h: 4,
-            resultData: result // Store the result data in the layout item
-        }];
+        let resultLayout;
+        
+        // For contacts, use the contact profile widget
+        if (result.type === 'contact') {
+            resultLayout = [{
+                i: `contact-profile-${result.id}`,
+                x: 0,
+                y: 0,
+                w: 12,
+                h: 8,
+                widgetKey: 'contact-profile-widget',
+                widgetData: { contactId: result.id }
+            }];
+        } else {
+            resultLayout = [{
+                i: `search-result-${result.id}`,
+                x: 0,
+                y: 0,
+                w: 12,
+                h: 4,
+                resultData: result // Store the result data in the layout item
+            }];
+        }
         
         // Update all state synchronously
         setOpenTabs(prev => [...prev, newTab]);
@@ -660,7 +675,7 @@ const Dashboard = () => {
     };
 
     // Handle opening contact profiles as new tabs
-    const handleOpenContactProfile = (contactId) => {
+    const handleOpenContactProfile = async (contactId) => {
         console.log('Opening contact profile as tab:', contactId);
         
         // Create a unique ID for the contact profile tab
@@ -674,10 +689,21 @@ const Dashboard = () => {
             return;
         }
         
+        // Fetch contact details to get the name for the tab
+        let contactName = 'Contact Profile';
+        try {
+            const response = await axios.get(`${API_URL}/api/contacts/${contactId}`, {
+                withCredentials: true
+            });
+            contactName = `${response.data.firstName} ${response.data.lastName}`;
+        } catch (error) {
+            console.error('Failed to fetch contact details for tab name:', error);
+        }
+        
         // Create a new tab for the contact profile
         const newTab = {
             id: tabId,
-            name: `Contact Profile`,
+            name: contactName,
             isDefault: false
         };
         

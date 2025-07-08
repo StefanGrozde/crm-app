@@ -16,6 +16,7 @@ const WidgetRenderer = memo(({
     widgetPath, 
     type, 
     resultData, 
+    widgetData,
     isVisible = true,
     onWidgetReady,
     onWidgetError,
@@ -41,9 +42,10 @@ const WidgetRenderer = memo(({
         widgetPath,
         type,
         resultData,
+        widgetData,
         onOpenContactProfile,
         ...props
-    }), [widgetKey, widgetPath, type, resultData, onOpenContactProfile, props]);
+    }), [widgetKey, widgetPath, type, resultData, widgetData, onOpenContactProfile, props]);
     
     // Handle widget ready state
     const handleWidgetReady = useCallback(() => {

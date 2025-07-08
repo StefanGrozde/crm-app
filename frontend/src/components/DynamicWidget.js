@@ -153,7 +153,7 @@ const ExternalWidgetLoader = memo(({ widgetKey, widgetPath, type, onLoad, onErro
 });
 
 // Main DynamicWidget component
-const DynamicWidget = memo(({ widgetKey, widgetPath, type, resultData, onLoad, onError, widgetState, showLoadingSpinner, loadingSpinnerSize, ...props }) => {
+const DynamicWidget = memo(({ widgetKey, widgetPath, type, resultData, widgetData, onLoad, onError, widgetState, showLoadingSpinner, loadingSpinnerSize, ...props }) => {
     // Memoize the widget key to prevent unnecessary re-renders
     const memoizedWidgetKey = useMemo(() => widgetKey, [widgetKey]);
     
@@ -215,6 +215,14 @@ const DynamicWidget = memo(({ widgetKey, widgetPath, type, resultData, onLoad, o
                 }
             }, []); // eslint-disable-line react-hooks/exhaustive-deps
             
+            // Pass contact profile handler specifically to ContactsWidget
+            if (memoizedWidgetKey === 'contacts-widget') {
+                return <RegisteredWidget onOpenContactProfile={props.onOpenContactProfile} />;
+            }
+            // Pass widgetData to ContactProfileWidget
+            if (memoizedWidgetKey === 'contact-profile-widget' && widgetData) {
+                return <RegisteredWidget contactId={widgetData.contactId} />;
+            }
             return <RegisteredWidget {...props} />;
         };
         
@@ -267,6 +275,10 @@ const DynamicWidget = memo(({ widgetKey, widgetPath, type, resultData, onLoad, o
                 // Pass contact profile handler specifically to ContactsWidget
                 if (memoizedWidgetKey === 'contacts-widget') {
                     return <RegisteredWidget onOpenContactProfile={props.onOpenContactProfile} />;
+                }
+                // Pass widgetData to ContactProfileWidget
+                if (memoizedWidgetKey === 'contact-profile-widget' && widgetData) {
+                    return <RegisteredWidget contactId={widgetData.contactId} />;
                 }
                 return <RegisteredWidget {...props} />;
             } else {

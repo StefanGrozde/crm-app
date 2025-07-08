@@ -97,8 +97,11 @@ const DashboardGrid = ({
             >
                 {layout.map(item => {
                     console.log('Rendering layout item:', item);
-                    console.log('Looking for widget:', item.i, 'in library:', widgetLibrary);
-                    const widget = widgetLibrary.find(w => w.key === item.i);
+                    
+                    // Determine the widget key to look for
+                    const widgetKeyToFind = item.widgetKey || item.i;
+                    console.log('Looking for widget:', widgetKeyToFind, 'in library:', widgetLibrary);
+                    const widget = widgetLibrary.find(w => w.key === widgetKeyToFind);
                     console.log('Found widget:', widget);
                     
                     // Skip rendering if widget library is not loaded yet
@@ -146,10 +149,11 @@ const DashboardGrid = ({
                             <div>
                                 {console.log('Rendering widget:', item.i, 'widget data:', widget, 'type:', widget?.type)}
                                 <WidgetRenderer 
-                                    widgetKey={item.i} 
+                                    widgetKey={widgetKeyToFind} 
                                     widgetPath={widget?.path} 
                                     type={widget?.type}
                                     resultData={item.i.startsWith('search-result-') ? item.resultData : undefined}
+                                    widgetData={item.widgetData}
                                     isVisible={isVisible}
                                     onWidgetReady={onWidgetReady}
                                     onWidgetError={onWidgetError}
