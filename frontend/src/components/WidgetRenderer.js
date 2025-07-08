@@ -23,6 +23,7 @@ const WidgetRenderer = memo(({
     onOpenContactProfile,
     onOpenLeadProfile,
     onOpenOpportunityProfile,
+    onOpenUserProfile,
     ...props 
 }) => {
     // Get widget configuration
@@ -39,17 +40,22 @@ const WidgetRenderer = memo(({
     const lastRenderTimeRef = useRef(0);
     
     // Memoize widget props to prevent unnecessary re-renders
-    const memoizedProps = useMemo(() => ({
-        widgetKey,
-        widgetPath,
-        type,
-        resultData,
-        widgetData,
-        onOpenContactProfile,
-        onOpenLeadProfile,
-        onOpenOpportunityProfile,
-        ...props
-    }), [widgetKey, widgetPath, type, resultData, widgetData, onOpenContactProfile, onOpenLeadProfile, onOpenOpportunityProfile, props]);
+    const memoizedProps = useMemo(() => {
+        const memoizedProps = {
+            widgetKey,
+            widgetPath,
+            type,
+            resultData,
+            widgetData,
+            onOpenContactProfile,
+            onOpenLeadProfile,
+            onOpenOpportunityProfile,
+            onOpenUserProfile,
+            ...props
+        };
+        console.log('WidgetRenderer - memoizedProps for', widgetKey, ':', memoizedProps);
+        return memoizedProps;
+    }, [widgetKey, widgetPath, type, resultData, widgetData, onOpenContactProfile, onOpenLeadProfile, onOpenOpportunityProfile, onOpenUserProfile, props]);
     
     // Handle widget ready state
     const handleWidgetReady = useCallback(() => {

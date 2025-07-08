@@ -1113,7 +1113,13 @@ const ContactsWidget = ({ onOpenContactProfile }) => {
                                         <div>
                                             <div 
                                                 className="text-sm font-medium text-gray-900 cursor-pointer hover:text-blue-600 hover:underline"
-                                                onClick={() => onOpenContactProfile && onOpenContactProfile(contact.id)}
+                                                onClick={() => {
+                                                    console.log('Contact name clicked:', contact.id, contact.firstName, contact.lastName);
+                                                    console.log('onOpenContactProfile function:', onOpenContactProfile);
+                                                    if (onOpenContactProfile) {
+                                                        onOpenContactProfile(contact.id);
+                                                    }
+                                                }}
                                             >
                                                 {contact.firstName} {contact.lastName}
                                             </div>

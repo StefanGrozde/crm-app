@@ -145,7 +145,8 @@ const SearchBar = ({ className = '', placeholder = "Search contacts, leads, oppo
     for (const [type, typeResults] of Object.entries(results.results || {})) {
       for (const result of typeResults) {
         if (currentIndex === index) {
-          return { ...result, type };
+          // Keep the original type from the result, don't override with the key
+          return { ...result };
         }
         currentIndex++;
       }

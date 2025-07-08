@@ -650,7 +650,7 @@ const Dashboard = () => {
         // Create a new tab for the search result
         const newTab = {
             id: tabId,
-            name: result.type === 'contact' ? result.title : `${result.title} (${result.type})`,
+            name: (result.type === 'contact' || result.type === 'contacts') ? result.title : `${result.title} (${result.type})`,
             isDefault: false
         };
         
@@ -658,7 +658,7 @@ const Dashboard = () => {
         let resultLayout;
         
         // For contacts, use the contact profile widget
-        if (result.type === 'contact') {
+        if (result.type === 'contact' || result.type === 'contacts') {
             resultLayout = [{
                 i: `contact-profile-${result.id}`,
                 x: 0,
@@ -668,7 +668,7 @@ const Dashboard = () => {
                 widgetKey: 'contact-profile-widget',
                 widgetData: { contactId: result.id }
             }];
-        } else if (result.type === 'lead') {
+        } else if (result.type === 'lead' || result.type === 'leads') {
             // For leads, use the lead profile widget
             resultLayout = [{
                 i: `lead-profile-${result.id}`,
@@ -679,7 +679,7 @@ const Dashboard = () => {
                 widgetKey: 'lead-profile-widget',
                 widgetData: { leadId: result.id }
             }];
-        } else if (result.type === 'opportunity') {
+        } else if (result.type === 'opportunity' || result.type === 'opportunities') {
             // For opportunities, use the opportunity profile widget
             resultLayout = [{
                 i: `opportunity-profile-${result.id}`,
@@ -689,6 +689,17 @@ const Dashboard = () => {
                 h: 8,
                 widgetKey: 'opportunity-profile-widget',
                 widgetData: { opportunityId: result.id }
+            }];
+        } else if (result.type === 'user' || result.type === 'users') {
+            // For users, use the user profile widget
+            resultLayout = [{
+                i: `user-profile-${result.id}`,
+                x: 0,
+                y: 0,
+                w: 12,
+                h: 8,
+                widgetKey: 'user-profile-widget',
+                widgetData: { userId: result.id }
             }];
         } else {
             resultLayout = [{
@@ -721,6 +732,7 @@ const Dashboard = () => {
     // Handle opening contact profiles as new tabs
     const handleOpenContactProfile = async (contactId) => {
         console.log('Opening contact profile as tab:', contactId);
+        console.log('Function called from:', new Error().stack);
         
         // Create a unique ID for the contact profile tab
         const tabId = `contact-profile-${contactId}`;
@@ -897,6 +909,68 @@ const Dashboard = () => {
         setLayout(profileLayout);
         
         console.log('Opened lead profile tab:', tabId, 'with layout:', profileLayout);
+        
+        // Small delay to ensure state updates are processed
+        setTimeout(() => setIsTabSwitching(false), 50);
+    };
+
+    // Handle opening user profiles as new tabs
+    const handleOpenUserProfile = async (userId, userName) => {
+        console.log('Opening user profile as tab:', userId, userName);
+        
+        // Create a unique ID for the user profile tab
+        const tabId = `user-profile-${userId}`;
+        
+        // Check if tab is already open
+        const isTabOpen = openTabs.find(tab => tab.id === tabId);
+        if (isTabOpen) {
+            // If already open, just switch to it
+            switchToTab(tabId);
+            return;
+        }
+        
+        // Use the provided user name or fetch it if not provided
+        let userNameToUse = userName || 'User Profile';
+        if (!userName) {
+            try {
+                const response = await axios.get(`${API_URL}/api/users/${userId}`, {
+                    withCredentials: true
+                });
+                userNameToUse = response.data.username || response.data.email;
+            } catch (error) {
+                console.error('Failed to fetch user details for tab name:', error);
+            }
+        }
+        
+        // Create a new tab for the user profile
+        const newTab = {
+            id: tabId,
+            name: userNameToUse,
+            isDefault: false
+        };
+        
+        // Create a simple layout for the user profile
+        const profileLayout = [{
+            i: `user-profile-${userId}`,
+            x: 0,
+            y: 0,
+            w: 12,
+            h: 8,
+            widgetKey: 'user-profile-widget',
+            widgetData: { userId }
+        }];
+        
+        // Update all state synchronously
+        setOpenTabs(prev => [...prev, newTab]);
+        setTabLayouts(prev => ({ ...prev, [tabId]: profileLayout }));
+        
+        // Switch to the new tab immediately
+        setIsTabSwitching(true);
+        setActiveTabId(tabId);
+        setCurrentViewId(tabId);
+        setLayout(profileLayout);
+        
+        console.log('Opened user profile tab:', tabId, 'with layout:', profileLayout);
         
         // Small delay to ensure state updates are processed
         setTimeout(() => setIsTabSwitching(false), 50);
@@ -1202,6 +1276,7 @@ const Dashboard = () => {
                     onLoadView={loadView}
                     onOpenSearchResult={handleOpenSearchResult}
                     onOpenPageTab={handleOpenPageTab}
+                    onOpenUserProfile={handleOpenUserProfile}
                     currentViewId={currentViewId}
                 />
 
@@ -1254,6 +1329,7 @@ const Dashboard = () => {
                             onOpenContactProfile={handleOpenContactProfile}
                             onOpenLeadProfile={handleOpenLeadProfile}
                             onOpenOpportunityProfile={handleOpenOpportunityProfile}
+                            onOpenUserProfile={handleOpenUserProfile}
                         />
                     )}
                     

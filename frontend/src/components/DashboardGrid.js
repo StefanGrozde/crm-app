@@ -14,7 +14,8 @@ const DashboardGrid = ({
     onWidgetError,
     onOpenContactProfile,
     onOpenLeadProfile,
-    onOpenOpportunityProfile
+    onOpenOpportunityProfile,
+    onOpenUserProfile
 }) => {
     // Skip rendering if no layout or widget library
     if (!layout || !widgetLibrary || layout.length === 0) {
@@ -150,6 +151,7 @@ const DashboardGrid = ({
                             {/* Widget content with robust rendering */}
                             <div>
                                 {console.log('Rendering widget:', item.i, 'widget data:', widget, 'type:', widget?.type)}
+                                {console.log('DashboardGrid - onOpenContactProfile prop:', onOpenContactProfile)}
                                 <WidgetRenderer 
                                     widgetKey={widgetKeyToFind} 
                                     widgetPath={widget?.path} 
@@ -162,6 +164,7 @@ const DashboardGrid = ({
                                     onOpenContactProfile={onOpenContactProfile}
                                     onOpenLeadProfile={onOpenLeadProfile}
                                     onOpenOpportunityProfile={onOpenOpportunityProfile}
+                                    onOpenUserProfile={onOpenUserProfile}
                                 />
                             </div>
                         </div>

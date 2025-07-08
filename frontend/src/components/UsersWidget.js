@@ -4,7 +4,7 @@ import { AuthContext } from '../context/AuthContext';
 
 const API_URL = process.env.REACT_APP_API_URL;
 
-const UsersWidget = () => {
+const UsersWidget = ({ onOpenUserProfile }) => {
     // Context
     const { user } = useContext(AuthContext);
     
@@ -464,6 +464,12 @@ const UsersWidget = () => {
                                 </td>
                                 <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
                                     <div className="flex space-x-2">
+                                        <button
+                                            onClick={() => onOpenUserProfile && onOpenUserProfile(item.id, item.username)}
+                                            className="text-green-600 hover:text-green-900 text-xs font-medium"
+                                        >
+                                            View Profile
+                                        </button>
                                         <button
                                             onClick={() => openEditModal(item)}
                                             className="text-blue-600 hover:text-blue-900 text-xs font-medium"

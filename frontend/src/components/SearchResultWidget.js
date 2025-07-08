@@ -22,18 +22,23 @@ const SearchResultWidget = memo(({ resultData }) => {
       let endpoint = '';
       switch (resultData.type) {
         case 'contact':
+        case 'contacts':
           endpoint = `/api/contacts/${resultData.id}`;
           break;
         case 'lead':
+        case 'leads':
           endpoint = `/api/leads/${resultData.id}`;
           break;
         case 'opportunity':
+        case 'opportunities':
           endpoint = `/api/opportunities/${resultData.id}`;
           break;
         case 'company':
+        case 'companies':
           endpoint = `/api/companies/${resultData.id}`;
           break;
         case 'user':
+        case 'users':
           endpoint = `/api/users/${resultData.id}`;
           break;
         default:
@@ -87,17 +92,17 @@ const SearchResultWidget = memo(({ resultData }) => {
   }
 
   // For contact results, render the ContactProfileWidget
-  if (resultData.type === 'contact') {
+  if (resultData.type === 'contact' || resultData.type === 'contacts') {
     return <ContactProfileWidget contactId={resultData.id} />;
   }
 
   // For lead results, render the LeadProfileWidget
-  if (resultData.type === 'lead') {
+  if (resultData.type === 'lead' || resultData.type === 'leads') {
     return <LeadProfileWidget leadId={resultData.id} />;
   }
 
   // For opportunity results, render the OpportunityProfileWidget
-  if (resultData.type === 'opportunity') {
+  if (resultData.type === 'opportunity' || resultData.type === 'opportunities') {
     return <OpportunityProfileWidget opportunityId={resultData.id} />;
   }
 
@@ -106,7 +111,10 @@ const SearchResultWidget = memo(({ resultData }) => {
 
 const SearchResultDisplay = memo(({ result }) => {
   const getTypeIcon = useCallback((type) => {
-    switch (type) {
+    // Normalize type to handle both singular and plural
+    const normalizedType = type?.replace(/s$/, '');
+    
+    switch (normalizedType) {
       case 'contact':
         return (
           <svg className="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -376,7 +384,10 @@ const SearchResultDisplay = memo(({ result }) => {
   );
 
   const renderDetails = () => {
-    switch (result.type) {
+    // Normalize type to handle both singular and plural
+    const normalizedType = result.type?.replace(/s$/, '');
+    
+    switch (normalizedType) {
       case 'contact':
         return renderContactDetails();
       case 'lead':

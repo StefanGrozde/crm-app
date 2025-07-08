@@ -9,6 +9,7 @@ const Navbar = ({
     onLoadView, 
     onOpenSearchResult, 
     onOpenPageTab,
+    onOpenUserProfile,
     currentViewId
 }) => {
     // Debug logging
@@ -54,6 +55,13 @@ const Navbar = ({
         setEditPopupOpen(true);
     };
 
+    const handleViewProfile = () => {
+        setMenuOpen(false);
+        if (onOpenUserProfile) {
+            onOpenUserProfile(user.id, user.username);
+        }
+    };
+
     // Convenience functions for specific pages
     const handleOpenContactsTab = () => onOpenPageTab('contacts', 'Contacts', 'contacts-widget');
     const handleOpenLeadsTab = () => onOpenPageTab('leads', 'Leads', 'leads-widget');
@@ -75,7 +83,7 @@ const Navbar = ({
                         <div className="flex-1 flex justify-center px-8">
                             <div className="w-full max-w-2xl">
                                 <SearchBar 
-                                    placeholder="Search contacts, leads, opportunities, companies..."
+                                    placeholder="Search contacts, leads, opportunities, companies, users..."
                                     className="w-full"
                                     onOpenResult={onOpenSearchResult}
                                 />
@@ -225,10 +233,10 @@ const Navbar = ({
                                 {menuOpen && (
                                     <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10">
                                         <button 
-                                            onClick={handleOpenEditPopup}
+                                            onClick={handleViewProfile}
                                             className="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                                         >
-                                            Edit Profile
+                                            View Profile
                                         </button>
                                         {user.role === 'Administrator' && (
                                             <Link 
