@@ -2,6 +2,7 @@ import React, { useState, useEffect, memo, useMemo } from 'react';
 import SearchResultWidget from './SearchResultWidget';
 import ContactsWidget from './ContactsWidget';
 import ContactProfileWidget from './ContactProfileWidget';
+import LeadProfileWidget from './LeadProfileWidget';
 import LeadsWidget from './LeadsWidget';
 import OpportunitiesWidget from './OpportunitiesWidget';
 import BusinessWidget from './BusinessWidget';
@@ -14,6 +15,7 @@ const WidgetRegistry = {
     // Built-in React widgets
     'contacts-widget': ContactsWidget,
     'contact-profile-widget': ContactProfileWidget,
+    'lead-profile-widget': LeadProfileWidget,
     'search-result-widget': SearchResultWidget,
     'leads-widget': LeadsWidget,
     'opportunities-widget': OpportunitiesWidget,

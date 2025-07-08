@@ -1,6 +1,7 @@
 import React, { useState, useEffect, memo, useCallback } from 'react';
 import axios from 'axios';
 import ContactProfileWidget from './ContactProfileWidget';
+import LeadProfileWidget from './LeadProfileWidget';
 
 const API_URL = process.env.REACT_APP_API_URL;
 
@@ -87,6 +88,11 @@ const SearchResultWidget = memo(({ resultData }) => {
   // For contact results, render the ContactProfileWidget
   if (resultData.type === 'contact') {
     return <ContactProfileWidget contactId={resultData.id} />;
+  }
+
+  // For lead results, render the LeadProfileWidget
+  if (resultData.type === 'lead') {
+    return <LeadProfileWidget leadId={resultData.id} />;
   }
 
   return <SearchResultDisplay result={details || resultData} />;
