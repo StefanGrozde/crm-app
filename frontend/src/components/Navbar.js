@@ -49,11 +49,6 @@ const Navbar = ({
     };
 
     const toggleMenu = () => setMenuOpen(!menuOpen);
-    
-    const handleOpenEditPopup = () => {
-        setMenuOpen(false);
-        setEditPopupOpen(true);
-    };
 
     const handleViewProfile = () => {
         setMenuOpen(false);

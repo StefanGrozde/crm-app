@@ -151,7 +151,6 @@ const DashboardGrid = ({
                             {/* Widget content with robust rendering */}
                             <div>
                                 {console.log('Rendering widget:', item.i, 'widget data:', widget, 'type:', widget?.type)}
-                                {console.log('DashboardGrid - onOpenContactProfile prop:', onOpenContactProfile)}
                                 <WidgetRenderer 
                                     widgetKey={widgetKeyToFind} 
                                     widgetPath={widget?.path} 

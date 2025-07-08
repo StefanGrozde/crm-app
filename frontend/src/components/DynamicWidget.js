@@ -223,7 +223,6 @@ const DynamicWidget = memo(({ widgetKey, widgetPath, type, resultData, widgetDat
             
             // Pass contact profile handler specifically to ContactsWidget
             if (memoizedWidgetKey === 'contacts-widget') {
-                console.log('ContactsWidget - onOpenContactProfile prop:', props.onOpenContactProfile);
                 return <RegisteredWidget onOpenContactProfile={props.onOpenContactProfile} />;
             }
             // Pass lead profile handler specifically to LeadsWidget
@@ -305,7 +304,6 @@ const DynamicWidget = memo(({ widgetKey, widgetPath, type, resultData, widgetDat
             if (RegisteredWidget) {
                 // Pass contact profile handler specifically to ContactsWidget
                 if (memoizedWidgetKey === 'contacts-widget') {
-                    console.log('BuiltinReactWrapper - ContactsWidget - onOpenContactProfile prop:', props.onOpenContactProfile);
                     return <RegisteredWidget onOpenContactProfile={props.onOpenContactProfile} />;
                 }
                 // Pass lead profile handler specifically to LeadsWidget

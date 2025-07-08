@@ -2,7 +2,6 @@ import React, { useState, useEffect, useContext, useCallback, memo } from 'react
 import { createPortal } from 'react-dom';
 import axios from 'axios';
 import { AuthContext } from '../context/AuthContext';
-import LeadProfileWidget from './LeadProfileWidget';
 
 const API_URL = process.env.REACT_APP_API_URL;
 

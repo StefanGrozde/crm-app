@@ -6,6 +6,7 @@ const API_URL = process.env.REACT_APP_API_URL;
 
 const LeadProfileWidget = ({ leadId }) => {
     // Context
+    // eslint-disable-next-line no-unused-vars
     const { user } = useContext(AuthContext);
     
     // Core data states
@@ -15,11 +16,13 @@ const LeadProfileWidget = ({ leadId }) => {
     
     // Edit states
     const [showEditModal, setShowEditModal] = useState(false);
+    // eslint-disable-next-line no-unused-vars
     const [editingLead, setEditingLead] = useState(null);
     const [formData, setFormData] = useState({});
     
     // Additional data for dropdowns and relationships
     const [dropdownData, setDropdownData] = useState({});
+    // eslint-disable-next-line no-unused-vars
     const [relatedData, setRelatedData] = useState({});
 
     // Logic: Load lead data

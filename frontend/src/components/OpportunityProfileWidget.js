@@ -6,6 +6,7 @@ const API_URL = process.env.REACT_APP_API_URL;
 
 const OpportunityProfileWidget = ({ opportunityId }) => {
     // Context
+    // eslint-disable-next-line no-unused-vars
     const { user } = useContext(AuthContext);
     
     // Core data states
@@ -15,11 +16,13 @@ const OpportunityProfileWidget = ({ opportunityId }) => {
     
     // Edit states
     const [showEditModal, setShowEditModal] = useState(false);
+    // eslint-disable-next-line no-unused-vars
     const [editingOpportunity, setEditingOpportunity] = useState(null);
     const [formData, setFormData] = useState({});
     
     // Additional data for dropdowns and relationships
     const [dropdownData, setDropdownData] = useState({});
+    // eslint-disable-next-line no-unused-vars
     const [relatedData, setRelatedData] = useState({});
 
     // Logic: Load opportunity data
@@ -86,6 +89,7 @@ const OpportunityProfileWidget = ({ opportunityId }) => {
     }, []);
 
     // Logic: Handle tag input (if applicable)
+    // eslint-disable-next-line no-unused-vars
     const handleTagInput = useCallback((e) => {
         if (e.key === 'Enter' && e.target.value.trim()) {
             e.preventDefault();
@@ -99,6 +103,7 @@ const OpportunityProfileWidget = ({ opportunityId }) => {
     }, []);
 
     // Logic: Remove tag (if applicable)
+    // eslint-disable-next-line no-unused-vars
     const removeTag = useCallback((tagToRemove) => {
         setFormData(prev => ({
             ...prev,
@@ -353,9 +358,9 @@ const OpportunityProfileWidget = ({ opportunityId }) => {
                             <div>
                                 <span className="text-sm font-medium text-gray-500">Company</span>
                                 <p className="text-sm text-gray-900 mt-1">
-                                    <a href="#" className="text-blue-600 hover:text-blue-800">
+                                    <span className="text-blue-600 hover:text-blue-800">
                                         {opportunity.company.name}
-                                    </a>
+                                    </span>
                                 </p>
                             </div>
                         )}
@@ -364,9 +369,9 @@ const OpportunityProfileWidget = ({ opportunityId }) => {
                             <div>
                                 <span className="text-sm font-medium text-gray-500">Contact</span>
                                 <p className="text-sm text-gray-900 mt-1">
-                                    <a href="#" className="text-blue-600 hover:text-blue-800">
+                                    <span className="text-blue-600 hover:text-blue-800">
                                         {`${opportunity.contact.firstName} ${opportunity.contact.lastName}`}
-                                    </a>
+                                    </span>
                                 </p>
                                 {opportunity.contact.email && (
                                     <p className="text-xs text-gray-500 mt-1">

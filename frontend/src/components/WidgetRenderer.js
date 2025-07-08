@@ -53,7 +53,6 @@ const WidgetRenderer = memo(({
             onOpenUserProfile,
             ...props
         };
-        console.log('WidgetRenderer - memoizedProps for', widgetKey, ':', memoizedProps);
         return memoizedProps;
     }, [widgetKey, widgetPath, type, resultData, widgetData, onOpenContactProfile, onOpenLeadProfile, onOpenOpportunityProfile, onOpenUserProfile, props]);
     
