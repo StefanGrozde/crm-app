@@ -975,6 +975,68 @@ const Dashboard = () => {
         setTimeout(() => setIsTabSwitching(false), 50);
     };
 
+    // Handle opening business profiles as new tabs
+    const handleOpenBusinessProfile = async (businessId, businessName) => {
+        console.log('Opening business profile as tab:', businessId, businessName);
+        
+        // Create a unique ID for the business profile tab
+        const tabId = `business-profile-${businessId}`;
+        
+        // Check if tab is already open
+        const isTabOpen = openTabs.find(tab => tab.id === tabId);
+        if (isTabOpen) {
+            // If already open, just switch to it
+            switchToTab(tabId);
+            return;
+        }
+        
+        // Use the provided business name or fetch it if not provided
+        let businessNameToUse = businessName || 'Business Profile';
+        if (!businessName) {
+            try {
+                const response = await axios.get(`${API_URL}/api/businesses/${businessId}`, {
+                    withCredentials: true
+                });
+                businessNameToUse = response.data.name;
+            } catch (error) {
+                console.error('Failed to fetch business details for tab name:', error);
+            }
+        }
+        
+        // Create a new tab for the business profile
+        const newTab = {
+            id: tabId,
+            name: businessNameToUse,
+            isDefault: false
+        };
+        
+        // Create a simple layout for the business profile
+        const profileLayout = [{
+            i: `business-profile-${businessId}`,
+            x: 0,
+            y: 0,
+            w: 12,
+            h: 8,
+            widgetKey: 'business-profile-widget',
+            widgetData: { businessId }
+        }];
+        
+        // Update all state synchronously
+        setOpenTabs(prev => [...prev, newTab]);
+        setTabLayouts(prev => ({ ...prev, [tabId]: profileLayout }));
+        
+        // Switch to the new tab immediately
+        setIsTabSwitching(true);
+        setActiveTabId(tabId);
+        setCurrentViewId(tabId);
+        setLayout(profileLayout);
+        
+        console.log('Opened business profile tab:', tabId, 'with layout:', profileLayout);
+        
+        // Small delay to ensure state updates are processed
+        setTimeout(() => setIsTabSwitching(false), 50);
+    };
+
     // Generic function to open any page as a new tab
     const handleOpenPageTab = (pageType, pageName, widgetKey) => {
         console.log(`Opening ${pageName} tab`);
@@ -1328,6 +1390,7 @@ const Dashboard = () => {
                             onOpenContactProfile={handleOpenContactProfile}
                             onOpenLeadProfile={handleOpenLeadProfile}
                             onOpenOpportunityProfile={handleOpenOpportunityProfile}
+                            onOpenBusinessProfile={handleOpenBusinessProfile}
                             onOpenUserProfile={handleOpenUserProfile}
                         />
                     )}

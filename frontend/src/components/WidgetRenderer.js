@@ -23,6 +23,7 @@ const WidgetRenderer = memo(({
     onOpenContactProfile,
     onOpenLeadProfile,
     onOpenOpportunityProfile,
+    onOpenBusinessProfile,
     onOpenUserProfile,
     ...props 
 }) => {
@@ -50,6 +51,7 @@ const WidgetRenderer = memo(({
             onOpenContactProfile,
             onOpenLeadProfile,
             onOpenOpportunityProfile,
+            onOpenBusinessProfile,
             onOpenUserProfile,
             ...props
         };
@@ -57,7 +59,7 @@ const WidgetRenderer = memo(({
 
         
         return memoizedProps;
-    }, [widgetKey, widgetPath, type, resultData, widgetData, onOpenContactProfile, onOpenLeadProfile, onOpenOpportunityProfile, onOpenUserProfile, props]);
+    }, [widgetKey, widgetPath, type, resultData, widgetData, onOpenContactProfile, onOpenLeadProfile, onOpenOpportunityProfile, onOpenBusinessProfile, onOpenUserProfile, props]);
     
 
     

@@ -259,9 +259,41 @@ const DynamicWidget = memo(({ widgetKey, widgetPath, type, resultData, widgetDat
                 if (memoizedWidgetKey === 'contacts-widget') {
                     return <RegisteredWidget onOpenContactProfile={onOpenContactProfile} />;
                 }
+                // Pass lead profile handler specifically to LeadsWidget
+                if (memoizedWidgetKey === 'leads-widget') {
+                    return <RegisteredWidget onOpenLeadProfile={onOpenLeadProfile} />;
+                }
+                // Pass opportunity profile handler specifically to OpportunitiesWidget
+                if (memoizedWidgetKey === 'opportunities-widget') {
+                    return <RegisteredWidget onOpenOpportunityProfile={onOpenOpportunityProfile} />;
+                }
+                // Pass business profile handler specifically to BusinessWidget
+                if (memoizedWidgetKey === 'business-widget') {
+                    return <RegisteredWidget onOpenBusinessProfile={onOpenBusinessProfile} />;
+                }
+                // Pass user profile handler specifically to UsersWidget
+                if (memoizedWidgetKey === 'users-widget') {
+                    return <RegisteredWidget onOpenUserProfile={onOpenUserProfile} />;
+                }
                 // Pass widgetData to ContactProfileWidget
                 if (memoizedWidgetKey === 'contact-profile-widget' && widgetData) {
                     return <RegisteredWidget contactId={widgetData.contactId} />;
+                }
+                // Pass widgetData to LeadProfileWidget
+                if (memoizedWidgetKey === 'lead-profile-widget' && widgetData) {
+                    return <RegisteredWidget leadId={widgetData.leadId} />;
+                }
+                // Pass widgetData to OpportunityProfileWidget
+                if (memoizedWidgetKey === 'opportunity-profile-widget' && widgetData) {
+                    return <RegisteredWidget opportunityId={widgetData.opportunityId} />;
+                }
+                // Pass widgetData to BusinessProfileWidget
+                if (memoizedWidgetKey === 'business-profile-widget' && widgetData) {
+                    return <RegisteredWidget businessId={widgetData.businessId} />;
+                }
+                // Pass widgetData to UserProfileWidget
+                if (memoizedWidgetKey === 'user-profile-widget' && widgetData) {
+                    return <RegisteredWidget userId={widgetData.userId} />;
                 }
                 return <RegisteredWidget {...props} />;
             };
