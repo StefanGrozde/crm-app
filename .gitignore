@@ -7,3 +7,4 @@ backend/.env
 .cursor/rules/crm-app-rule.mdc
 WIDGET_TEMPLATES.md
 CURSOR_WIDGET_RULES.md
+.cursor/rules/widget-profile-creation-rune.mdc
