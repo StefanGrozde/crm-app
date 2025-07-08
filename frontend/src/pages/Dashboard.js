@@ -65,6 +65,68 @@ const Dashboard = () => {
         console.log('Active tab:', activeTabId);
     }, [layout, openTabs, activeTabId]);
 
+    // Define refreshCurrentView function early to avoid circular dependencies
+    const refreshCurrentView = useCallback(async () => {
+        if (!activeTabId || String(activeTabId).includes('-page') || String(activeTabId).includes('search-')) {
+            console.log('Skipping refresh for non-view tab:', activeTabId);
+            return;
+        }
+
+        try {
+            setIsRefreshing(true);
+            console.log('Refreshing current view from backend:', activeTabId);
+            const { data } = await axios.get(`${API_URL}/api/dashboard/views/${activeTabId}`, { withCredentials: true });
+            
+            // Convert widgets to layout format
+            let refreshedLayout = [];
+            if (data.widgets && data.widgets.length > 0) {
+                refreshedLayout = data.widgets.map(w => ({ 
+                    i: w.widgetKey, 
+                    x: w.x || 0, 
+                    y: w.y || 0, 
+                    w: w.w || 6, 
+                    h: w.h || 2 
+                }));
+            }
+            
+            // Update the tab's layout in session
+            setTabLayouts(prev => ({ ...prev, [activeTabId]: refreshedLayout }));
+            
+            // Update the current layout if this is the active tab
+            if (activeTabId === currentViewId) {
+                setLayout(refreshedLayout);
+                console.log('Current layout updated with refreshed data:', refreshedLayout);
+            }
+            
+            // Update the tab name if it changed
+            const currentTab = openTabs.find(tab => tab.id === activeTabId);
+            if (currentTab && currentTab.name !== data.name) {
+                setOpenTabs(prev => prev.map(tab => 
+                    tab.id === activeTabId ? { ...tab, name: data.name } : tab
+                ));
+                console.log('Tab name updated:', data.name);
+            }
+            
+            console.log('View refreshed successfully:', data.name, 'Layout:', refreshedLayout);
+        } catch (error) {
+            console.error("Failed to refresh view", error);
+            console.error("Error details:", error.response?.data);
+            console.error("Error status:", error.response?.status);
+            
+            // Show user-friendly error message
+            if (error.response?.status === 404) {
+                console.log('View not found, it may have been deleted');
+                // Optionally close the tab or show a message
+            } else if (error.response?.status === 403) {
+                console.log('Access denied to view');
+            } else {
+                console.log('Network or server error occurred');
+            }
+        } finally {
+            setIsRefreshing(false);
+        }
+    }, [activeTabId, currentViewId, openTabs, setTabLayouts, setOpenTabs]);
+
     // Enhanced location change detection with timestamp tracking
     useEffect(() => {
         const currentPath = location.pathname;
@@ -515,67 +577,7 @@ const Dashboard = () => {
         }
     };
 
-    // Refresh current view data from backend
-    const refreshCurrentView = useCallback(async () => {
-        if (!activeTabId || String(activeTabId).includes('-page') || String(activeTabId).includes('search-')) {
-            console.log('Skipping refresh for non-view tab:', activeTabId);
-            return;
-        }
 
-        try {
-            setIsRefreshing(true);
-            console.log('Refreshing current view from backend:', activeTabId);
-            const { data } = await axios.get(`${API_URL}/api/dashboard/views/${activeTabId}`, { withCredentials: true });
-            
-            // Convert widgets to layout format
-            let refreshedLayout = [];
-            if (data.widgets && data.widgets.length > 0) {
-                refreshedLayout = data.widgets.map(w => ({ 
-                    i: w.widgetKey, 
-                    x: w.x || 0, 
-                    y: w.y || 0, 
-                    w: w.w || 6, 
-                    h: w.h || 2 
-                }));
-            }
-            
-            // Update the tab's layout in session
-            setTabLayouts(prev => ({ ...prev, [activeTabId]: refreshedLayout }));
-            
-            // Update the current layout if this is the active tab
-            if (activeTabId === currentViewId) {
-                setLayout(refreshedLayout);
-                console.log('Current layout updated with refreshed data:', refreshedLayout);
-            }
-            
-            // Update the tab name if it changed
-            const currentTab = openTabs.find(tab => tab.id === activeTabId);
-            if (currentTab && currentTab.name !== data.name) {
-                setOpenTabs(prev => prev.map(tab => 
-                    tab.id === activeTabId ? { ...tab, name: data.name } : tab
-                ));
-                console.log('Tab name updated:', data.name);
-            }
-            
-            console.log('View refreshed successfully:', data.name, 'Layout:', refreshedLayout);
-        } catch (error) {
-            console.error("Failed to refresh view", error);
-            console.error("Error details:", error.response?.data);
-            console.error("Error status:", error.response?.status);
-            
-            // Show user-friendly error message
-            if (error.response?.status === 404) {
-                console.log('View not found, it may have been deleted');
-                // Optionally close the tab or show a message
-            } else if (error.response?.status === 403) {
-                console.log('Access denied to view');
-            } else {
-                console.log('Network or server error occurred');
-            }
-        } finally {
-            setIsRefreshing(false);
-        }
-    }, [activeTabId, currentViewId, openTabs, setTabLayouts, setOpenTabs]);
 
     // Refresh views list from backend
     const refreshViewsList = async () => {
