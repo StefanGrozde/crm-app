@@ -275,6 +275,20 @@ const Dashboard = () => {
                         path: null
                     },
                     {
+                        key: 'contact-profile-widget',
+                        name: 'Contact Profile Widget',
+                        description: 'Display detailed contact information',
+                        type: 'builtin-react',
+                        path: null
+                    },
+                    {
+                        key: 'search-result-widget',
+                        name: 'Search Result Widget',
+                        description: 'Display search results',
+                        type: 'builtin-react',
+                        path: null
+                    },
+                    {
                         key: 'leads-widget',
                         name: 'Leads Widget',
                         description: 'Manage and view leads',
@@ -654,6 +668,7 @@ const Dashboard = () => {
                 y: 0,
                 w: 12,
                 h: 4,
+                widgetKey: 'search-result-widget',
                 resultData: result // Store the result data in the layout item
             }];
         }
