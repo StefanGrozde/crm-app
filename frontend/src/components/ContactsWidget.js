@@ -19,7 +19,6 @@ const ContactsWidget = () => {
     
     // Filter states
     const [filters, setFilters] = useState({
-        search: '',
         status: '',
         assignedTo: '',
         source: '',
@@ -28,6 +27,9 @@ const ContactsWidget = () => {
         state: '',
         country: ''
     });
+    
+    // Separate search state to prevent re-renders
+    const [searchTerm, setSearchTerm] = useState('');
     
     // Refs for uncontrolled inputs
     const searchInputRef = useRef(null);
@@ -109,6 +111,7 @@ const ContactsWidget = () => {
             const params = new URLSearchParams({
                 page,
                 limit: pagination.itemsPerPage,
+                search: searchTerm,
                 ...filters
             });
             
@@ -124,7 +127,7 @@ const ContactsWidget = () => {
         } finally {
             setLoading(false);
         }
-    }, [filters, pagination.itemsPerPage]);
+    }, [filters, searchTerm, pagination.itemsPerPage]);
 
     // Load users and filter options for dropdowns - memoized
     const loadDropdownData = useCallback(async () => {
@@ -169,8 +172,6 @@ const ContactsWidget = () => {
 
     // Handle search input changes - optimized to prevent re-rendering
     const handleSearchInputChange = useCallback(() => {
-        const value = searchInputRef.current?.value || '';
-        
         // Clear existing timeout
         if (window.searchTimeout) {
             clearTimeout(window.searchTimeout);
@@ -178,17 +179,8 @@ const ContactsWidget = () => {
         
         // Set new timeout for search
         window.searchTimeout = setTimeout(() => {
-            // Only update filters if the value has actually changed
-            setFilters(prev => {
-                const newFilters = { ...prev, search: value };
-                // If search is empty, ensure we still load contacts
-                if (!value.trim()) {
-                    // Remove search filter but keep other filters
-                    const { search, ...otherFilters } = newFilters;
-                    return otherFilters;
-                }
-                return newFilters;
-            });
+            const value = searchInputRef.current?.value || '';
+            setSearchTerm(value);
             loadContacts(1);
         }, 300); // Shorter delay for more responsive feel
     }, [loadContacts]);
@@ -208,9 +200,7 @@ const ContactsWidget = () => {
 
     // Clear filters
     const clearFilters = useCallback(() => {
-        const searchValue = searchInputRef.current?.value || '';
         const clearedFilters = {
-            search: searchValue, // Keep current search input
             status: '',
             assignedTo: '',
             source: '',
@@ -925,7 +915,7 @@ const ContactsWidget = () => {
     }
 
     // Check if any filters are active
-    const hasActiveFilters = Object.values(filters).some(value => value && value !== '');
+    const hasActiveFilters = Object.values(filters).some(value => value && value !== '') || searchTerm.trim() !== '';
 
     return (
         <div className="h-full overflow-hidden">
@@ -948,7 +938,7 @@ const ContactsWidget = () => {
                         <span>Filter</span>
                         {hasActiveFilters && (
                             <span className="bg-blue-600 text-white text-xs rounded-full px-1.5 py-0.5">
-                                {Object.values(filters).filter(v => v && v !== '').length}
+                                {Object.values(filters).filter(v => v && v !== '').length + (searchTerm.trim() ? 1 : 0)}
                             </span>
                         )}
                     </button>
@@ -984,8 +974,28 @@ const ContactsWidget = () => {
                 <div className="mb-4 p-2 bg-blue-50 border border-blue-200 rounded-md">
                     <div className="flex items-center justify-between">
                         <div className="flex flex-wrap gap-2">
+                            {/* Show search term if active */}
+                            {searchTerm.trim() && (
+                                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                    Search: {searchTerm}
+                                    <button
+                                        onClick={() => {
+                                            setSearchTerm('');
+                                            if (searchInputRef.current) {
+                                                searchInputRef.current.value = '';
+                                            }
+                                            loadContacts(1);
+                                        }}
+                                        className="ml-1 inline-flex items-center justify-center w-4 h-4 rounded-full text-blue-400 hover:bg-blue-200 hover:text-blue-500"
+                                    >
+                                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                        </svg>
+                                    </button>
+                                </span>
+                            )}
                             {Object.entries(filters).map(([key, value]) => {
-                                if (value && value !== '' && key !== 'search') {
+                                if (value && value !== '') {
                                     // Get user-friendly label for filter key
                                     const getFilterLabel = (filterKey) => {
                                         const labels = {

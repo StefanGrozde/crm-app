@@ -27,14 +27,24 @@ router.get('/', protect, async (req, res) => {
         const offset = (page - 1) * limit;
         const whereClause = {};
 
-        // Search functionality
+        // Search functionality - search across all relevant fields
         if (search) {
             whereClause[Op.or] = [
                 { firstName: { [Op.iLike]: `%${search}%` } },
                 { lastName: { [Op.iLike]: `%${search}%` } },
                 { email: { [Op.iLike]: `%${search}%` } },
+                { phone: { [Op.iLike]: `%${search}%` } },
+                { mobile: { [Op.iLike]: `%${search}%` } },
                 { jobTitle: { [Op.iLike]: `%${search}%` } },
-                { department: { [Op.iLike]: `%${search}%` } }
+                { department: { [Op.iLike]: `%${search}%` } },
+                { address: { [Op.iLike]: `%${search}%` } },
+                { city: { [Op.iLike]: `%${search}%` } },
+                { state: { [Op.iLike]: `%${search}%` } },
+                { zipCode: { [Op.iLike]: `%${search}%` } },
+                { country: { [Op.iLike]: `%${search}%` } },
+                { notes: { [Op.iLike]: `%${search}%` } },
+                { status: { [Op.iLike]: `%${search}%` } },
+                { source: { [Op.iLike]: `%${search}%` } }
             ];
         }
 
