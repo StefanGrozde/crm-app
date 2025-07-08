@@ -110,119 +110,40 @@ router.get('/', protect, async (req, res) => {
 // GET /api/leads/conversion-metrics - Get lead conversion metrics
 router.get('/conversion-metrics', protect, async (req, res) => {
     try {
+        console.log('Conversion metrics endpoint called');
+        console.log('User company ID:', req.user.companyId);
+        
         const { days = 30 } = req.query;
         const daysAgo = new Date();
         daysAgo.setDate(daysAgo.getDate() - parseInt(days));
+        
+        console.log('Days ago:', daysAgo);
 
-        // Get total leads in the time period
+        // Simple test - just get total leads first
         const totalLeads = await Lead.count({
             where: {
-                createdAt: { [Op.gte]: daysAgo },
                 companyId: req.user.companyId
             }
         });
 
-        // Get converted leads (closed_won status)
-        const convertedLeads = await Lead.count({
-            where: {
-                status: 'closed_won',
-                actualCloseDate: { [Op.gte]: daysAgo },
-                companyId: req.user.companyId
-            }
-        });
+        console.log('Total leads found:', totalLeads);
 
-        // Calculate conversion rate
-        const conversionRate = totalLeads > 0 ? (convertedLeads / totalLeads) * 100 : 0;
-
-        // Calculate average conversion time (days from creation to close for won leads)
-        const wonLeads = await Lead.findAll({
-            attributes: [
-                'createdAt',
-                'actualCloseDate'
-            ],
-            where: {
-                status: 'closed_won',
-                actualCloseDate: { [Op.gte]: daysAgo },
-                companyId: req.user.companyId,
-                actualCloseDate: { [Op.ne]: null }
-            }
-        });
-
-        let totalConversionDays = 0;
-        let validConversions = 0;
-
-        wonLeads.forEach(lead => {
-            if (lead.actualCloseDate) {
-                const conversionTime = (new Date(lead.actualCloseDate) - new Date(lead.createdAt)) / (1000 * 60 * 60 * 24);
-                if (conversionTime >= 0) {
-                    totalConversionDays += conversionTime;
-                    validConversions++;
-                }
-            }
-        });
-
-        const averageConversionTime = validConversions > 0 ? totalConversionDays / validConversions : 0;
-
-        // Get leads by stage
-        const leadsByStage = await Lead.findAll({
-            attributes: [
-                'status',
-                [Lead.sequelize.fn('COUNT', Lead.sequelize.col('id')), 'count']
-            ],
-            where: {
-                createdAt: { [Op.gte]: daysAgo },
-                companyId: req.user.companyId
-            },
-            group: ['status'],
-            order: [[Lead.sequelize.fn('COUNT', Lead.sequelize.col('id')), 'DESC']]
-        });
-
-        // Convert to object format
-        const leadsByStageObj = {};
-        leadsByStage.forEach(item => {
-            leadsByStageObj[item.status] = parseInt(item.dataValues.count);
-        });
-
-        // Get conversion trend (daily conversions over the period)
-        const conversionTrend = [];
-        const currentDate = new Date(daysAgo);
-        const endDate = new Date();
-
-        while (currentDate <= endDate) {
-            const dayStart = new Date(currentDate);
-            dayStart.setHours(0, 0, 0, 0);
-            const dayEnd = new Date(currentDate);
-            dayEnd.setHours(23, 59, 59, 999);
-
-            const dailyConversions = await Lead.count({
-                where: {
-                    status: 'closed_won',
-                    actualCloseDate: {
-                        [Op.between]: [dayStart, dayEnd]
-                    },
-                    companyId: req.user.companyId
-                }
-            });
-
-            conversionTrend.push({
-                date: currentDate.toISOString().split('T')[0],
-                conversions: dailyConversions
-            });
-
-            currentDate.setDate(currentDate.getDate() + 1);
-        }
-
+        // Return a simple response for testing
         res.json({
             totalLeads,
-            convertedLeads,
-            conversionRate,
-            averageConversionTime,
-            leadsByStage: leadsByStageObj,
-            conversionTrend
+            convertedLeads: 0,
+            conversionRate: 0,
+            averageConversionTime: 0,
+            leadsByStage: {},
+            conversionTrend: []
         });
     } catch (error) {
-        console.error('Error fetching conversion metrics:', error);
-        res.status(500).json({ message: 'Failed to fetch conversion metrics' });
+        console.error('Error in conversion metrics:', error);
+        res.status(500).json({ 
+            message: 'Failed to fetch conversion metrics',
+            error: error.message,
+            stack: error.stack
+        });
     }
 });
 
