@@ -59,10 +59,7 @@ const WidgetRenderer = memo(({
         return memoizedProps;
     }, [widgetKey, widgetPath, type, resultData, widgetData, onOpenContactProfile, onOpenLeadProfile, onOpenOpportunityProfile, onOpenUserProfile, props]);
     
-    // Debug logging for profile-opening functions
-    if (widgetKey === 'contacts-widget') {
-        console.log('WidgetRenderer received onOpenContactProfile:', !!onOpenContactProfile, 'function:', onOpenContactProfile);
-    }
+
     
     // Handle widget ready state
     const handleWidgetReady = useCallback(() => {

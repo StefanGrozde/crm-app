@@ -163,10 +163,7 @@ const DynamicWidget = memo(({ widgetKey, widgetPath, type, resultData, widgetDat
     // Memoize the widget key to prevent unnecessary re-renders
     const memoizedWidgetKey = useMemo(() => widgetKey, [widgetKey]);
     
-    // Debug logging for profile-opening functions
-    if (memoizedWidgetKey === 'contacts-widget') {
-        console.log('DynamicWidget received onOpenContactProfile:', !!onOpenContactProfile, 'function:', onOpenContactProfile);
-    }
+
     
 
     
@@ -226,50 +223,13 @@ const DynamicWidget = memo(({ widgetKey, widgetPath, type, resultData, widgetDat
                 }
             }, []); // eslint-disable-line react-hooks/exhaustive-deps
             
-            console.log('WidgetWrapper rendering:', memoizedWidgetKey, 'with props:', {
-                onOpenContactProfile: !!props.onOpenContactProfile,
-                onOpenLeadProfile: !!props.onOpenLeadProfile,
-                onOpenOpportunityProfile: !!props.onOpenOpportunityProfile,
-                widgetData
-            });
-            
             // Pass contact profile handler specifically to ContactsWidget
             if (memoizedWidgetKey === 'contacts-widget') {
-                console.log('Rendering ContactsWidget with onOpenContactProfile:', !!props.onOpenContactProfile, 'function:', props.onOpenContactProfile);
                 return <RegisteredWidget onOpenContactProfile={props.onOpenContactProfile} />;
-            }
-            // Pass lead profile handler specifically to LeadsWidget
-            if (memoizedWidgetKey === 'leads-widget') {
-                console.log('Rendering LeadsWidget with onOpenLeadProfile:', !!props.onOpenLeadProfile);
-                return <RegisteredWidget onOpenLeadProfile={props.onOpenLeadProfile} />;
-            }
-            // Pass opportunity profile handler specifically to OpportunitiesWidget
-            if (memoizedWidgetKey === 'opportunities-widget') {
-                console.log('Rendering OpportunitiesWidget with onOpenOpportunityProfile:', !!props.onOpenOpportunityProfile);
-                return <RegisteredWidget onOpenOpportunityProfile={props.onOpenOpportunityProfile} />;
-            }
-            // Pass user profile handler specifically to UsersWidget
-            if (memoizedWidgetKey === 'users-widget') {
-                return <RegisteredWidget onOpenUserProfile={props.onOpenUserProfile} />;
             }
             // Pass widgetData to ContactProfileWidget
             if (memoizedWidgetKey === 'contact-profile-widget' && widgetData) {
-                console.log('Rendering ContactProfileWidget with contactId:', widgetData.contactId);
                 return <RegisteredWidget contactId={widgetData.contactId} />;
-            }
-            // Pass widgetData to LeadProfileWidget
-            if (memoizedWidgetKey === 'lead-profile-widget' && widgetData) {
-                console.log('Rendering LeadProfileWidget with leadId:', widgetData.leadId);
-                return <RegisteredWidget leadId={widgetData.leadId} />;
-            }
-            // Pass widgetData to OpportunityProfileWidget
-            if (memoizedWidgetKey === 'opportunity-profile-widget' && widgetData) {
-                console.log('Rendering OpportunityProfileWidget with opportunityId:', widgetData.opportunityId);
-                return <RegisteredWidget opportunityId={widgetData.opportunityId} />;
-            }
-            // Pass widgetData to UserProfileWidget
-            if (memoizedWidgetKey === 'user-profile-widget' && widgetData) {
-                return <RegisteredWidget userId={widgetData.userId} />;
             }
             return <RegisteredWidget {...props} />;
         };
@@ -320,50 +280,13 @@ const DynamicWidget = memo(({ widgetKey, widgetPath, type, resultData, widgetDat
             console.log('Found RegisteredWidget for:', memoizedWidgetKey, ':', !!RegisteredWidget);
             
             if (RegisteredWidget) {
-                console.log('BuiltinReactWrapper rendering:', memoizedWidgetKey, 'with props:', {
-                    onOpenContactProfile: !!onOpenContactProfile,
-                    onOpenLeadProfile: !!onOpenLeadProfile,
-                    onOpenOpportunityProfile: !!onOpenOpportunityProfile,
-                    widgetData
-                });
-                
                 // Pass contact profile handler specifically to ContactsWidget
                 if (memoizedWidgetKey === 'contacts-widget') {
-                    console.log('BuiltinReactWrapper rendering ContactsWidget with onOpenContactProfile:', !!onOpenContactProfile, 'function:', onOpenContactProfile);
                     return <RegisteredWidget onOpenContactProfile={onOpenContactProfile} />;
-                }
-                // Pass lead profile handler specifically to LeadsWidget
-                if (memoizedWidgetKey === 'leads-widget') {
-                    console.log('BuiltinReactWrapper rendering LeadsWidget with onOpenLeadProfile:', !!onOpenLeadProfile);
-                    return <RegisteredWidget onOpenLeadProfile={onOpenLeadProfile} />;
-                }
-                // Pass opportunity profile handler specifically to OpportunitiesWidget
-                if (memoizedWidgetKey === 'opportunities-widget') {
-                    console.log('BuiltinReactWrapper rendering OpportunitiesWidget with onOpenOpportunityProfile:', !!onOpenOpportunityProfile);
-                    return <RegisteredWidget onOpenOpportunityProfile={onOpenOpportunityProfile} />;
-                }
-                // Pass user profile handler specifically to UsersWidget
-                if (memoizedWidgetKey === 'users-widget') {
-                    return <RegisteredWidget onOpenUserProfile={onOpenUserProfile} />;
                 }
                 // Pass widgetData to ContactProfileWidget
                 if (memoizedWidgetKey === 'contact-profile-widget' && widgetData) {
-                    console.log('BuiltinReactWrapper rendering ContactProfileWidget with contactId:', widgetData.contactId);
                     return <RegisteredWidget contactId={widgetData.contactId} />;
-                }
-                // Pass widgetData to LeadProfileWidget
-                if (memoizedWidgetKey === 'lead-profile-widget' && widgetData) {
-                    console.log('BuiltinReactWrapper rendering LeadProfileWidget with leadId:', widgetData.leadId);
-                    return <RegisteredWidget leadId={widgetData.leadId} />;
-                }
-                // Pass widgetData to OpportunityProfileWidget
-                if (memoizedWidgetKey === 'opportunity-profile-widget' && widgetData) {
-                    console.log('BuiltinReactWrapper rendering OpportunityProfileWidget with opportunityId:', widgetData.opportunityId);
-                    return <RegisteredWidget opportunityId={widgetData.opportunityId} />;
-                }
-                // Pass widgetData to UserProfileWidget
-                if (memoizedWidgetKey === 'user-profile-widget' && widgetData) {
-                    return <RegisteredWidget userId={widgetData.userId} />;
                 }
                 return <RegisteredWidget {...props} />;
             } else {

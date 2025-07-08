@@ -165,7 +165,6 @@ const DashboardGrid = ({
                                     onOpenOpportunityProfile={onOpenOpportunityProfile}
                                     onOpenUserProfile={onOpenUserProfile}
                                 />
-                                {widgetKeyToFind === 'contacts-widget' && console.log('DashboardGrid passing onOpenContactProfile to WidgetRenderer:', !!onOpenContactProfile)}
                             </div>
                         </div>
                     );
