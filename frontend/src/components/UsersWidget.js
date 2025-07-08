@@ -8,15 +8,6 @@ const UsersWidget = () => {
     // Context
     const { user } = useContext(AuthContext);
     
-    // Check if user is admin
-    if (user.role !== 'Administrator') {
-        return (
-            <div className="text-center py-8">
-                <div className="text-red-600 text-sm">Access denied. Admin role required.</div>
-            </div>
-        );
-    }
-    
     // Core data states
     const [data, setData] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -244,6 +235,15 @@ const UsersWidget = () => {
         };
         return colors[role] || 'bg-gray-100 text-gray-800';
     }, []);
+
+    // Check if user is admin - AFTER all hooks are declared
+    if (user.role !== 'Administrator') {
+        return (
+            <div className="text-center py-8">
+                <div className="text-red-600 text-sm">Access denied. Admin role required.</div>
+            </div>
+        );
+    }
 
     // Rendering: Loading state
     if (loading) {
