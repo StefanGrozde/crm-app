@@ -731,7 +731,7 @@ const Dashboard = () => {
 
     // Handle opening contact profiles as new tabs
     const handleOpenContactProfile = async (contactId) => {
-        console.log('Opening contact profile as tab:', contactId);
+        console.log('Dashboard handleOpenContactProfile called with contactId:', contactId);
         
         // Create a unique ID for the contact profile tab
         const tabId = `contact-profile-${contactId}`;
@@ -791,7 +791,7 @@ const Dashboard = () => {
 
     // Handle opening opportunity profiles as new tabs
     const handleOpenOpportunityProfile = async (opportunityId, opportunityTitle) => {
-        console.log('Opening opportunity profile as tab:', opportunityId, opportunityTitle);
+        console.log('Dashboard handleOpenOpportunityProfile called with opportunityId:', opportunityId, 'opportunityTitle:', opportunityTitle);
         
         // Create a unique ID for the opportunity profile tab
         const tabId = `opportunity-profile-${opportunityId}`;
@@ -853,7 +853,7 @@ const Dashboard = () => {
 
     // Handle opening lead profiles as new tabs
     const handleOpenLeadProfile = async (leadId, leadTitle) => {
-        console.log('Opening lead profile as tab:', leadId, leadTitle);
+        console.log('Dashboard handleOpenLeadProfile called with leadId:', leadId, 'leadTitle:', leadTitle);
         
         // Create a unique ID for the lead profile tab
         const tabId = `lead-profile-${leadId}`;

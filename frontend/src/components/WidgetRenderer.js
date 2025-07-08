@@ -53,6 +53,17 @@ const WidgetRenderer = memo(({
             onOpenUserProfile,
             ...props
         };
+        
+        // Debug logging for profile-opening functions
+        if (widgetKey === 'contacts-widget' || widgetKey === 'leads-widget' || widgetKey === 'opportunities-widget') {
+            console.log('WidgetRenderer memoizedProps for', widgetKey, ':', {
+                onOpenContactProfile: !!onOpenContactProfile,
+                onOpenLeadProfile: !!onOpenLeadProfile,
+                onOpenOpportunityProfile: !!onOpenOpportunityProfile,
+                widgetData
+            });
+        }
+        
         return memoizedProps;
     }, [widgetKey, widgetPath, type, resultData, widgetData, onOpenContactProfile, onOpenLeadProfile, onOpenOpportunityProfile, onOpenUserProfile, props]);
     

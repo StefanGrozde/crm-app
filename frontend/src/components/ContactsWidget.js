@@ -18,6 +18,9 @@ const ContactsWidget = ({ onOpenContactProfile }) => {
         itemsPerPage: 10
     });
     
+    // Debug logging
+    console.log('ContactsWidget render - onOpenContactProfile:', !!onOpenContactProfile);
+    
     // Filter states
     const [filters, setFilters] = useState({
         status: '',
@@ -928,6 +931,18 @@ const ContactsWidget = ({ onOpenContactProfile }) => {
             <div className="flex justify-between items-center mb-4">
                 <h2 className="text-lg font-semibold text-gray-900">Contacts</h2>
                 <div className="flex space-x-2">
+                    {/* Temporary test button */}
+                    <button
+                        onClick={() => {
+                            console.log('Test button clicked - onOpenContactProfile:', !!onOpenContactProfile);
+                            if (onOpenContactProfile) {
+                                onOpenContactProfile(1); // Test with contact ID 1
+                            }
+                        }}
+                        className="px-3 py-1 text-sm bg-red-600 text-white rounded-md hover:bg-red-700"
+                    >
+                        Test Profile
+                    </button>
                     <button
                         onClick={openFilterModal}
                         className={`px-3 py-1 text-sm rounded flex items-center space-x-1 ${
@@ -1113,7 +1128,12 @@ const ContactsWidget = ({ onOpenContactProfile }) => {
                                         <div>
                                             <div 
                                                 className="text-sm font-medium text-gray-900 cursor-pointer hover:text-blue-600 hover:underline"
-                                                onClick={() => onOpenContactProfile && onOpenContactProfile(contact.id)}
+                                                onClick={() => {
+                                                    console.log('Contact name clicked:', contact.id, 'onOpenContactProfile:', !!onOpenContactProfile);
+                                                    if (onOpenContactProfile) {
+                                                        onOpenContactProfile(contact.id);
+                                                    }
+                                                }}
                                             >
                                                 {contact.firstName} {contact.lastName}
                                             </div>

@@ -18,6 +18,9 @@ const LeadsWidget = ({ onOpenLeadProfile }) => {
         itemsPerPage: 10
     });
     
+    // Debug logging
+    console.log('LeadsWidget render - onOpenLeadProfile:', !!onOpenLeadProfile);
+    
     // Filter states
     const [filters, setFilters] = useState({
         search: '',
@@ -254,6 +257,7 @@ const LeadsWidget = ({ onOpenLeadProfile }) => {
 
     // Handle lead click to open profile
     const handleLeadClick = useCallback((lead) => {
+        console.log('Lead name clicked:', lead.id, 'onOpenLeadProfile:', !!onOpenLeadProfile);
         if (onOpenLeadProfile) {
             onOpenLeadProfile(lead.id, lead.title);
         }
@@ -608,6 +612,18 @@ const LeadsWidget = ({ onOpenLeadProfile }) => {
             <div className="flex justify-between items-center mb-4">
                 <h2 className="text-lg font-semibold text-gray-900">Leads</h2>
                 <div className="flex space-x-2">
+                    {/* Temporary test button */}
+                    <button
+                        onClick={() => {
+                            console.log('Test button clicked - onOpenLeadProfile:', !!onOpenLeadProfile);
+                            if (onOpenLeadProfile) {
+                                onOpenLeadProfile(1, 'Test Lead'); // Test with lead ID 1
+                            }
+                        }}
+                        className="px-3 py-1 text-sm bg-red-600 text-white rounded-md hover:bg-red-700"
+                    >
+                        Test Profile
+                    </button>
                     <button
                         onClick={() => setShowFilterModal(true)}
                         className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50"
