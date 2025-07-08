@@ -162,11 +162,6 @@ const ExternalWidgetLoader = memo(({ widgetKey, widgetPath, type, onLoad, onErro
 const DynamicWidget = memo(({ widgetKey, widgetPath, type, resultData, widgetData, onLoad, onError, widgetState, showLoadingSpinner, loadingSpinnerSize, onOpenContactProfile, onOpenLeadProfile, onOpenOpportunityProfile, onOpenUserProfile, ...props }) => {
     // Memoize the widget key to prevent unnecessary re-renders
     const memoizedWidgetKey = useMemo(() => widgetKey, [widgetKey]);
-    
-
-    
-
-    
     // Show loading state only for external widgets
     if (
         (type === 'uploaded' || type === 'builtin') &&
@@ -192,7 +187,6 @@ const DynamicWidget = memo(({ widgetKey, widgetPath, type, resultData, widgetDat
         const SearchResultWrapper = () => {
             useEffect(() => {
                 if (onLoad) {
-                    console.log('SearchResultWrapper calling onLoad for:', memoizedWidgetKey);
                     // Small delay to ensure the widget has rendered
                     const timer = setTimeout(() => {
                         onLoad();
@@ -207,14 +201,14 @@ const DynamicWidget = memo(({ widgetKey, widgetPath, type, resultData, widgetDat
         return <SearchResultWrapper />;
     }
 
-    // Check if widget is in our registry
-    const RegisteredWidget = WidgetRegistry[memoizedWidgetKey];
-    if (RegisteredWidget) {
-        // Create a wrapper component that calls onLoad after render
-        const WidgetWrapper = () => {
-            useEffect(() => {
+    // Check if widget is in our registry (only for non-builtin-react widgets)
+    if (type !== 'builtin-react') {
+        const RegisteredWidget = WidgetRegistry[memoizedWidgetKey];
+        if (RegisteredWidget) {
+            // Create a wrapper component that calls onLoad after render
+            const WidgetWrapper = () => {
+                            useEffect(() => {
                 if (onLoad) {
-                    console.log('WidgetWrapper calling onLoad for:', memoizedWidgetKey);
                     // Small delay to ensure the widget has rendered
                     const timer = setTimeout(() => {
                         onLoad();
@@ -222,19 +216,12 @@ const DynamicWidget = memo(({ widgetKey, widgetPath, type, resultData, widgetDat
                     return () => clearTimeout(timer);
                 }
             }, []); // eslint-disable-line react-hooks/exhaustive-deps
+                
+                return <RegisteredWidget {...props} />;
+            };
             
-            // Pass contact profile handler specifically to ContactsWidget
-            if (memoizedWidgetKey === 'contacts-widget') {
-                return <RegisteredWidget onOpenContactProfile={props.onOpenContactProfile} />;
-            }
-            // Pass widgetData to ContactProfileWidget
-            if (memoizedWidgetKey === 'contact-profile-widget' && widgetData) {
-                return <RegisteredWidget contactId={widgetData.contactId} />;
-            }
-            return <RegisteredWidget {...props} />;
-        };
-        
-        return <WidgetWrapper />;
+            return <WidgetWrapper />;
+        }
     }
 
     // Handle external widgets (uploaded or builtin)
@@ -252,34 +239,22 @@ const DynamicWidget = memo(({ widgetKey, widgetPath, type, resultData, widgetDat
     
     // Handle builtin-react widgets (these are handled by the registry)
     if (type === 'builtin-react') {
-        console.log('Handling builtin-react widget:', memoizedWidgetKey);
-        console.log('onLoad callback:', onLoad);
-        console.log('Available registry keys:', Object.keys(WidgetRegistry));
+        // Check if widget is in our registry
+        const RegisteredWidget = WidgetRegistry[memoizedWidgetKey];
         
-        // Create a wrapper component that calls onLoad after render
-        const BuiltinReactWrapper = () => {
-            console.log('BuiltinReactWrapper mounting for:', memoizedWidgetKey);
-            
-            useEffect(() => {
-                console.log('BuiltinReactWrapper useEffect running for:', memoizedWidgetKey);
-                if (onLoad) {
-                    console.log('BuiltinReactWrapper calling onLoad for:', memoizedWidgetKey);
-                    // Small delay to ensure the widget has rendered
-                    const timer = setTimeout(() => {
-                        console.log('BuiltinReactWrapper executing onLoad for:', memoizedWidgetKey);
-                        onLoad();
-                    }, 10);
-                    return () => clearTimeout(timer);
-                } else {
-                    console.log('BuiltinReactWrapper: no onLoad callback provided for:', memoizedWidgetKey);
-                }
-            }, [memoizedWidgetKey]); // eslint-disable-line react-hooks/exhaustive-deps
-            
-            // Check if widget is in our registry
-            const RegisteredWidget = WidgetRegistry[memoizedWidgetKey];
-            console.log('Found RegisteredWidget for:', memoizedWidgetKey, ':', !!RegisteredWidget);
-            
-            if (RegisteredWidget) {
+        if (RegisteredWidget) {
+            // Create a wrapper component that calls onLoad after render
+            const BuiltinReactWrapper = () => {
+                useEffect(() => {
+                    if (onLoad) {
+                        // Small delay to ensure the widget has rendered
+                        const timer = setTimeout(() => {
+                            onLoad();
+                        }, 10);
+                        return () => clearTimeout(timer);
+                    }
+                }, []); // eslint-disable-line react-hooks/exhaustive-deps
+                
                 // Pass contact profile handler specifically to ContactsWidget
                 if (memoizedWidgetKey === 'contacts-widget') {
                     return <RegisteredWidget onOpenContactProfile={onOpenContactProfile} />;
@@ -289,18 +264,18 @@ const DynamicWidget = memo(({ widgetKey, widgetPath, type, resultData, widgetDat
                     return <RegisteredWidget contactId={widgetData.contactId} />;
                 }
                 return <RegisteredWidget {...props} />;
-            } else {
-                return (
-                    <div className="p-4 text-red-500 border border-red-200 rounded-lg bg-red-50">
-                        <div className="font-medium">Built-in React Widget Not Found</div>
-                        <div className="text-sm">Widget key: {memoizedWidgetKey}</div>
-                        <div className="text-sm">Available keys: {Object.keys(WidgetRegistry).join(', ')}</div>
-                    </div>
-                );
-            }
-        };
-        
-        return <BuiltinReactWrapper />;
+            };
+            
+            return <BuiltinReactWrapper />;
+        } else {
+            return (
+                <div className="p-4 text-red-500 border border-red-200 rounded-lg bg-red-50">
+                    <div className="font-medium">Built-in React Widget Not Found</div>
+                    <div className="text-sm">Widget key: {memoizedWidgetKey}</div>
+                    <div className="text-sm">Available keys: {Object.keys(WidgetRegistry).join(', ')}</div>
+                </div>
+            );
+        }
     }
 
     // Fallback for unknown widgets
