@@ -6,7 +6,7 @@ import LeadProfileWidget from './LeadProfileWidget';
 
 const API_URL = process.env.REACT_APP_API_URL;
 
-const LeadsWidget = () => {
+const LeadsWidget = ({ onOpenLeadProfile }) => {
     // eslint-disable-next-line no-unused-vars
     const { user } = useContext(AuthContext);
     const [leads, setLeads] = useState([]);
@@ -66,9 +66,7 @@ const LeadsWidget = () => {
     const [companies, setCompanies] = useState([]);
     const [contacts, setContacts] = useState([]);
     
-    // Profile widget state
-    const [selectedLeadId, setSelectedLeadId] = useState(null);
-    const [showProfileWidget, setShowProfileWidget] = useState(false);
+
 
 
     // Load leads
@@ -257,9 +255,10 @@ const LeadsWidget = () => {
 
     // Handle lead click to open profile
     const handleLeadClick = useCallback((lead) => {
-        setSelectedLeadId(lead.id);
-        setShowProfileWidget(true);
-    }, []);
+        if (onOpenLeadProfile) {
+            onOpenLeadProfile(lead.id, lead.title);
+        }
+    }, [onOpenLeadProfile]);
 
     // Handle delete
     const handleDelete = useCallback(async (leadId) => {
@@ -791,30 +790,7 @@ const LeadsWidget = () => {
                 onSubmit={handleSubmit}
             />
 
-            {/* Lead Profile Widget Modal */}
-            {showProfileWidget && selectedLeadId && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-lg w-full max-w-6xl max-h-[95vh] overflow-hidden">
-                        <div className="flex justify-between items-center p-4 border-b border-gray-200">
-                            <h2 className="text-lg font-semibold">Lead Profile</h2>
-                            <button
-                                onClick={() => {
-                                    setShowProfileWidget(false);
-                                    setSelectedLeadId(null);
-                                }}
-                                className="text-gray-500 hover:text-gray-700"
-                            >
-                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                </svg>
-                            </button>
-                        </div>
-                        <div className="p-4 h-[calc(95vh-80px)] overflow-y-auto">
-                            <LeadProfileWidget leadId={selectedLeadId} />
-                        </div>
-                    </div>
-                </div>
-            )}
+
         </div>
     );
 };

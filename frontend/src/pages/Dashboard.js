@@ -303,6 +303,13 @@ const Dashboard = () => {
                         path: null
                     },
                     {
+                        key: 'opportunity-profile-widget',
+                        name: 'Opportunity Profile Widget',
+                        description: 'Display detailed opportunity information',
+                        type: 'builtin-react',
+                        path: null
+                    },
+                    {
                         key: 'business-widget',
                         name: 'Business Widget',
                         description: 'Manage and view businesses',
@@ -661,6 +668,28 @@ const Dashboard = () => {
                 widgetKey: 'contact-profile-widget',
                 widgetData: { contactId: result.id }
             }];
+        } else if (result.type === 'lead') {
+            // For leads, use the lead profile widget
+            resultLayout = [{
+                i: `lead-profile-${result.id}`,
+                x: 0,
+                y: 0,
+                w: 12,
+                h: 8,
+                widgetKey: 'lead-profile-widget',
+                widgetData: { leadId: result.id }
+            }];
+        } else if (result.type === 'opportunity') {
+            // For opportunities, use the opportunity profile widget
+            resultLayout = [{
+                i: `opportunity-profile-${result.id}`,
+                x: 0,
+                y: 0,
+                w: 12,
+                h: 8,
+                widgetKey: 'opportunity-profile-widget',
+                widgetData: { opportunityId: result.id }
+            }];
         } else {
             resultLayout = [{
                 i: `search-result-${result.id}`,
@@ -744,6 +773,130 @@ const Dashboard = () => {
         setLayout(profileLayout);
         
         console.log('Opened contact profile tab:', tabId, 'with layout:', profileLayout);
+        
+        // Small delay to ensure state updates are processed
+        setTimeout(() => setIsTabSwitching(false), 50);
+    };
+
+    // Handle opening opportunity profiles as new tabs
+    const handleOpenOpportunityProfile = async (opportunityId, opportunityTitle) => {
+        console.log('Opening opportunity profile as tab:', opportunityId, opportunityTitle);
+        
+        // Create a unique ID for the opportunity profile tab
+        const tabId = `opportunity-profile-${opportunityId}`;
+        
+        // Check if tab is already open
+        const isTabOpen = openTabs.find(tab => tab.id === tabId);
+        if (isTabOpen) {
+            // If already open, just switch to it
+            switchToTab(tabId);
+            return;
+        }
+        
+        // Use the provided opportunity title or fetch it if not provided
+        let opportunityName = opportunityTitle || 'Opportunity Profile';
+        if (!opportunityTitle) {
+            try {
+                const response = await axios.get(`${API_URL}/api/opportunities/${opportunityId}`, {
+                    withCredentials: true
+                });
+                opportunityName = response.data.name;
+            } catch (error) {
+                console.error('Failed to fetch opportunity details for tab name:', error);
+            }
+        }
+        
+        // Create a new tab for the opportunity profile
+        const newTab = {
+            id: tabId,
+            name: opportunityName,
+            isDefault: false
+        };
+        
+        // Create a simple layout for the opportunity profile
+        const profileLayout = [{
+            i: `opportunity-profile-${opportunityId}`,
+            x: 0,
+            y: 0,
+            w: 12,
+            h: 8,
+            widgetKey: 'opportunity-profile-widget',
+            widgetData: { opportunityId }
+        }];
+        
+        // Update all state synchronously
+        setOpenTabs(prev => [...prev, newTab]);
+        setTabLayouts(prev => ({ ...prev, [tabId]: profileLayout }));
+        
+        // Switch to the new tab immediately
+        setIsTabSwitching(true);
+        setActiveTabId(tabId);
+        setCurrentViewId(tabId);
+        setLayout(profileLayout);
+        
+        console.log('Opened opportunity profile tab:', tabId, 'with layout:', profileLayout);
+        
+        // Small delay to ensure state updates are processed
+        setTimeout(() => setIsTabSwitching(false), 50);
+    };
+
+    // Handle opening lead profiles as new tabs
+    const handleOpenLeadProfile = async (leadId, leadTitle) => {
+        console.log('Opening lead profile as tab:', leadId, leadTitle);
+        
+        // Create a unique ID for the lead profile tab
+        const tabId = `lead-profile-${leadId}`;
+        
+        // Check if tab is already open
+        const isTabOpen = openTabs.find(tab => tab.id === tabId);
+        if (isTabOpen) {
+            // If already open, just switch to it
+            switchToTab(tabId);
+            return;
+        }
+        
+        // Use the provided lead title or fetch it if not provided
+        let leadName = leadTitle || 'Lead Profile';
+        if (!leadTitle) {
+            try {
+                const response = await axios.get(`${API_URL}/api/leads/${leadId}`, {
+                    withCredentials: true
+                });
+                leadName = response.data.title;
+            } catch (error) {
+                console.error('Failed to fetch lead details for tab name:', error);
+            }
+        }
+        
+        // Create a new tab for the lead profile
+        const newTab = {
+            id: tabId,
+            name: leadName,
+            isDefault: false
+        };
+        
+        // Create a simple layout for the lead profile
+        const profileLayout = [{
+            i: `lead-profile-${leadId}`,
+            x: 0,
+            y: 0,
+            w: 12,
+            h: 8,
+            widgetKey: 'lead-profile-widget',
+            widgetData: { leadId }
+        }];
+        
+        // Update all state synchronously
+        setOpenTabs(prev => [...prev, newTab]);
+        setTabLayouts(prev => ({ ...prev, [tabId]: profileLayout }));
+        
+        // Switch to the new tab immediately
+        setIsTabSwitching(true);
+        setActiveTabId(tabId);
+        setCurrentViewId(tabId);
+        setLayout(profileLayout);
+        
+        console.log('Opened lead profile tab:', tabId, 'with layout:', profileLayout);
         
         // Small delay to ensure state updates are processed
         setTimeout(() => setIsTabSwitching(false), 50);
@@ -1099,6 +1252,8 @@ const Dashboard = () => {
                                 console.error(`Widget ${widgetKey} error:`, error);
                             }}
                             onOpenContactProfile={handleOpenContactProfile}
+                            onOpenLeadProfile={handleOpenLeadProfile}
+                            onOpenOpportunityProfile={handleOpenOpportunityProfile}
                         />
                     )}
                     

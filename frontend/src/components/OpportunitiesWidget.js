@@ -5,7 +5,7 @@ import { AuthContext } from '../context/AuthContext';
 
 const API_URL = process.env.REACT_APP_API_URL;
 
-const OpportunitiesWidget = () => {
+const OpportunitiesWidget = ({ onOpenOpportunityProfile }) => {
     // eslint-disable-next-line no-unused-vars
     const { user } = useContext(AuthContext);
     const [opportunities, setOpportunities] = useState([]);
@@ -702,7 +702,12 @@ const OpportunitiesWidget = () => {
                             {Array.isArray(opportunities) && opportunities.map((opportunity) => (
                                 <tr key={opportunity.id} className="hover:bg-gray-50">
                                     <td className="px-3 py-2 whitespace-nowrap">
-                                        <div className="text-sm font-medium text-gray-900">{opportunity.name}</div>
+                                        <div 
+                                            className="text-sm font-medium text-blue-600 hover:text-blue-800 cursor-pointer"
+                                            onClick={() => onOpenOpportunityProfile && onOpenOpportunityProfile(opportunity.id, opportunity.name)}
+                                        >
+                                            {opportunity.name}
+                                        </div>
                                         <div className="text-sm text-gray-500">{opportunity.type}</div>
                                     </td>
                                     <td className="px-3 py-2 whitespace-nowrap">

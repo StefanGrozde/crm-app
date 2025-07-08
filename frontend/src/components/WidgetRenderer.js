@@ -21,6 +21,8 @@ const WidgetRenderer = memo(({
     onWidgetReady,
     onWidgetError,
     onOpenContactProfile,
+    onOpenLeadProfile,
+    onOpenOpportunityProfile,
     ...props 
 }) => {
     // Get widget configuration
@@ -44,8 +46,10 @@ const WidgetRenderer = memo(({
         resultData,
         widgetData,
         onOpenContactProfile,
+        onOpenLeadProfile,
+        onOpenOpportunityProfile,
         ...props
-    }), [widgetKey, widgetPath, type, resultData, widgetData, onOpenContactProfile, props]);
+    }), [widgetKey, widgetPath, type, resultData, widgetData, onOpenContactProfile, onOpenLeadProfile, onOpenOpportunityProfile, props]);
     
     // Handle widget ready state
     const handleWidgetReady = useCallback(() => {

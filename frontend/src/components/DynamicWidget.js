@@ -5,6 +5,7 @@ import ContactProfileWidget from './ContactProfileWidget';
 import LeadProfileWidget from './LeadProfileWidget';
 import LeadsWidget from './LeadsWidget';
 import OpportunitiesWidget from './OpportunitiesWidget';
+import OpportunityProfileWidget from './OpportunityProfileWidget';
 import BusinessWidget from './BusinessWidget';
 import UsersWidget from './UsersWidget';
 import InvitationsWidget from './InvitationsWidget';
@@ -19,6 +20,7 @@ const WidgetRegistry = {
     'search-result-widget': SearchResultWidget,
     'leads-widget': LeadsWidget,
     'opportunities-widget': OpportunitiesWidget,
+    'opportunity-profile-widget': OpportunityProfileWidget,
     'business-widget': BusinessWidget,
     'users-widget': UsersWidget,
     'invitations-widget': InvitationsWidget,
@@ -155,7 +157,7 @@ const ExternalWidgetLoader = memo(({ widgetKey, widgetPath, type, onLoad, onErro
 });
 
 // Main DynamicWidget component
-const DynamicWidget = memo(({ widgetKey, widgetPath, type, resultData, widgetData, onLoad, onError, widgetState, showLoadingSpinner, loadingSpinnerSize, ...props }) => {
+const DynamicWidget = memo(({ widgetKey, widgetPath, type, resultData, widgetData, onLoad, onError, widgetState, showLoadingSpinner, loadingSpinnerSize, onOpenContactProfile, onOpenLeadProfile, onOpenOpportunityProfile, ...props }) => {
     // Memoize the widget key to prevent unnecessary re-renders
     const memoizedWidgetKey = useMemo(() => widgetKey, [widgetKey]);
     
@@ -221,9 +223,25 @@ const DynamicWidget = memo(({ widgetKey, widgetPath, type, resultData, widgetDat
             if (memoizedWidgetKey === 'contacts-widget') {
                 return <RegisteredWidget onOpenContactProfile={props.onOpenContactProfile} />;
             }
+            // Pass lead profile handler specifically to LeadsWidget
+            if (memoizedWidgetKey === 'leads-widget') {
+                return <RegisteredWidget onOpenLeadProfile={props.onOpenLeadProfile} />;
+            }
+            // Pass opportunity profile handler specifically to OpportunitiesWidget
+            if (memoizedWidgetKey === 'opportunities-widget') {
+                return <RegisteredWidget onOpenOpportunityProfile={props.onOpenOpportunityProfile} />;
+            }
             // Pass widgetData to ContactProfileWidget
             if (memoizedWidgetKey === 'contact-profile-widget' && widgetData) {
                 return <RegisteredWidget contactId={widgetData.contactId} />;
+            }
+            // Pass widgetData to LeadProfileWidget
+            if (memoizedWidgetKey === 'lead-profile-widget' && widgetData) {
+                return <RegisteredWidget leadId={widgetData.leadId} />;
+            }
+            // Pass widgetData to OpportunityProfileWidget
+            if (memoizedWidgetKey === 'opportunity-profile-widget' && widgetData) {
+                return <RegisteredWidget opportunityId={widgetData.opportunityId} />;
             }
             return <RegisteredWidget {...props} />;
         };
@@ -278,9 +296,25 @@ const DynamicWidget = memo(({ widgetKey, widgetPath, type, resultData, widgetDat
                 if (memoizedWidgetKey === 'contacts-widget') {
                     return <RegisteredWidget onOpenContactProfile={props.onOpenContactProfile} />;
                 }
+                // Pass lead profile handler specifically to LeadsWidget
+                if (memoizedWidgetKey === 'leads-widget') {
+                    return <RegisteredWidget onOpenLeadProfile={props.onOpenLeadProfile} />;
+                }
+                // Pass opportunity profile handler specifically to OpportunitiesWidget
+                if (memoizedWidgetKey === 'opportunities-widget') {
+                    return <RegisteredWidget onOpenOpportunityProfile={props.onOpenOpportunityProfile} />;
+                }
                 // Pass widgetData to ContactProfileWidget
                 if (memoizedWidgetKey === 'contact-profile-widget' && widgetData) {
                     return <RegisteredWidget contactId={widgetData.contactId} />;
+                }
+                // Pass widgetData to LeadProfileWidget
+                if (memoizedWidgetKey === 'lead-profile-widget' && widgetData) {
+                    return <RegisteredWidget leadId={widgetData.leadId} />;
+                }
+                // Pass widgetData to OpportunityProfileWidget
+                if (memoizedWidgetKey === 'opportunity-profile-widget' && widgetData) {
+                    return <RegisteredWidget opportunityId={widgetData.opportunityId} />;
                 }
                 return <RegisteredWidget {...props} />;
             } else {
