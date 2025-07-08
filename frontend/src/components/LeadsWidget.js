@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useContext, useCallback, memo } from 'react';
+import { createPortal } from 'react-dom';
 import axios from 'axios';
 import { AuthContext } from '../context/AuthContext';
 
@@ -295,7 +296,7 @@ const LeadsWidget = () => {
     const FilterModal = ({ isOpen, onClose }) => {
         if (!isOpen) return null;
 
-        return (
+        return createPortal(
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
                 <div className="bg-white rounded-lg p-6 w-full max-w-md">
                     <h3 className="text-lg font-semibold mb-4">Filter Leads</h3>
@@ -342,7 +343,7 @@ const LeadsWidget = () => {
                                 className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
                             >
                                 <option value="">All Users</option>
-                                {users.map(user => (
+                                {Array.isArray(users) && users.map(user => (
                                     <option key={user.id} value={user.id}>
                                         {user.username}
                                     </option>
@@ -369,7 +370,7 @@ const LeadsWidget = () => {
                                 className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
                             >
                                 <option value="">All Companies</option>
-                                {companies.map(company => (
+                                {Array.isArray(companies) && companies.map(company => (
                                     <option key={company.id} value={company.id}>
                                         {company.name}
                                     </option>
@@ -392,7 +393,8 @@ const LeadsWidget = () => {
                         </button>
                     </div>
                 </div>
-            </div>
+            </div>,
+            document.body
         );
     };
 
@@ -400,7 +402,7 @@ const LeadsWidget = () => {
     const LeadModal = ({ isOpen, onClose, title, onSubmit }) => {
         if (!isOpen) return null;
 
-        return (
+        return createPortal(
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
                 <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
                     <h3 className="text-lg font-semibold mb-4">{title}</h3>
@@ -501,7 +503,7 @@ const LeadsWidget = () => {
                                     className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
                                 >
                                     <option value="">Unassigned</option>
-                                    {users.map(user => (
+                                    {Array.isArray(users) && users.map(user => (
                                         <option key={user.id} value={user.id}>
                                             {user.username}
                                         </option>
@@ -517,7 +519,7 @@ const LeadsWidget = () => {
                                     className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
                                 >
                                     <option value="">No Company</option>
-                                    {companies.map(company => (
+                                    {Array.isArray(companies) && companies.map(company => (
                                         <option key={company.id} value={company.id}>
                                             {company.name}
                                         </option>
@@ -533,7 +535,7 @@ const LeadsWidget = () => {
                                     className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
                                 >
                                     <option value="">No Contact</option>
-                                    {contacts.map(contact => (
+                                    {Array.isArray(contacts) && contacts.map(contact => (
                                         <option key={contact.id} value={contact.id}>
                                             {contact.firstName} {contact.lastName}
                                         </option>
@@ -578,7 +580,8 @@ const LeadsWidget = () => {
                         </div>
                     </form>
                 </div>
-            </div>
+            </div>,
+            document.body
         );
     };
 
@@ -687,7 +690,7 @@ const LeadsWidget = () => {
                             </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
-                            {leads.map((lead) => (
+                            {Array.isArray(leads) && leads.map((lead) => (
                                 <tr key={lead.id} className="hover:bg-gray-50">
                                     <td className="px-3 py-2 whitespace-nowrap">
                                         <div className="text-sm font-medium text-gray-900">{lead.title}</div>
