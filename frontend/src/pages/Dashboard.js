@@ -107,6 +107,12 @@ const Dashboard = () => {
                 console.log('Tab name updated:', data.name);
             }
             
+            // Clear the EditLayout return flag after successful refresh
+            if (isReturningFromEditLayoutRef.current) {
+                console.log('Clearing EditLayout return flag after successful refresh');
+                isReturningFromEditLayoutRef.current = false;
+            }
+            
             console.log('View refreshed successfully:', data.name, 'Layout:', refreshedLayout);
         } catch (error) {
             console.error("Failed to refresh view", error);
@@ -153,17 +159,6 @@ const Dashboard = () => {
             }, 1000); // Increased delay to ensure session is fully loaded
         }
         
-        // Also check if we're on dashboard and recently navigated (fallback for cases where location doesn't change)
-        if (currentPath === '/dashboard' && currentTime - lastNavigationTimeRef.current < 5000) {
-            console.log('Recent navigation to dashboard detected - checking if refresh is needed');
-            setTimeout(() => {
-                if (activeTabId && !String(activeTabId).includes('-page') && !String(activeTabId).includes('search-')) {
-                    console.log('Refreshing view after recent navigation to dashboard');
-                    refreshCurrentView();
-                }
-            }, 2000);
-        }
-        
         prevLocationRef.current = currentPath;
     }, [location.pathname, activeTabId, refreshCurrentView]);
 
@@ -188,11 +183,11 @@ const Dashboard = () => {
         if (!isSessionLoading && !isLoading && activeTabId && !String(activeTabId).includes('-page') && !String(activeTabId).includes('search-')) {
             const timeSinceNavigation = Date.now() - lastNavigationTimeRef.current;
             
-            // If we recently navigated (within last 15 seconds) and haven't refreshed yet
-            if (timeSinceNavigation < 15000 && timeSinceNavigation > 2000) {
-                console.log('Fallback refresh mechanism - session loaded with recent navigation');
+            // Only refresh if we're returning from EditLayout (within last 30 seconds)
+            if (timeSinceNavigation < 30000 && timeSinceNavigation > 2000 && isReturningFromEditLayoutRef.current) {
+                console.log('Fallback refresh mechanism - returning from EditLayout');
                 setTimeout(() => {
-                    console.log('Performing fallback refresh');
+                    console.log('Performing EditLayout return refresh');
                     refreshCurrentView();
                 }, 1000);
             }
@@ -204,11 +199,11 @@ const Dashboard = () => {
         if (layout.length > 0 && activeTabId && !String(activeTabId).includes('-page') && !String(activeTabId).includes('search-')) {
             const timeSinceNavigation = Date.now() - lastNavigationTimeRef.current;
             
-            // If we recently navigated (within last 10 seconds) and the layout was loaded from session
-            if (timeSinceNavigation < 10000 && timeSinceNavigation > 1000) {
-                console.log('Layout loaded from session - checking if refresh is needed');
+            // Only refresh if we're returning from EditLayout (within last 30 seconds)
+            if (timeSinceNavigation < 30000 && timeSinceNavigation > 1000 && isReturningFromEditLayoutRef.current) {
+                console.log('Layout loaded from session - returning from EditLayout');
                 setTimeout(() => {
-                    console.log('Performing layout-based refresh');
+                    console.log('Performing EditLayout return layout-based refresh');
                     refreshCurrentView();
                 }, 1500);
             }
@@ -243,10 +238,9 @@ const Dashboard = () => {
         if (activeTabId && !String(activeTabId).includes('-page') && !String(activeTabId).includes('search-')) {
             console.log('Dashboard mounted with active view tab - checking if refresh is needed');
             
-            // Check if we recently navigated (within last 5 seconds)
-            const timeSinceNavigation = Date.now() - lastNavigationTimeRef.current;
-            if (timeSinceNavigation < 5000) {
-                console.log('Recent navigation detected, refreshing view');
+            // Only refresh if we're returning from EditLayout
+            if (isReturningFromEditLayoutRef.current) {
+                console.log('Returning from EditLayout detected on mount, refreshing view');
                 setTimeout(() => {
                     refreshCurrentView();
                 }, 1000);
@@ -783,7 +777,7 @@ const Dashboard = () => {
         };
     }, []);
 
-    // Enhanced refresh mechanism with multiple triggers
+    // Enhanced refresh mechanism specifically for EditLayout returns
     useEffect(() => {
         let lastRefreshTime = 0;
         const REFRESH_DEBOUNCE = 2000; // 2 seconds debounce
@@ -791,7 +785,6 @@ const Dashboard = () => {
         const shouldRefresh = () => {
             const now = Date.now();
             const timeSinceLastRefresh = now - lastRefreshTime;
-            const timeSinceLastNavigation = now - lastNavigationTimeRef.current;
             
             // Refresh if enough time has passed since last refresh
             if (timeSinceLastRefresh < REFRESH_DEBOUNCE) {
@@ -805,9 +798,9 @@ const Dashboard = () => {
                 return false;
             }
             
-            // Refresh if we recently navigated (within last 10 seconds) or if it's been a while
-            if (timeSinceLastNavigation < 10000 || timeSinceLastRefresh > 30000) {
-                console.log('Triggering refresh - recent navigation or long time since last refresh');
+            // Only refresh if we're returning from EditLayout
+            if (isReturningFromEditLayoutRef.current) {
+                console.log('Triggering refresh - returning from EditLayout');
                 return true;
             }
             
@@ -816,7 +809,7 @@ const Dashboard = () => {
         
         const performRefresh = () => {
             if (shouldRefresh()) {
-                console.log('Performing automatic refresh');
+                console.log('Performing EditLayout return refresh');
                 lastRefreshTime = Date.now();
                 setTimeout(() => {
                     refreshCurrentView();
