@@ -6,6 +6,7 @@ const API_URL = process.env.REACT_APP_API_URL;
 
 const ContactProfileWidget = ({ contactId }) => {
     // Context
+    // eslint-disable-next-line no-unused-vars
     const { user } = useContext(AuthContext);
     
     // Core data states
@@ -15,11 +16,13 @@ const ContactProfileWidget = ({ contactId }) => {
     
     // Edit states
     const [showEditModal, setShowEditModal] = useState(false);
+    // eslint-disable-next-line no-unused-vars
     const [editingContact, setEditingContact] = useState(null);
     const [formData, setFormData] = useState({});
     
     // Additional data for dropdowns
     const [users, setUsers] = useState([]);
+    // eslint-disable-next-line no-unused-vars
     const [companies, setCompanies] = useState([]);
 
     // Logic: Load contact data
@@ -46,13 +49,11 @@ const ContactProfileWidget = ({ contactId }) => {
     // Logic: Load dropdown data
     const loadDropdownData = useCallback(async () => {
         try {
-            const [usersResponse, companiesResponse] = await Promise.all([
-                axios.get(`${API_URL}/api/users`, { withCredentials: true }),
-                axios.get(`${API_URL}/api/companies`, { withCredentials: true })
+            const [usersResponse] = await Promise.all([
+                axios.get(`${API_URL}/api/users`, { withCredentials: true })
             ]);
             
             setUsers(usersResponse.data);
-            setCompanies(companiesResponse.data);
         } catch (error) {
             console.error('Error loading dropdown data:', error);
         }

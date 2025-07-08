@@ -224,6 +224,7 @@ const ContactsWidget = ({ onOpenContactProfile }) => {
     }, [loadContacts]);
 
     // Handle form input changes - now using refs
+    // eslint-disable-next-line no-unused-vars
     const handleInputChange = useCallback((e) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));

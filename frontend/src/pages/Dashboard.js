@@ -129,7 +129,7 @@ const Dashboard = () => {
         } finally {
             setIsRefreshing(false);
         }
-    }, [activeTabId, currentViewId, openTabs, setTabLayouts, setOpenTabs]);
+    }, [activeTabId, openTabs, setTabLayouts, setOpenTabs]);
 
     // Enhanced location change detection with timestamp tracking
     useEffect(() => {
