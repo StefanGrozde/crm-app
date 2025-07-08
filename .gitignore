@@ -6,3 +6,4 @@ backend/node_modules/
 backend/.env
 .cursor/rules/crm-app-rule.mdc
 WIDGET_TEMPLATES.md
+CURSOR_WIDGET_RULES.md
