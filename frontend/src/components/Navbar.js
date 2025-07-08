@@ -68,16 +68,18 @@ const Navbar = ({
 
             <header className="bg-white shadow-md w-full">
                 <div className="w-full px-4 sm:px-6 lg:px-8">
-                    <div className="flex items-center py-4">
+                    <div className="flex items-center justify-between py-4">
                         <h1 className="text-2xl font-bold text-gray-900 flex-shrink-0">Dashboard</h1>
                         
                         {/* Search Bar - Centered */}
-                        <div className="flex-1 flex justify-center max-w-2xl mx-8">
-                            <SearchBar 
-                                placeholder="Search contacts, leads, opportunities, companies..."
-                                className="w-full"
-                                onOpenResult={onOpenSearchResult}
-                            />
+                        <div className="flex-1 flex justify-center px-8">
+                            <div className="w-full max-w-2xl">
+                                <SearchBar 
+                                    placeholder="Search contacts, leads, opportunities, companies..."
+                                    className="w-full"
+                                    onOpenResult={onOpenSearchResult}
+                                />
+                            </div>
                         </div>
                         
                         {/* View selector and controls */}
