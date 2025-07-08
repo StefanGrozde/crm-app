@@ -92,11 +92,9 @@ const Dashboard = () => {
             // Update the tab's layout in session
             setTabLayouts(prev => ({ ...prev, [activeTabId]: refreshedLayout }));
             
-            // Update the current layout if this is the active tab
-            if (activeTabId === currentViewId) {
-                setLayout(refreshedLayout);
-                console.log('Current layout updated with refreshed data:', refreshedLayout);
-            }
+            // Always update the current layout immediately after refresh
+            setLayout(refreshedLayout);
+            console.log('Current layout updated with refreshed data:', refreshedLayout);
             
             // Update the tab name if it changed
             const currentTab = openTabs.find(tab => tab.id === activeTabId);
