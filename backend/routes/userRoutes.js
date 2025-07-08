@@ -5,6 +5,7 @@ const Company = require('../models/Company');
 const { protect } = require('../middleware/authMiddleware');
 const bcrypt = require('bcryptjs');
 const { sequelize } = require('../config/db');
+const { Op } = require('sequelize');
 
 // @desc    Get all users with pagination and filtering (Admin only)
 // @route   GET /api/users
@@ -27,9 +28,9 @@ router.get('/', protect, async (req, res) => {
         
         // Add search filter
         if (req.query.search) {
-            whereClause[sequelize.Op.or] = [
-                { username: { [sequelize.Op.iLike]: `%${req.query.search}%` } },
-                { email: { [sequelize.Op.iLike]: `%${req.query.search}%` } }
+            whereClause[Op.or] = [
+                { username: { [Op.iLike]: `%${req.query.search}%` } },
+                { email: { [Op.iLike]: `%${req.query.search}%` } }
             ];
         }
         
@@ -43,7 +44,6 @@ router.get('/', protect, async (req, res) => {
             include: [
                 {
                     model: Company,
-                    as: 'company',
                     attributes: ['id', 'name']
                 }
             ],
@@ -70,6 +70,43 @@ router.get('/', protect, async (req, res) => {
     }
 });
 
+// @desc    Get user profile
+// @route   GET /api/users/profile
+// @access  Private
+router.get('/profile', protect, async (req, res) => {
+    try {
+        // req.user is attached by the 'protect' middleware
+        const user = req.user;
+        res.json({
+            id: user.id,
+            email: user.email,
+            username: user.username,
+            role: user.role,
+        });
+    } catch (error) {
+        console.error('Error fetching user profile:', error);
+        res.status(500).json({ message: 'Server Error' });
+    }
+});
+
+// @desc    Get all users (for dropdowns) - simplified version
+// @route   GET /api/users/dropdown
+// @access  Private
+router.get('/dropdown', protect, async (req, res) => {
+    try {
+        // Return users from the same company
+        const users = await User.findAll({
+            where: { companyId: req.user.companyId },
+            attributes: ['id', 'email', 'username', 'role']
+        });
+        
+        res.json(users);
+    } catch (error) {
+        console.error('Error fetching users for dropdown:', error);
+        res.status(500).json({ message: 'Server Error' });
+    }
+});
+
 // @desc    Get single user by ID (Admin only)
 // @route   GET /api/users/:id
 // @access  Private (Admin only)
@@ -88,7 +125,6 @@ router.get('/:id', protect, async (req, res) => {
             include: [
                 {
                     model: Company,
-                    as: 'company',
                     attributes: ['id', 'name']
                 }
             ],
@@ -126,7 +162,7 @@ router.post('/', protect, async (req, res) => {
         // Check if username or email already exists
         const existingUser = await User.findOne({
             where: {
-                [sequelize.Op.or]: [{ username }, { email }]
+                [Op.or]: [{ username }, { email }]
             }
         });
 
@@ -188,11 +224,11 @@ router.put('/:id', protect, async (req, res) => {
         if (username || email) {
             const existingUser = await User.findOne({
                 where: {
-                    [sequelize.Op.or]: [
+                    [Op.or]: [
                         username ? { username } : null,
                         email ? { email } : null
                     ].filter(Boolean),
-                    id: { [sequelize.Op.ne]: req.params.id }
+                    id: { [Op.ne]: req.params.id }
                 }
             });
 
@@ -262,25 +298,6 @@ router.delete('/:id', protect, async (req, res) => {
     }
 });
 
-// @desc    Get user profile
-// @route   GET /api/users/profile
-// @access  Private
-router.get('/profile', protect, async (req, res) => {
-    try {
-        // req.user is attached by the 'protect' middleware
-        const user = req.user;
-        res.json({
-            id: user.id,
-            email: user.email,
-            username: user.username,
-            role: user.role,
-        });
-    } catch (error) {
-        console.error('Error fetching user profile:', error);
-        res.status(500).json({ message: 'Server Error' });
-    }
-});
-
 // @desc    Update user profile
 // @route   PUT /api/users/profile
 // @access  Private
@@ -310,24 +327,6 @@ router.put('/profile', protect, async (req, res) => {
         }
     } catch (error) {
         console.error('Error updating user profile:', error);
-        res.status(500).json({ message: 'Server Error' });
-    }
-});
-
-// @desc    Get all users (for dropdowns) - simplified version
-// @route   GET /api/users/dropdown
-// @access  Private
-router.get('/dropdown', protect, async (req, res) => {
-    try {
-        // Return users from the same company
-        const users = await User.findAll({
-            where: { companyId: req.user.companyId },
-            attributes: ['id', 'email', 'username', 'role']
-        });
-        
-        res.json(users);
-    } catch (error) {
-        console.error('Error fetching users for dropdown:', error);
         res.status(500).json({ message: 'Server Error' });
     }
 });

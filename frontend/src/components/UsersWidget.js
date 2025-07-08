@@ -380,7 +380,7 @@ const UsersWidget = () => {
                                 Role
                             </th>
                             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b">
-                                Created
+                                Company
                             </th>
                             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b">
                                 Actions
@@ -413,7 +413,7 @@ const UsersWidget = () => {
                                     </span>
                                 </td>
                                 <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
-                                    {new Date(item.created_at).toLocaleDateString()}
+                                    {item.Company ? item.Company.name : 'No Company'}
                                 </td>
                                 <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
                                     <div className="flex space-x-2">
