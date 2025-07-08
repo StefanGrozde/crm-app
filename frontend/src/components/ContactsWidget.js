@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext, useCallback, memo } from 'react';
+import React, { useState, useEffect, useContext, useCallback, memo, useRef } from 'react';
 import axios from 'axios';
 import { AuthContext } from '../context/AuthContext';
 
@@ -29,8 +29,27 @@ const ContactsWidget = () => {
         country: ''
     });
     
-    // Separate state for search input to prevent re-rendering
-    const [searchInput, setSearchInput] = useState('');
+    // Refs for uncontrolled inputs
+    const searchInputRef = useRef(null);
+    const formRefs = useRef({
+        firstName: useRef(null),
+        lastName: useRef(null),
+        email: useRef(null),
+        phone: useRef(null),
+        mobile: useRef(null),
+        jobTitle: useRef(null),
+        department: useRef(null),
+        address: useRef(null),
+        city: useRef(null),
+        state: useRef(null),
+        zipCode: useRef(null),
+        country: useRef(null),
+        notes: useRef(null),
+        status: useRef(null),
+        source: useRef(null),
+        assignedTo: useRef(null),
+        tagInput: useRef(null)
+    });
     
     // Filter modal state
     const [showFilterModal, setShowFilterModal] = useState(false);
@@ -149,11 +168,8 @@ const ContactsWidget = () => {
     }, [loadContacts, loadDropdownData]);
 
     // Handle search input changes - optimized to prevent re-rendering
-    const handleSearchInputChange = useCallback((value) => {
-        // Only update if the value actually changed
-        if (searchInput === value) return;
-        
-        setSearchInput(value);
+    const handleSearchInputChange = useCallback(() => {
+        const value = searchInputRef.current?.value || '';
         
         // Clear existing timeout
         if (window.searchTimeout) {
@@ -175,7 +191,7 @@ const ContactsWidget = () => {
             });
             loadContacts(1);
         }, 300); // Shorter delay for more responsive feel
-    }, [searchInput, loadContacts]);
+    }, [loadContacts]);
 
     // Handle filter form input changes
     const handleFilterInputChange = useCallback((e) => {
@@ -192,8 +208,9 @@ const ContactsWidget = () => {
 
     // Clear filters
     const clearFilters = useCallback(() => {
+        const searchValue = searchInputRef.current?.value || '';
         const clearedFilters = {
-            search: searchInput, // Keep current search input
+            search: searchValue, // Keep current search input
             status: '',
             assignedTo: '',
             source: '',
@@ -213,9 +230,9 @@ const ContactsWidget = () => {
             country: ''
         });
         loadContacts(1);
-    }, [searchInput, loadContacts]);
+    }, [loadContacts]);
 
-    // Handle form input changes
+    // Handle form input changes - now using refs
     const handleInputChange = useCallback((e) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
@@ -264,6 +281,21 @@ const ContactsWidget = () => {
             companyId: '',
             assignedTo: ''
         });
+        
+        // Clear all form inputs
+        Object.values(formRefs.current).forEach(ref => {
+            if (ref.current) {
+                ref.current.value = '';
+            }
+        });
+        
+        // Set default values for select elements
+        if (formRefs.current.status.current) {
+            formRefs.current.status.current.value = 'active';
+        }
+        if (formRefs.current.assignedTo.current) {
+            formRefs.current.assignedTo.current.value = '';
+        }
     }, []);
 
     // Open add modal
@@ -309,6 +341,27 @@ const ContactsWidget = () => {
             tags: contact.tags || [],
             assignedTo: contact.assignedTo || ''
         });
+        
+        // Set form values using refs
+        setTimeout(() => {
+            if (formRefs.current.firstName.current) formRefs.current.firstName.current.value = contact.firstName;
+            if (formRefs.current.lastName.current) formRefs.current.lastName.current.value = contact.lastName;
+            if (formRefs.current.email.current) formRefs.current.email.current.value = contact.email || '';
+            if (formRefs.current.phone.current) formRefs.current.phone.current.value = contact.phone || '';
+            if (formRefs.current.mobile.current) formRefs.current.mobile.current.value = contact.mobile || '';
+            if (formRefs.current.jobTitle.current) formRefs.current.jobTitle.current.value = contact.jobTitle || '';
+            if (formRefs.current.department.current) formRefs.current.department.current.value = contact.department || '';
+            if (formRefs.current.address.current) formRefs.current.address.current.value = contact.address || '';
+            if (formRefs.current.city.current) formRefs.current.city.current.value = contact.city || '';
+            if (formRefs.current.state.current) formRefs.current.state.current.value = contact.state || '';
+            if (formRefs.current.zipCode.current) formRefs.current.zipCode.current.value = contact.zipCode || '';
+            if (formRefs.current.country.current) formRefs.current.country.current.value = contact.country || '';
+            if (formRefs.current.notes.current) formRefs.current.notes.current.value = contact.notes || '';
+            if (formRefs.current.status.current) formRefs.current.status.current.value = contact.status || 'active';
+            if (formRefs.current.source.current) formRefs.current.source.current.value = contact.source || '';
+            if (formRefs.current.assignedTo.current) formRefs.current.assignedTo.current.value = contact.assignedTo || '';
+        }, 0);
+        
         setShowEditModal(true);
     }, []);
 
@@ -316,16 +369,37 @@ const ContactsWidget = () => {
     const handleSubmit = useCallback(async (e) => {
         e.preventDefault();
         
+        // Get form data from refs
+        const formDataFromRefs = {
+            firstName: formRefs.current.firstName.current?.value || '',
+            lastName: formRefs.current.lastName.current?.value || '',
+            email: formRefs.current.email.current?.value || '',
+            phone: formRefs.current.phone.current?.value || '',
+            mobile: formRefs.current.mobile.current?.value || '',
+            jobTitle: formRefs.current.jobTitle.current?.value || '',
+            department: formRefs.current.department.current?.value || '',
+            address: formRefs.current.address.current?.value || '',
+            city: formRefs.current.city.current?.value || '',
+            state: formRefs.current.state.current?.value || '',
+            zipCode: formRefs.current.zipCode.current?.value || '',
+            country: formRefs.current.country.current?.value || '',
+            notes: formRefs.current.notes.current?.value || '',
+            status: formRefs.current.status.current?.value || 'active',
+            source: formRefs.current.source.current?.value || '',
+            tags: formData.tags, // Keep tags from state since they're managed separately
+            assignedTo: formRefs.current.assignedTo.current?.value || ''
+        };
+        
         try {
             if (showEditModal) {
                 // Update contact
-                await axios.put(`${API_URL}/api/contacts/${editingContact.id}`, formData, {
+                await axios.put(`${API_URL}/api/contacts/${editingContact.id}`, formDataFromRefs, {
                     withCredentials: true
                 });
                 setShowEditModal(false);
             } else {
                 // Create contact
-                await axios.post(`${API_URL}/api/contacts`, formData, {
+                await axios.post(`${API_URL}/api/contacts`, formDataFromRefs, {
                     withCredentials: true
                 });
                 setShowAddModal(false);
@@ -337,7 +411,7 @@ const ContactsWidget = () => {
             console.error('Error saving contact:', error);
             alert(error.response?.data?.message || 'Failed to save contact');
         }
-    }, [showEditModal, editingContact, formData, resetForm, loadContacts, pagination.currentPage]);
+    }, [showEditModal, editingContact, formData.tags, resetForm, loadContacts, pagination.currentPage]);
 
     // Handle delete
     const handleDelete = useCallback(async (contactId) => {
@@ -601,10 +675,9 @@ const ContactsWidget = () => {
                             <div>
                                 <label className="block text-sm font-medium text-gray-700">First Name *</label>
                                 <input
+                                    ref={formRefs.current.firstName}
                                     type="text"
                                     name="firstName"
-                                    value={formData.firstName}
-                                    onChange={handleInputChange}
                                     required
                                     className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                                 />
@@ -612,10 +685,9 @@ const ContactsWidget = () => {
                             <div>
                                 <label className="block text-sm font-medium text-gray-700">Last Name *</label>
                                 <input
+                                    ref={formRefs.current.lastName}
                                     type="text"
                                     name="lastName"
-                                    value={formData.lastName}
-                                    onChange={handleInputChange}
                                     required
                                     className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                                 />
@@ -623,10 +695,9 @@ const ContactsWidget = () => {
                             <div>
                                 <label className="block text-sm font-medium text-gray-700">Email</label>
                                 <input
+                                    ref={formRefs.current.email}
                                     type="email"
                                     name="email"
-                                    value={formData.email}
-                                    onChange={handleInputChange}
                                     className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                                 />
                             </div>
@@ -637,30 +708,27 @@ const ContactsWidget = () => {
                             <div>
                                 <label className="block text-sm font-medium text-gray-700">Phone</label>
                                 <input
+                                    ref={formRefs.current.phone}
                                     type="tel"
                                     name="phone"
-                                    value={formData.phone}
-                                    onChange={handleInputChange}
                                     className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                                 />
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-gray-700">Mobile</label>
                                 <input
+                                    ref={formRefs.current.mobile}
                                     type="tel"
                                     name="mobile"
-                                    value={formData.mobile}
-                                    onChange={handleInputChange}
                                     className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                                 />
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-gray-700">Job Title</label>
                                 <input
+                                    ref={formRefs.current.jobTitle}
                                     type="text"
                                     name="jobTitle"
-                                    value={formData.jobTitle}
-                                    onChange={handleInputChange}
                                     className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                                 />
                             </div>
@@ -671,19 +739,17 @@ const ContactsWidget = () => {
                             <div>
                                 <label className="block text-sm font-medium text-gray-700">Department</label>
                                 <input
+                                    ref={formRefs.current.department}
                                     type="text"
                                     name="department"
-                                    value={formData.department}
-                                    onChange={handleInputChange}
                                     className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                                 />
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-gray-700">Status</label>
                                 <select
+                                    ref={formRefs.current.status}
                                     name="status"
-                                    value={formData.status}
-                                    onChange={handleInputChange}
                                     className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                                 >
                                     <option value="active">Active</option>
@@ -694,10 +760,9 @@ const ContactsWidget = () => {
                             <div>
                                 <label className="block text-sm font-medium text-gray-700">Source</label>
                                 <input
+                                    ref={formRefs.current.source}
                                     type="text"
                                     name="source"
-                                    value={formData.source}
-                                    onChange={handleInputChange}
                                     placeholder="e.g., Website, Referral, Trade Show"
                                     className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                                 />
@@ -709,9 +774,8 @@ const ContactsWidget = () => {
                             <div>
                                 <label className="block text-sm font-medium text-gray-700">Address</label>
                                 <textarea
+                                    ref={formRefs.current.address}
                                     name="address"
-                                    value={formData.address}
-                                    onChange={handleInputChange}
                                     rows="2"
                                     className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                                 />
@@ -719,20 +783,18 @@ const ContactsWidget = () => {
                             <div>
                                 <label className="block text-sm font-medium text-gray-700">City</label>
                                 <input
+                                    ref={formRefs.current.city}
                                     type="text"
                                     name="city"
-                                    value={formData.city}
-                                    onChange={handleInputChange}
                                     className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                                 />
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-gray-700">State</label>
                                 <input
+                                    ref={formRefs.current.state}
                                     type="text"
                                     name="state"
-                                    value={formData.state}
-                                    onChange={handleInputChange}
                                     className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                                 />
                             </div>
@@ -743,29 +805,26 @@ const ContactsWidget = () => {
                             <div>
                                 <label className="block text-sm font-medium text-gray-700">ZIP Code</label>
                                 <input
+                                    ref={formRefs.current.zipCode}
                                     type="text"
                                     name="zipCode"
-                                    value={formData.zipCode}
-                                    onChange={handleInputChange}
                                     className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                                 />
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-gray-700">Country</label>
                                 <input
+                                    ref={formRefs.current.country}
                                     type="text"
                                     name="country"
-                                    value={formData.country}
-                                    onChange={handleInputChange}
                                     className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                                 />
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-gray-700">Assigned To</label>
                                 <select
+                                    ref={formRefs.current.assignedTo}
                                     name="assignedTo"
-                                    value={formData.assignedTo}
-                                    onChange={handleInputChange}
                                     className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                                 >
                                     <option value="">Select User</option>
@@ -783,6 +842,7 @@ const ContactsWidget = () => {
                             <div>
                                 <label className="block text-sm font-medium text-gray-700">Tags</label>
                                 <input
+                                    ref={formRefs.current.tagInput}
                                     type="text"
                                     placeholder="Press Enter to add a tag"
                                     onKeyPress={handleTagInput}
@@ -813,9 +873,8 @@ const ContactsWidget = () => {
                             <div>
                                 <label className="block text-sm font-medium text-gray-700">Notes</label>
                                 <textarea
+                                    ref={formRefs.current.notes}
                                     name="notes"
-                                    value={formData.notes}
-                                    onChange={handleInputChange}
                                     rows="3"
                                     className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                                 />
@@ -908,10 +967,10 @@ const ContactsWidget = () => {
             {/* Search */}
             <div className="mb-4">
                 <input
+                    ref={searchInputRef}
                     type="text"
                     placeholder="Search contacts..."
-                    value={searchInput}
-                    onChange={(e) => handleSearchInputChange(e.target.value)}
+                    onChange={handleSearchInputChange}
                     onKeyDown={(e) => {
                         // Prevent any key events from bubbling up to parent components
                         e.stopPropagation();
