@@ -8,6 +8,9 @@ const API_URL = process.env.REACT_APP_API_URL;
 const ContactsWidget = ({ onOpenContactProfile }) => {
     // eslint-disable-next-line no-unused-vars
     const { user } = useContext(AuthContext);
+    
+    // Debug logging
+    console.log('ContactsWidget received onOpenContactProfile:', !!onOpenContactProfile, 'function:', onOpenContactProfile);
     const [contacts, setContacts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -1115,7 +1118,13 @@ const ContactsWidget = ({ onOpenContactProfile }) => {
                                         <div>
                                             <div 
                                                 className="text-sm font-medium text-gray-900 cursor-pointer hover:text-blue-600 hover:underline"
-                                                onClick={() => onOpenContactProfile && onOpenContactProfile(contact.id)}
+                                                onClick={() => {
+                                                    console.log('Contact name clicked:', contact.id, 'onOpenContactProfile:', !!onOpenContactProfile);
+                                                    alert('Contact name clicked: ' + contact.id + ' - onOpenContactProfile: ' + !!onOpenContactProfile);
+                                                    if (onOpenContactProfile) {
+                                                        onOpenContactProfile(contact.id);
+                                                    }
+                                                }}
                                             >
                                                 {contact.firstName} {contact.lastName}
                                             </div>

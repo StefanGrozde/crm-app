@@ -731,7 +731,7 @@ const Dashboard = () => {
 
     // Handle opening contact profiles as new tabs
     const handleOpenContactProfile = async (contactId) => {
-        console.log('Opening contact profile as tab:', contactId);
+        console.log('Dashboard handleOpenContactProfile called with contactId:', contactId);
         
         // Create a unique ID for the contact profile tab
         const tabId = `contact-profile-${contactId}`;

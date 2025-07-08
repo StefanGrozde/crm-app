@@ -163,6 +163,11 @@ const DynamicWidget = memo(({ widgetKey, widgetPath, type, resultData, widgetDat
     // Memoize the widget key to prevent unnecessary re-renders
     const memoizedWidgetKey = useMemo(() => widgetKey, [widgetKey]);
     
+    // Debug logging for profile-opening functions
+    if (memoizedWidgetKey === 'contacts-widget') {
+        console.log('DynamicWidget received onOpenContactProfile:', !!onOpenContactProfile, 'function:', onOpenContactProfile);
+    }
+    
 
     
     // Show loading state only for external widgets
@@ -230,7 +235,7 @@ const DynamicWidget = memo(({ widgetKey, widgetPath, type, resultData, widgetDat
             
             // Pass contact profile handler specifically to ContactsWidget
             if (memoizedWidgetKey === 'contacts-widget') {
-                console.log('Rendering ContactsWidget with onOpenContactProfile:', !!props.onOpenContactProfile);
+                console.log('Rendering ContactsWidget with onOpenContactProfile:', !!props.onOpenContactProfile, 'function:', props.onOpenContactProfile);
                 return <RegisteredWidget onOpenContactProfile={props.onOpenContactProfile} />;
             }
             // Pass lead profile handler specifically to LeadsWidget
@@ -324,7 +329,7 @@ const DynamicWidget = memo(({ widgetKey, widgetPath, type, resultData, widgetDat
                 
                 // Pass contact profile handler specifically to ContactsWidget
                 if (memoizedWidgetKey === 'contacts-widget') {
-                    console.log('BuiltinReactWrapper rendering ContactsWidget with onOpenContactProfile:', !!props.onOpenContactProfile);
+                    console.log('BuiltinReactWrapper rendering ContactsWidget with onOpenContactProfile:', !!props.onOpenContactProfile, 'function:', props.onOpenContactProfile);
                     return <RegisteredWidget onOpenContactProfile={props.onOpenContactProfile} />;
                 }
                 // Pass lead profile handler specifically to LeadsWidget
