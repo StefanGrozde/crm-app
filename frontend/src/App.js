@@ -8,6 +8,7 @@ import EditLayout from './pages/EditLayout';
 import CreateCompany from './pages/CreateCompany';
 import EditCompany from './pages/EditCompany';
 import Contacts from './pages/Contacts';
+import MyViews from './pages/MyViews';
 import InviteRegistration from './pages/InviteRegistration';
 import PrivateRoute from './components/PrivateRoute';
 import AdminRoute from './components/AdminRoute';
@@ -26,6 +27,7 @@ function App() {
           <Route path="/edit-layout/:viewId" element={<PrivateRoute><EditLayout /></PrivateRoute>} />
           <Route path="/create-company" element={<PrivateRoute><CreateCompany /></PrivateRoute>} />
           <Route path="/contacts" element={<PrivateRoute><Contacts /></PrivateRoute>} />
+          <Route path="/my-views" element={<PrivateRoute><MyViews /></PrivateRoute>} />
 
           {/* Admin Only Route */}
           <Route element={<AdminRoute />}>

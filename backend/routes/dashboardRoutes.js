@@ -1,19 +1,48 @@
 const express = require('express');
 const { protect } = require('../middleware/authMiddleware');
 const { DashboardView, DashboardWidget } = require('../models/DashboardView');
+const { Op } = require('sequelize');
 
 const router = express.Router();
 
 // Get all views for the authenticated user
 router.get('/views', protect, async (req, res) => {
     try {
-        const views = await DashboardView.findAll({
-            where: { userId: req.user.id },
+        const {
+            page = 1,
+            limit = 20,
+            search,
+            sortBy = 'created_at',
+            sortOrder = 'DESC'
+        } = req.query;
+
+        const offset = (page - 1) * limit;
+        const whereClause = { userId: req.user.id };
+
+        // Search functionality
+        if (search) {
+            whereClause.name = {
+                [Op.iLike]: `%${search}%`
+            };
+        }
+
+        const { count, rows: views } = await DashboardView.findAndCountAll({
+            where: whereClause,
             include: [{ model: DashboardWidget, as: 'widgets' }],
-            order: [['is_default', 'DESC'], ['createdAt', 'ASC']] // Default views first, then by creation date
+            order: [['is_default', 'DESC'], [sortBy, sortOrder.toUpperCase()]],
+            limit: parseInt(limit),
+            offset: parseInt(offset)
         });
-        
-        res.json(views);
+
+        res.json({
+            items: views,
+            pagination: {
+                currentPage: parseInt(page),
+                totalPages: Math.ceil(count / limit),
+                totalItems: count,
+                itemsPerPage: parseInt(limit)
+            }
+        });
     } catch (error) {
         console.error('Error fetching dashboard views:', error);
         res.status(500).json({ error: 'Failed to fetch dashboard views' });
