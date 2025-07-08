@@ -6,8 +6,16 @@ const API_URL = process.env.REACT_APP_API_URL;
 
 const UsersWidget = () => {
     // Context
-    // eslint-disable-next-line no-unused-vars
     const { user } = useContext(AuthContext);
+    
+    // Check if user is admin
+    if (user.role !== 'Administrator') {
+        return (
+            <div className="text-center py-8">
+                <div className="text-red-600 text-sm">Access denied. Admin role required.</div>
+            </div>
+        );
+    }
     
     // Core data states
     const [data, setData] = useState([]);
@@ -23,8 +31,7 @@ const UsersWidget = () => {
     // Filter states
     const [filters, setFilters] = useState({
         search: '',
-        role: '',
-        company: ''
+        role: ''
     });
     
     // Separate search input state
@@ -39,15 +46,11 @@ const UsersWidget = () => {
     // Form states
     const [filterFormData, setFilterFormData] = useState({});
     const [formData, setFormData] = useState({
-        firstName: '',
-        lastName: '',
+        username: '',
         email: '',
-        role: 'Sales Representative',
-        companyId: ''
+        password: '',
+        role: 'Sales Representative'
     });
-    
-    // Dropdown data
-    const [dropdownData, setDropdownData] = useState([]);
 
     // Logic: Load data
     const loadData = useCallback(async (page = 1) => {
@@ -67,29 +70,21 @@ const UsersWidget = () => {
             setPagination(response.data.pagination);
         } catch (error) {
             console.error('Error loading data:', error);
-            setError('Failed to load data');
+            if (error.response?.status === 403) {
+                setError('Access denied. Admin role required.');
+            } else {
+                setError('Failed to load data');
+            }
         } finally {
             setLoading(false);
         }
     }, [filters, pagination.itemsPerPage]);
 
-    // Logic: Load dropdown data
-    const loadDropdownData = useCallback(async () => {
-        try {
-            const companiesResponse = await axios.get(`${API_URL}/api/companies`, { 
-                withCredentials: true 
-            });
-            setDropdownData(companiesResponse.data);
-        } catch (error) {
-            console.error('Error loading dropdown data:', error);
-        }
-    }, []);
-
     // Logic: Initialize component
     useEffect(() => {
         const initializeComponent = async () => {
             try {
-                await Promise.all([loadData(), loadDropdownData()]);
+                await loadData();
             } catch (error) {
                 console.error('Error initializing widget:', error);
                 setError('Failed to initialize widget');
@@ -103,7 +98,7 @@ const UsersWidget = () => {
                 clearTimeout(window.searchTimeout);
             }
         };
-    }, [loadData, loadDropdownData]);
+    }, [loadData]);
 
     // Logic: Handle search input changes
     const handleSearchInputChange = useCallback((value) => {
@@ -158,11 +153,10 @@ const UsersWidget = () => {
     // Logic: Reset form
     const resetForm = useCallback(() => {
         setFormData({
-            firstName: '',
-            lastName: '',
+            username: '',
             email: '',
-            role: 'Sales Representative',
-            companyId: ''
+            password: '',
+            role: 'Sales Representative'
         });
     }, []);
 
@@ -182,11 +176,10 @@ const UsersWidget = () => {
     const openEditModal = useCallback((item) => {
         setEditingItem(item);
         setFormData({
-            firstName: item.firstName || '',
-            lastName: item.lastName || '',
+            username: item.username || '',
             email: item.email || '',
-            role: item.role || 'Sales Representative',
-            companyId: item.companyId || ''
+            password: '', // Don't populate password for edit
+            role: item.role || 'Sales Representative'
         });
         setShowEditModal(true);
     }, []);
@@ -197,7 +190,13 @@ const UsersWidget = () => {
         
         try {
             if (showEditModal) {
-                await axios.put(`${API_URL}/api/users/${editingItem.id}`, formData, {
+                // For edit, don't send password if it's empty
+                const updateData = { ...formData };
+                if (!updateData.password) {
+                    delete updateData.password;
+                }
+                
+                await axios.put(`${API_URL}/api/users/${editingItem.id}`, updateData, {
                     withCredentials: true
                 });
                 setShowEditModal(false);
@@ -218,7 +217,7 @@ const UsersWidget = () => {
 
     // Logic: Handle delete
     const handleDelete = useCallback(async (itemId) => {
-        if (!window.confirm('Are you sure you want to delete this item?')) {
+        if (!window.confirm('Are you sure you want to delete this user?')) {
             return;
         }
         
@@ -230,7 +229,7 @@ const UsersWidget = () => {
             loadData(pagination.currentPage);
         } catch (error) {
             console.error('Error deleting item:', error);
-            alert('Failed to delete item');
+            alert(error.response?.data?.message || 'Failed to delete item');
         }
     }, [loadData, pagination.currentPage]);
 
@@ -330,8 +329,7 @@ const UsersWidget = () => {
                                 if (value && value !== '' && key !== 'search') {
                                     const getFilterLabel = (filterKey) => {
                                         const labels = {
-                                            role: 'Role',
-                                            company: 'Company'
+                                            role: 'Role'
                                         };
                                         return labels[filterKey] || filterKey;
                                     };
@@ -382,7 +380,7 @@ const UsersWidget = () => {
                                 Role
                             </th>
                             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b">
-                                Company
+                                Created
                             </th>
                             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b">
                                 Actions
@@ -415,7 +413,7 @@ const UsersWidget = () => {
                                     </span>
                                 </td>
                                 <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
-                                    {item.company ? item.company.name : 'No Company'}
+                                    {new Date(item.created_at).toLocaleDateString()}
                                 </td>
                                 <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
                                     <div className="flex space-x-2">
@@ -487,20 +485,6 @@ const UsersWidget = () => {
                                     <option value="Administrator">Administrator</option>
                                 </select>
                             </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700">Company</label>
-                                <select
-                                    name="company"
-                                    value={filterFormData.company || ''}
-                                    onChange={handleFilterInputChange}
-                                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
-                                >
-                                    <option value="">All Companies</option>
-                                    {dropdownData.map(company => (
-                                        <option key={company.id} value={company.id}>{company.name}</option>
-                                    ))}
-                                </select>
-                            </div>
                         </div>
                         <div className="flex justify-end space-x-3 mt-6">
                             <button
@@ -529,22 +513,11 @@ const UsersWidget = () => {
                         </h3>
                         <form onSubmit={handleSubmit} className="space-y-4">
                             <div>
-                                <label className="block text-sm font-medium text-gray-700">First Name *</label>
+                                <label className="block text-sm font-medium text-gray-700">Username *</label>
                                 <input
                                     type="text"
-                                    name="firstName"
-                                    value={formData.firstName}
-                                    onChange={handleInputChange}
-                                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
-                                    required
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700">Last Name *</label>
-                                <input
-                                    type="text"
-                                    name="lastName"
-                                    value={formData.lastName}
+                                    name="username"
+                                    value={formData.username}
                                     onChange={handleInputChange}
                                     className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
                                     required
@@ -562,6 +535,19 @@ const UsersWidget = () => {
                                 />
                             </div>
                             <div>
+                                <label className="block text-sm font-medium text-gray-700">
+                                    {showEditModal ? 'Password (leave blank to keep current)' : 'Password *'}
+                                </label>
+                                <input
+                                    type="password"
+                                    name="password"
+                                    value={formData.password}
+                                    onChange={handleInputChange}
+                                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
+                                    required={!showEditModal}
+                                />
+                            </div>
+                            <div>
                                 <label className="block text-sm font-medium text-gray-700">Role</label>
                                 <select
                                     name="role"
@@ -574,22 +560,6 @@ const UsersWidget = () => {
                                     <option value="Marketing Manager">Marketing Manager</option>
                                     <option value="Support Representative">Support Representative</option>
                                     <option value="Administrator">Administrator</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700">Company</label>
-                                <select
-                                    name="companyId"
-                                    value={formData.companyId}
-                                    onChange={handleInputChange}
-                                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
-                                >
-                                    <option value="">No Company</option>
-                                    {dropdownData.map(company => (
-                                        <option key={company.id} value={company.id}>
-                                            {company.name}
-                                        </option>
-                                    ))}
                                 </select>
                             </div>
                             <div className="flex justify-end space-x-3">
