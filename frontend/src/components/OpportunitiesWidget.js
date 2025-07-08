@@ -18,8 +18,7 @@ const OpportunitiesWidget = ({ onOpenOpportunityProfile }) => {
         itemsPerPage: 10
     });
     
-    // Debug logging
-    console.log('OpportunitiesWidget render - onOpenOpportunityProfile:', !!onOpenOpportunityProfile);
+
     
     // Filter states
     const [filters, setFilters] = useState({
@@ -611,18 +610,6 @@ const OpportunitiesWidget = ({ onOpenOpportunityProfile }) => {
             <div className="flex justify-between items-center mb-4">
                 <h2 className="text-lg font-semibold text-gray-900">Opportunities</h2>
                 <div className="flex space-x-2">
-                    {/* Temporary test button */}
-                    <button
-                        onClick={() => {
-                            console.log('Test button clicked - onOpenOpportunityProfile:', !!onOpenOpportunityProfile);
-                            if (onOpenOpportunityProfile) {
-                                onOpenOpportunityProfile(1, 'Test Opportunity'); // Test with opportunity ID 1
-                            }
-                        }}
-                        className="px-3 py-1 text-sm bg-red-600 text-white rounded-md hover:bg-red-700"
-                    >
-                        Test Profile
-                    </button>
                     <button
                         onClick={() => setShowFilterModal(true)}
                         className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50"
@@ -719,12 +706,7 @@ const OpportunitiesWidget = ({ onOpenOpportunityProfile }) => {
                                     <td className="px-3 py-2 whitespace-nowrap">
                                         <div 
                                             className="text-sm font-medium text-blue-600 hover:text-blue-800 cursor-pointer"
-                                            onClick={() => {
-                                                console.log('Opportunity name clicked:', opportunity.id, 'onOpenOpportunityProfile:', !!onOpenOpportunityProfile);
-                                                if (onOpenOpportunityProfile) {
-                                                    onOpenOpportunityProfile(opportunity.id, opportunity.name);
-                                                }
-                                            }}
+                                            onClick={() => onOpenOpportunityProfile && onOpenOpportunityProfile(opportunity.id, opportunity.name)}
                                         >
                                             {opportunity.name}
                                         </div>

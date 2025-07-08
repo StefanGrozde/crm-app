@@ -159,18 +159,11 @@ const ExternalWidgetLoader = memo(({ widgetKey, widgetPath, type, onLoad, onErro
 });
 
 // Main DynamicWidget component
-const DynamicWidget = memo(({ widgetKey, widgetPath, type, resultData, widgetData, onLoad, onError, widgetState, showLoadingSpinner, loadingSpinnerSize, onOpenContactProfile, onOpenLeadProfile, onOpenOpportunityProfile, ...props }) => {
+const DynamicWidget = memo(({ widgetKey, widgetPath, type, resultData, widgetData, onLoad, onError, widgetState, showLoadingSpinner, loadingSpinnerSize, onOpenContactProfile, onOpenLeadProfile, onOpenOpportunityProfile, onOpenUserProfile, ...props }) => {
     // Memoize the widget key to prevent unnecessary re-renders
     const memoizedWidgetKey = useMemo(() => widgetKey, [widgetKey]);
     
-    console.log('DynamicWidget render:', memoizedWidgetKey, 'type:', type, 'has onLoad:', !!onLoad, 'widgetState:', widgetState);
-    console.log('DynamicWidget props:', {
-        onOpenContactProfile: !!onOpenContactProfile,
-        onOpenLeadProfile: !!onOpenLeadProfile,
-        onOpenOpportunityProfile: !!onOpenOpportunityProfile,
-        widgetData,
-        resultData
-    });
+
     
     // Show loading state only for external widgets
     if (

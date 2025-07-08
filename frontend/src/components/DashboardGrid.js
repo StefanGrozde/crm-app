@@ -150,17 +150,7 @@ const DashboardGrid = ({
                         >
                             {/* Widget content with robust rendering */}
                             <div>
-                                {console.log('Rendering widget:', item.i, 'widget data:', widget, 'type:', widget?.type)}
-                                {console.log('DashboardGrid profile functions for', item.i, ':', {
-                                    onOpenContactProfile: !!onOpenContactProfile,
-                                    onOpenLeadProfile: !!onOpenLeadProfile,
-                                    onOpenOpportunityProfile: !!onOpenOpportunityProfile
-                                })}
-                                {console.log('Widget type check for', item.i, ':', {
-                                    isBuiltinReact: widget?.type === 'builtin-react',
-                                    isInRegistry: !!widget,
-                                    widgetKey: widget?.key
-                                })}
+
                                 <WidgetRenderer 
                                     widgetKey={widgetKeyToFind} 
                                     widgetPath={widget?.path} 
