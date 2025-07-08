@@ -5,7 +5,7 @@ import { AuthContext } from '../context/AuthContext';
 
 const API_URL = process.env.REACT_APP_API_URL;
 
-const ContactsWidget = () => {
+const ContactsWidget = ({ onOpenContactProfile }) => {
     // eslint-disable-next-line no-unused-vars
     const { user } = useContext(AuthContext);
     const [contacts, setContacts] = useState([]);
@@ -1110,7 +1110,10 @@ const ContactsWidget = () => {
                                             </span>
                                         </div>
                                         <div>
-                                            <div className="text-sm font-medium text-gray-900">
+                                            <div 
+                                                className="text-sm font-medium text-gray-900 cursor-pointer hover:text-blue-600 hover:underline"
+                                                onClick={() => onOpenContactProfile && onOpenContactProfile(contact.id)}
+                                            >
                                                 {contact.firstName} {contact.lastName}
                                             </div>
                                             <div className="text-xs text-gray-500">

@@ -106,6 +106,15 @@ export const WIDGET_TYPE_CONFIG = {
         cacheTimeout: 300000, // Cache for 5 minutes
     },
     
+    'contact-profile-widget': {
+        ...DEFAULT_WIDGET_CONFIG,
+        renderMode: 'eager', // Contact profile should load immediately
+        debounceDelay: 0, // No debouncing for profile
+        autoReload: false,
+        showLoadingSpinner: true,
+        cacheTimeout: 60000, // Cache for 1 minute
+    },
+    
     // Built-in widgets
     'sample-chart': {
         ...DEFAULT_WIDGET_CONFIG,
@@ -130,6 +139,7 @@ export const WIDGET_REGISTRY_CONFIG = {
     // Built-in React widgets (loaded immediately)
     builtinReact: [
         'contacts-widget',
+        'contact-profile-widget',
         'leads-widget', 
         'opportunities-widget',
         'business-widget',

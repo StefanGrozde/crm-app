@@ -11,7 +11,8 @@ const DashboardGrid = ({
     widgetLibrary, 
     isVisible = true,
     onWidgetReady,
-    onWidgetError 
+    onWidgetError,
+    onOpenContactProfile
 }) => {
     // Skip rendering if no layout or widget library
     if (!layout || !widgetLibrary || layout.length === 0) {
@@ -152,6 +153,7 @@ const DashboardGrid = ({
                                     isVisible={isVisible}
                                     onWidgetReady={onWidgetReady}
                                     onWidgetError={onWidgetError}
+                                    onOpenContactProfile={onOpenContactProfile}
                                 />
                             </div>
                         </div>

@@ -659,6 +659,55 @@ const Dashboard = () => {
         setTimeout(() => setIsTabSwitching(false), 50);
     };
 
+    // Handle opening contact profiles as new tabs
+    const handleOpenContactProfile = (contactId) => {
+        console.log('Opening contact profile as tab:', contactId);
+        
+        // Create a unique ID for the contact profile tab
+        const tabId = `contact-profile-${contactId}`;
+        
+        // Check if tab is already open
+        const isTabOpen = openTabs.find(tab => tab.id === tabId);
+        if (isTabOpen) {
+            // If already open, just switch to it
+            switchToTab(tabId);
+            return;
+        }
+        
+        // Create a new tab for the contact profile
+        const newTab = {
+            id: tabId,
+            name: `Contact Profile`,
+            isDefault: false
+        };
+        
+        // Create a simple layout for the contact profile
+        const profileLayout = [{
+            i: `contact-profile-${contactId}`,
+            x: 0,
+            y: 0,
+            w: 12,
+            h: 8,
+            widgetKey: 'contact-profile-widget',
+            widgetData: { contactId }
+        }];
+        
+        // Update all state synchronously
+        setOpenTabs(prev => [...prev, newTab]);
+        setTabLayouts(prev => ({ ...prev, [tabId]: profileLayout }));
+        
+        // Switch to the new tab immediately
+        setIsTabSwitching(true);
+        setActiveTabId(tabId);
+        setCurrentViewId(tabId);
+        setLayout(profileLayout);
+        
+        console.log('Opened contact profile tab:', tabId, 'with layout:', profileLayout);
+        
+        // Small delay to ensure state updates are processed
+        setTimeout(() => setIsTabSwitching(false), 50);
+    };
+
     // Generic function to open any page as a new tab
     const handleOpenPageTab = (pageType, pageName, widgetKey) => {
         console.log(`Opening ${pageName} tab`);
@@ -1008,6 +1057,7 @@ const Dashboard = () => {
                             onWidgetError={(widgetKey, error) => {
                                 console.error(`Widget ${widgetKey} error:`, error);
                             }}
+                            onOpenContactProfile={handleOpenContactProfile}
                         />
                     )}
                     

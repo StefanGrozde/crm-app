@@ -1,6 +1,7 @@
 import React, { useState, useEffect, memo, useMemo } from 'react';
 import SearchResultWidget from './SearchResultWidget';
 import ContactsWidget from './ContactsWidget';
+import ContactProfileWidget from './ContactProfileWidget';
 import LeadsWidget from './LeadsWidget';
 import OpportunitiesWidget from './OpportunitiesWidget';
 import BusinessWidget from './BusinessWidget';
@@ -12,6 +13,7 @@ import LeadConversionWidget from './LeadConversionWidget';
 const WidgetRegistry = {
     // Built-in React widgets
     'contacts-widget': ContactsWidget,
+    'contact-profile-widget': ContactProfileWidget,
     'search-result-widget': SearchResultWidget,
     'leads-widget': LeadsWidget,
     'opportunities-widget': OpportunitiesWidget,
@@ -262,6 +264,10 @@ const DynamicWidget = memo(({ widgetKey, widgetPath, type, resultData, onLoad, o
             console.log('Found RegisteredWidget for:', memoizedWidgetKey, ':', !!RegisteredWidget);
             
             if (RegisteredWidget) {
+                // Pass contact profile handler specifically to ContactsWidget
+                if (memoizedWidgetKey === 'contacts-widget') {
+                    return <RegisteredWidget onOpenContactProfile={props.onOpenContactProfile} />;
+                }
                 return <RegisteredWidget {...props} />;
             } else {
                 return (
