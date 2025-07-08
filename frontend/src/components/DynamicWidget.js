@@ -321,30 +321,30 @@ const DynamicWidget = memo(({ widgetKey, widgetPath, type, resultData, widgetDat
             
             if (RegisteredWidget) {
                 console.log('BuiltinReactWrapper rendering:', memoizedWidgetKey, 'with props:', {
-                    onOpenContactProfile: !!props.onOpenContactProfile,
-                    onOpenLeadProfile: !!props.onOpenLeadProfile,
-                    onOpenOpportunityProfile: !!props.onOpenOpportunityProfile,
+                    onOpenContactProfile: !!onOpenContactProfile,
+                    onOpenLeadProfile: !!onOpenLeadProfile,
+                    onOpenOpportunityProfile: !!onOpenOpportunityProfile,
                     widgetData
                 });
                 
                 // Pass contact profile handler specifically to ContactsWidget
                 if (memoizedWidgetKey === 'contacts-widget') {
-                    console.log('BuiltinReactWrapper rendering ContactsWidget with onOpenContactProfile:', !!props.onOpenContactProfile, 'function:', props.onOpenContactProfile);
-                    return <RegisteredWidget onOpenContactProfile={props.onOpenContactProfile} />;
+                    console.log('BuiltinReactWrapper rendering ContactsWidget with onOpenContactProfile:', !!onOpenContactProfile, 'function:', onOpenContactProfile);
+                    return <RegisteredWidget onOpenContactProfile={onOpenContactProfile} />;
                 }
                 // Pass lead profile handler specifically to LeadsWidget
                 if (memoizedWidgetKey === 'leads-widget') {
-                    console.log('BuiltinReactWrapper rendering LeadsWidget with onOpenLeadProfile:', !!props.onOpenLeadProfile);
-                    return <RegisteredWidget onOpenLeadProfile={props.onOpenLeadProfile} />;
+                    console.log('BuiltinReactWrapper rendering LeadsWidget with onOpenLeadProfile:', !!onOpenLeadProfile);
+                    return <RegisteredWidget onOpenLeadProfile={onOpenLeadProfile} />;
                 }
                 // Pass opportunity profile handler specifically to OpportunitiesWidget
                 if (memoizedWidgetKey === 'opportunities-widget') {
-                    console.log('BuiltinReactWrapper rendering OpportunitiesWidget with onOpenOpportunityProfile:', !!props.onOpenOpportunityProfile);
-                    return <RegisteredWidget onOpenOpportunityProfile={props.onOpenOpportunityProfile} />;
+                    console.log('BuiltinReactWrapper rendering OpportunitiesWidget with onOpenOpportunityProfile:', !!onOpenOpportunityProfile);
+                    return <RegisteredWidget onOpenOpportunityProfile={onOpenOpportunityProfile} />;
                 }
                 // Pass user profile handler specifically to UsersWidget
                 if (memoizedWidgetKey === 'users-widget') {
-                    return <RegisteredWidget onOpenUserProfile={props.onOpenUserProfile} />;
+                    return <RegisteredWidget onOpenUserProfile={onOpenUserProfile} />;
                 }
                 // Pass widgetData to ContactProfileWidget
                 if (memoizedWidgetKey === 'contact-profile-widget' && widgetData) {
