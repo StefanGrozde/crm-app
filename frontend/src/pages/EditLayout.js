@@ -63,6 +63,8 @@ const EditLayout = () => {
                             y: w.y || 0, 
                             w: w.w || 6, 
                             h: w.h || 2,
+                            widgetKey: w.widgetKey,
+                            widgetData: w.widgetData || {},
                             minW: 2,
                             minH: 1,
                             maxW: 12,
@@ -213,6 +215,8 @@ const EditLayout = () => {
             y: Infinity,
             w: 6, // Default width
             h: 2, // Default height
+            widgetKey: widgetKey,
+            widgetData: {},
             minW: 2,
             minH: 1,
             maxW: 12,

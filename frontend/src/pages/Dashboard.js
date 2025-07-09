@@ -85,7 +85,9 @@ const Dashboard = () => {
                     x: w.x || 0, 
                     y: w.y || 0, 
                     w: w.w || 6, 
-                    h: w.h || 2 
+                    h: w.h || 2,
+                    widgetKey: w.widgetKey,
+                    widgetData: w.widgetData || {}
                 }));
             }
             
@@ -501,7 +503,9 @@ const Dashboard = () => {
                     x: w.x || 0, 
                     y: w.y || 0, 
                     w: w.w || 6, 
-                    h: w.h || 2 
+                    h: w.h || 2,
+                    widgetKey: w.widgetKey,
+                    widgetData: w.widgetData || {}
                 }));
             }
             
@@ -889,7 +893,9 @@ const Dashboard = () => {
             x: 0,
             y: 0,
             w: 12,
-            h: 8
+            h: 8,
+            widgetKey: widgetKey,
+            widgetData: {}
         }];
         
         // Update all state synchronously
