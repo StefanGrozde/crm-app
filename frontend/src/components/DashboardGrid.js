@@ -152,7 +152,7 @@ const DashboardGrid = ({
                     return (
                         <div 
                             key={item.i} 
-                            className="bg-white rounded-lg shadow-lg p-2 overflow-hidden transition-all duration-200 relative"
+                            className="bg-white rounded-lg shadow-lg p-2 overflow-hidden transition-all duration-200 relative h-full"
                             data-widget-key={item.i}
                             data-grid-x={item.x}
                             data-grid-y={item.y}

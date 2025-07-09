@@ -661,7 +661,7 @@ const Dashboard = () => {
                 x: 0,
                 y: 0,
                 w: 12,
-                h: 8,
+                h: 12,
                 widgetKey: 'contact-profile-widget',
                 widgetData: { contactId: result.id }
             }];

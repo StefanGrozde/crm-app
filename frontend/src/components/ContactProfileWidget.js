@@ -255,7 +255,7 @@ const ContactProfileWidget = ({ contactId }) => {
     const gradientColors = getGradientColors(contact.firstName, contact.lastName);
 
     return (
-        <div className="h-full overflow-hidden bg-gradient-to-br from-slate-50 to-gray-100 p-6">
+        <div className="h-full overflow-y-auto bg-gradient-to-br from-slate-50 to-gray-100 p-6" style={{ maxHeight: '100%' }}>
             {/* Header with enhanced design */}
             <div className="bg-white rounded-2xl shadow-xl p-8 mb-8 border border-gray-100">
                 <div className="flex flex-col lg:flex-row lg:justify-between lg:items-start space-y-6 lg:space-y-0">
@@ -488,11 +488,11 @@ const ContactProfileWidget = ({ contactId }) => {
                         <h2 className="text-xl font-bold text-gray-900">Sales History</h2>
                     </div>
                     <div className="text-sm text-gray-500">
-                        {contact.sales ? contact.sales.length : 0} sale{contact.sales && contact.sales.length !== 1 ? 's' : ''}
+                        {contact.sales && Array.isArray(contact.sales) ? contact.sales.length : 0} sale{(contact.sales && Array.isArray(contact.sales) && contact.sales.length !== 1) ? 's' : ''}
                     </div>
                 </div>
                 
-                {contact.sales && contact.sales.length > 0 ? (
+                {contact.sales && Array.isArray(contact.sales) && contact.sales.length > 0 ? (
                     <div className="space-y-4">
                         {contact.sales.map((sale) => (
                             <div key={sale.id} className="border border-gray-200 rounded-xl p-4 hover:bg-gray-50 transition-colors duration-200">
