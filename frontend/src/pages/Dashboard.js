@@ -694,7 +694,7 @@ const Dashboard = () => {
                 y: 0,
                 w: 12,
                 h: 8,
-                widgetKey: 'lead-profile-widget',
+                widgetKey: `lead-profile-widget-${result.id}`,
                 widgetData: { leadId: result.id }
             }];
         } else if (result.type === 'opportunity' || result.type === 'opportunities') {
@@ -824,7 +824,7 @@ const Dashboard = () => {
             y: 0,
             w: 12,
             h: 8,
-            widgetKey: `${profileType}-profile-widget`,
+            widgetKey: `${profileType}-profile-widget-${profileId}`,
             widgetData: { [`${profileType}Id`]: profileId }
         }];
         
