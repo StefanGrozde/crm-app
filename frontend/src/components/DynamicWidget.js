@@ -13,6 +13,8 @@ import UserProfileWidget from './UserProfileWidget';
 import InvitationsWidget from './InvitationsWidget';
 import LeadConversionWidget from './LeadConversionWidget';
 import MyViewsWidget from './MyViewsWidget';
+import SalesWidget from './SalesWidget';
+import SalesProfileWidget from './SalesProfileWidget';
 
 // Widget Registry - Central place to register all widgets
 const WidgetRegistry = {
@@ -30,7 +32,9 @@ const WidgetRegistry = {
     'user-profile-widget': UserProfileWidget,
     'invitations-widget': InvitationsWidget,
     'lead-conversion': LeadConversionWidget,
-    'my-views-widget': MyViewsWidget
+    'my-views-widget': MyViewsWidget,
+    'sales-widget': SalesWidget,
+    'sales-profile-widget': SalesProfileWidget
 };
 
 // Dynamic widget loader for external widgets

@@ -18,6 +18,7 @@ const opportunityRoutes = require('./routes/opportunityRoutes');
 const businessRoutes = require('./routes/businessRoutes');
 const invitationRoutes = require('./routes/invitationRoutes');
 const listRoutes = require('./routes/listRoutes');
+const salesRoutes = require('./routes/salesRoutes');
 const path = require('path');
 
 console.log("Application starting...");
@@ -79,6 +80,7 @@ app.use('/api/opportunities', opportunityRoutes);
 app.use('/api/businesses', businessRoutes);
 app.use('/api/invitations', invitationRoutes);
 app.use('/api/lists', listRoutes);
+app.use('/api/sales', salesRoutes);
 app.use('/api/widgets/buildin', express.static(path.join(__dirname, 'widgets', 'buildin')));
 app.use('/api/widgets/custom', express.static(path.join(__dirname, 'widgets', 'custom')));
 // Test Route to check DB connection
@@ -123,6 +125,7 @@ const startServer = async () => {
     const List = require('./models/List');
     const ListMembership = require('./models/ListMembership');
     const ListShare = require('./models/ListShare');
+    const Sale = require('./models/Sale');
     
     // Define associations
     // Company associations
@@ -130,6 +133,7 @@ const startServer = async () => {
     Company.hasMany(Contact, { foreignKey: 'companyId' });
     Company.hasMany(Lead, { foreignKey: 'companyId' });
     Company.hasMany(Opportunity, { foreignKey: 'companyId' });
+    Company.hasMany(Sale, { foreignKey: 'companyId' });
     
     // User associations
     User.belongsTo(Company, { foreignKey: 'companyId' });
@@ -137,6 +141,8 @@ const startServer = async () => {
     User.hasMany(Contact, { foreignKey: 'createdBy', as: 'createdContacts' });
     User.hasMany(Lead, { foreignKey: 'createdBy', as: 'createdLeads' });
     User.hasMany(Opportunity, { foreignKey: 'createdBy', as: 'createdOpportunities' });
+    User.hasMany(Sale, { foreignKey: 'assignedTo', as: 'assignedSales' });
+    User.hasMany(Sale, { foreignKey: 'createdBy', as: 'createdSales' });
     User.hasMany(UserInvitation, { foreignKey: 'invitedBy', as: 'InvitedBy' });
     
     // Contact associations
@@ -145,18 +151,29 @@ const startServer = async () => {
     Contact.belongsTo(User, { foreignKey: 'createdBy', as: 'creator' });
     Contact.hasMany(Lead, { foreignKey: 'contactId', as: 'leads' });
     Contact.hasMany(Opportunity, { foreignKey: 'contactId', as: 'opportunities' });
+    Contact.hasMany(Sale, { foreignKey: 'contactId', as: 'sales' });
     
     // Lead associations
     Lead.belongsTo(Company, { foreignKey: 'companyId', as: 'company' });
     Lead.belongsTo(Contact, { foreignKey: 'contactId', as: 'contact' });
     Lead.belongsTo(User, { foreignKey: 'assignedTo', as: 'assignedUser' });
     Lead.belongsTo(User, { foreignKey: 'createdBy', as: 'creator' });
+    Lead.hasMany(Sale, { foreignKey: 'leadId', as: 'sales' });
     
     // Opportunity associations
     Opportunity.belongsTo(Company, { foreignKey: 'companyId', as: 'company' });
     Opportunity.belongsTo(Contact, { foreignKey: 'contactId', as: 'contact' });
     Opportunity.belongsTo(User, { foreignKey: 'assignedTo', as: 'assignedUser' });
     Opportunity.belongsTo(User, { foreignKey: 'createdBy', as: 'creator' });
+    Opportunity.hasMany(Sale, { foreignKey: 'opportunityId', as: 'sales' });
+    
+    // Sale associations
+    Sale.belongsTo(Company, { foreignKey: 'companyId', as: 'company' });
+    Sale.belongsTo(Contact, { foreignKey: 'contactId', as: 'contact' });
+    Sale.belongsTo(Lead, { foreignKey: 'leadId', as: 'lead' });
+    Sale.belongsTo(Opportunity, { foreignKey: 'opportunityId', as: 'opportunity' });
+    Sale.belongsTo(User, { foreignKey: 'assignedTo', as: 'assignedUser' });
+    Sale.belongsTo(User, { foreignKey: 'createdBy', as: 'creator' });
     
     // UserInvitation associations
     UserInvitation.belongsTo(Company, { foreignKey: 'companyId' });

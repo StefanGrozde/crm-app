@@ -124,6 +124,22 @@ export const WIDGET_TYPE_CONFIG = {
         cacheTimeout: 60000, // Cache for 1 minute
     },
     
+    'sales-widget': {
+        ...DEFAULT_WIDGET_CONFIG,
+        renderMode: 'lazy',
+        autoReload: false,
+        showLoadingSpinner: true,
+    },
+    
+    'sales-profile-widget': {
+        ...DEFAULT_WIDGET_CONFIG,
+        renderMode: 'eager', // Sales profile should load immediately
+        debounceDelay: 0, // No debouncing for profile
+        autoReload: false,
+        showLoadingSpinner: true,
+        cacheTimeout: 60000, // Cache for 1 minute
+    },
+    
     // Built-in widgets
     'sample-chart': {
         ...DEFAULT_WIDGET_CONFIG,
@@ -155,7 +171,9 @@ export const WIDGET_REGISTRY_CONFIG = {
         'business-widget',
         'users-widget',
         'invitations-widget',
-        'search-result-widget'
+        'search-result-widget',
+        'sales-widget',
+        'sales-profile-widget'
     ],
     
     // Built-in external widgets (loaded from backend)
@@ -278,7 +296,7 @@ export const getWidgetConfig = (widgetKey) => {
     }
     
     // Check if it's a built-in React widget
-    if (widgetKey.endsWith('-widget') && ['contacts', 'leads', 'opportunities', 'companies', 'users'].some(type => widgetKey.startsWith(type))) {
+    if (widgetKey.endsWith('-widget') && ['contacts', 'leads', 'opportunities', 'companies', 'users', 'sales'].some(type => widgetKey.startsWith(type))) {
         return WIDGET_TYPE_CONFIG['builtin-react'];
     }
     
