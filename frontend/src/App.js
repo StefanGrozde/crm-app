@@ -7,6 +7,7 @@ import Dashboard from './pages/Dashboard';
 import CreateCompany from './pages/CreateCompany';
 import EditCompany from './pages/EditCompany';
 import Contacts from './pages/Contacts';
+import TestContactsWidget from './pages/TestContactsWidget';
 
 import InviteRegistration from './pages/InviteRegistration';
 import PrivateRoute from './components/PrivateRoute';
@@ -25,6 +26,7 @@ function App() {
           <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
           <Route path="/create-company" element={<PrivateRoute><CreateCompany /></PrivateRoute>} />
           <Route path="/contacts" element={<PrivateRoute><Contacts /></PrivateRoute>} />
+          <Route path="/test-contacts-widget" element={<PrivateRoute><TestContactsWidget /></PrivateRoute>} />
 
 
           {/* Admin Only Route */}
