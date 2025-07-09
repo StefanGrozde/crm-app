@@ -1186,18 +1186,6 @@ const Dashboard = () => {
 
                     {/* Grid layout - only show if there's an active tab and layout is ready */}
                     {activeTabId && layout && !isEditMode && (
-                        <>
-                            {/* Layout Debug */}
-                            <div className="mb-4 p-2 bg-green-100 rounded text-xs">
-                                <strong>Grid Layout Debug:</strong>
-                                <div>Layout length: {layout.length}</div>
-                                <div>Layout data: {JSON.stringify(layout)}</div>
-                                <div>Active tab: {activeTabId}</div>
-                                <div>Current view ID: {currentViewId}</div>
-                            </div>
-                        </>
-                    )}
-                    {activeTabId && layout && !isEditMode && (
                         <DashboardGrid
                             layout={layout}
                             widgetLibrary={widgetLibrary}
