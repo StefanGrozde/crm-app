@@ -340,6 +340,10 @@ router.get('/contacts', protect, async (req, res) => {
  */
 router.get('/leads', protect, async (req, res) => {
   try {
+    console.log('🔍 Backend: Lead search request received');
+    console.log('🔍 Backend: Lead search query params:', req.query);
+    console.log('🔍 Backend: User:', { id: req.user.id, companyId: req.user.companyId });
+    
     const { 
       q: query, 
       limit = 10, 
@@ -347,6 +351,7 @@ router.get('/leads', protect, async (req, res) => {
     } = req.query;
 
     if (!query || query.trim().length < 2) {
+      console.log('🔍 Backend: Lead search query too short');
       return res.status(400).json({ 
         message: 'Search query must be at least 2 characters long' 
       });
@@ -359,6 +364,7 @@ router.get('/leads', protect, async (req, res) => {
       offset: parseInt(offset)
     });
 
+    console.log('🔍 Backend: Lead search results:', results);
     res.json({
       query: query.trim(),
       totalResults: results.length,
@@ -370,7 +376,8 @@ router.get('/leads', protect, async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Lead search error:', error);
+    console.error('🔍 Backend: Lead search error:', error);
+    console.error('🔍 Backend: Lead search error stack:', error.stack);
     res.status(500).json({ 
       message: 'Lead search failed. Please try again.',
       error: process.env.NODE_ENV === 'development' ? error.message : undefined
@@ -652,6 +659,49 @@ router.get('/test-tables', protect, async (req, res) => {
     console.error('🔍 Test tables error:', error);
     res.status(500).json({
       message: 'Failed to test tables',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+});
+
+/**
+ * @route   GET /api/search/test-leads
+ * @desc    Test leads search functionality
+ * @access  Private
+ */
+router.get('/test-leads', protect, async (req, res) => {
+  try {
+    console.log('🔍 Testing leads search...');
+    
+    // Test 1: Check if leads table exists and has data
+    const leadCount = await Lead.count();
+    console.log('🔍 Total leads in database:', leadCount);
+    
+    // Test 2: Get a sample lead to see the field structure
+    const sampleLead = await Lead.findOne({
+      where: { companyId: req.user.companyId },
+      raw: true
+    });
+    console.log('🔍 Sample lead structure:', sampleLead);
+    
+    // Test 3: Try a simple search
+    const searchResults = await SearchService.searchLeads('test', {
+      userId: req.user.id,
+      companyId: req.user.companyId,
+      limit: 5
+    });
+    console.log('🔍 Search results:', searchResults);
+    
+    res.json({
+      leadCount,
+      sampleLead,
+      searchResults,
+      userCompanyId: req.user.companyId
+    });
+  } catch (error) {
+    console.error('🔍 Test leads error:', error);
+    res.status(500).json({
+      message: 'Test failed',
       error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }

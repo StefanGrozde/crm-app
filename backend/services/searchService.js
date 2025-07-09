@@ -191,28 +191,28 @@ class SearchService {
   }
 
   /**
-   * Search leads with simple search
+   * Search leads with PostgreSQL full-text search
    */
   static async searchLeads(query, options = {}) {
+    console.log('🔍 SearchService: searchLeads called with query:', query);
+    console.log('🔍 SearchService: searchLeads options:', options);
+    
     const { userId, companyId, limit = 10, offset = 0 } = options;
 
-    const whereClause = {
-      [Op.or]: [
-        // Title search
-        { title: { [Op.iLike]: `%${query}%` } },
-        // Description search
-        { description: { [Op.iLike]: `%${query}%` } }
-      ]
-    };
-
-    if (companyId) {
-      whereClause.companyId = companyId;
-    }
-
     try {
+      // Use PostgreSQL full-text search with proper ranking
       const leads = await Lead.findAll({
-        where: whereClause,
+        where: {
+          [Op.and]: [
+            // Full-text search using the GIN index
+            literal(`to_tsvector('english', COALESCE(title, '') || ' ' || COALESCE(description, '') || ' ' || COALESCE(notes, '')) @@ plainto_tsquery('english', '${query}')`),
+            // Company filter
+            companyId ? { companyId } : {}
+          ]
+        },
         order: [
+          // Order by relevance first, then by priority and creation date
+          [literal(`ts_rank(to_tsvector('english', COALESCE(title, '') || ' ' || COALESCE(description, '') || ' ' || COALESCE(notes, '')), plainto_tsquery('english', '${query}'))`), 'DESC'],
           ['priority', 'DESC'],
           ['createdAt', 'DESC']
         ],
@@ -221,18 +221,72 @@ class SearchService {
         raw: true
       });
 
-      return leads.map(lead => ({
+      console.log('🔍 SearchService: Raw leads from database:', leads.length);
+      console.log('🔍 SearchService: First lead sample:', leads[0] || 'No leads found');
+
+      // If no results with full-text search, try simple ILIKE search as fallback
+      if (leads.length === 0) {
+        console.log('🔍 SearchService: No full-text results, trying ILIKE fallback...');
+        
+        const fallbackLeads = await Lead.findAll({
+          where: {
+            [Op.and]: [
+              {
+                [Op.or]: [
+                  { title: { [Op.iLike]: `%${query}%` } },
+                  { description: { [Op.iLike]: `%${query}%` } },
+                  { source: { [Op.iLike]: `%${query}%` } },
+                  { notes: { [Op.iLike]: `%${query}%` } }
+                ]
+              },
+              companyId ? { companyId } : {}
+            ]
+          },
+          order: [
+            ['priority', 'DESC'],
+            ['createdAt', 'DESC']
+          ],
+          limit,
+          offset,
+          raw: true
+        });
+
+        console.log('🔍 SearchService: Fallback leads found:', fallbackLeads.length);
+        
+        const mappedLeads = fallbackLeads.map(lead => ({
+          id: lead.id,
+          type: 'lead',
+          title: lead.title,
+          subtitle: lead.description ? lead.description.substring(0, 50) + '...' : 'No description',
+          status: lead.status,
+          priority: lead.priority,
+          estimatedValue: lead.estimated_value || lead.estimatedValue,
+          currency: lead.currency,
+          source: lead.source,
+          company: 'Company info not available',
+          relevance: 0
+        }));
+
+        console.log('🔍 SearchService: Mapped fallback leads:', mappedLeads);
+        return mappedLeads;
+      }
+
+      const mappedLeads = leads.map(lead => ({
         id: lead.id,
         type: 'lead',
         title: lead.title,
-        subtitle: 'Contact info not available', // We'll add this back later
+        subtitle: lead.description ? lead.description.substring(0, 50) + '...' : 'No description',
         status: lead.status,
         priority: lead.priority,
-        estimatedValue: lead.estimatedValue,
+        estimatedValue: lead.estimated_value || lead.estimatedValue,
         currency: lead.currency,
-        company: 'Company info not available', // We'll add this back later
+        source: lead.source,
+        company: 'Company info not available',
         relevance: 0
       }));
+
+      console.log('🔍 SearchService: Mapped leads:', mappedLeads);
+      return mappedLeads;
     } catch (error) {
       console.error('🔍 SearchService: Error in searchLeads:', error);
       console.error('🔍 SearchService: Error stack:', error.stack);
@@ -493,6 +547,20 @@ class SearchService {
 
       suggestions.push(...companySuggestions.map(c => c.name));
 
+      // Simple lead suggestions
+      console.log('🔍 SearchService: Fetching lead suggestions...');
+      const leadSuggestions = await Lead.findAll({
+        where: {
+          title: { [Op.iLike]: `${query}%` }
+        },
+        attributes: ['title'],
+        limit: Math.ceil(limit / 4),
+        raw: true
+      });
+      console.log('🔍 SearchService: Lead suggestions found:', leadSuggestions.length);
+
+      suggestions.push(...leadSuggestions.map(l => l.title));
+
       // Simple sales suggestions
       console.log('🔍 SearchService: Fetching sales suggestions...');
       const salesSuggestions = await Sale.findAll({
@@ -500,7 +568,7 @@ class SearchService {
           title: { [Op.iLike]: `${query}%` }
         },
         attributes: ['title'],
-        limit: Math.ceil(limit / 3),
+        limit: Math.ceil(limit / 4),
         raw: true
       });
       console.log('🔍 SearchService: Sales suggestions found:', salesSuggestions.length);
