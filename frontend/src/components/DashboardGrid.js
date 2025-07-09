@@ -104,8 +104,15 @@ const DashboardGrid = ({
                     
                     // Determine the widget key to look for
                     const widgetKeyToFind = item.widgetKey || item.i;
-                    console.log('Looking for widget:', widgetKeyToFind, 'in library:', widgetLibrary);
-                    const widget = widgetLibrary.find(w => w.key === widgetKeyToFind);
+                    
+                    // Handle dynamic widget keys (e.g., lead-profile-widget-34 -> lead-profile-widget)
+                    let lookupKey = widgetKeyToFind;
+                    if (widgetKeyToFind.includes('-widget-')) {
+                        lookupKey = widgetKeyToFind.split('-widget-')[0] + '-widget';
+                    }
+                    
+                    console.log('Looking for widget:', widgetKeyToFind, 'lookup key:', lookupKey, 'in library:', widgetLibrary);
+                    const widget = widgetLibrary.find(w => w.key === lookupKey);
                     console.log('Found widget:', widget);
                     
                     // Skip rendering if widget library is not loaded yet
@@ -127,6 +134,9 @@ const DashboardGrid = ({
                                 <div className="text-center">
                                     <div className="text-red-600 text-sm font-medium">
                                         Widget not found: {item.i}
+                                    </div>
+                                    <div className="text-xs text-gray-400 mt-1">
+                                        Original key: {widgetKeyToFind} | Lookup key: {lookupKey}
                                     </div>
                                     <div className="text-xs text-gray-400 mt-1">
                                         This widget may have been removed or renamed.
