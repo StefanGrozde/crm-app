@@ -4,7 +4,7 @@ import { AuthContext } from '../context/AuthContext';
 
 const API_URL = process.env.REACT_APP_API_URL;
 
-const ListManager = ({ entityType, selectedListId, onListChange }) => {
+const ListManager = ({ entityType, selectedListId, onListChange, onListsLoaded }) => {
     const { user } = useContext(AuthContext);
     const [lists, setLists] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -18,9 +18,16 @@ const ListManager = ({ entityType, selectedListId, onListChange }) => {
         name: '',
         description: '',
         type: 'static',
+        entityType: entityType, // Default to the widget's entity type
         color: '#3B82F6',
         icon: 'list'
     });
+
+    // Entity management state
+    const [availableEntities, setAvailableEntities] = useState([]);
+    const [selectedEntities, setSelectedEntities] = useState([]);
+    const [entitySearchTerm, setEntitySearchTerm] = useState('');
+    const [loadingEntities, setLoadingEntities] = useState(false);
 
     // Load lists for the specified entity type
     const loadLists = useCallback(async () => {
@@ -30,6 +37,11 @@ const ListManager = ({ entityType, selectedListId, onListChange }) => {
                 withCredentials: true
             });
             setLists(response.data);
+            
+            // Pass lists data to parent component
+            if (onListsLoaded) {
+                onListsLoaded(response.data);
+            }
         } catch (error) {
             console.error('Error loading lists:', error);
             setError('Failed to load lists');
@@ -42,16 +54,77 @@ const ListManager = ({ entityType, selectedListId, onListChange }) => {
         loadLists();
     }, [loadLists]);
 
+    // Load available entities for selection
+    const loadAvailableEntities = useCallback(async (entityType, searchTerm = '') => {
+        if (!entityType) return;
+        
+        try {
+            setLoadingEntities(true);
+            const params = new URLSearchParams({
+                limit: 100,
+                search: searchTerm
+            });
+            
+            let endpoint = '';
+            switch (entityType) {
+                case 'contact':
+                    endpoint = 'contacts';
+                    break;
+                case 'lead':
+                    endpoint = 'leads';
+                    break;
+                case 'opportunity':
+                    endpoint = 'opportunities';
+                    break;
+                default:
+                    return;
+            }
+            
+            const response = await axios.get(`${API_URL}/api/${endpoint}?${params}`, {
+                withCredentials: true
+            });
+            
+            // Extract entities from the response
+            const entities = response.data.contacts || response.data.leads || response.data.opportunities || response.data.items || [];
+            setAvailableEntities(entities);
+        } catch (error) {
+            console.error('Error loading entities:', error);
+        } finally {
+            setLoadingEntities(false);
+        }
+    }, []);
+
+    // Load entities when modal opens or entity type changes
+    useEffect(() => {
+        if ((showCreateModal || showEditModal) && formData.entityType) {
+            loadAvailableEntities(formData.entityType, entitySearchTerm);
+        }
+    }, [showCreateModal, showEditModal, formData.entityType, entitySearchTerm, loadAvailableEntities]);
+
     // Create new list
     const handleCreateList = async (e) => {
         e.preventDefault();
         try {
-            await axios.post(`${API_URL}/api/lists`, {
-                ...formData,
-                entityType
-            }, {
+            // Create the list
+            const response = await axios.post(`${API_URL}/api/lists`, formData, {
                 withCredentials: true
             });
+            
+            const createdList = response.data;
+            
+            // Add selected entities to the list if any
+            if (selectedEntities.length > 0) {
+                const entities = selectedEntities.map(entityId => ({
+                    entityType: formData.entityType,
+                    entityId: entityId
+                }));
+                
+                await axios.post(`${API_URL}/api/lists/${createdList.id}/members`, {
+                    entities
+                }, {
+                    withCredentials: true
+                });
+            }
             
             setShowCreateModal(false);
             resetForm();
@@ -66,9 +139,45 @@ const ListManager = ({ entityType, selectedListId, onListChange }) => {
     const handleUpdateList = async (e) => {
         e.preventDefault();
         try {
+            // Update the list metadata
             await axios.put(`${API_URL}/api/lists/${editingList.id}`, formData, {
                 withCredentials: true
             });
+            
+            // Get current list members
+            const currentMembersResponse = await axios.get(`${API_URL}/api/lists/${editingList.id}`, {
+                withCredentials: true
+            });
+            const currentMembers = currentMembersResponse.data.members || [];
+            const currentMemberIds = currentMembers.map(m => m.entityId);
+            
+            // Calculate changes
+            const toAdd = selectedEntities.filter(id => !currentMemberIds.includes(id));
+            const toRemove = currentMemberIds.filter(id => !selectedEntities.includes(id));
+            
+            // Add new members
+            if (toAdd.length > 0) {
+                const entities = toAdd.map(entityId => ({
+                    entityType: formData.entityType,
+                    entityId: entityId
+                }));
+                
+                await axios.post(`${API_URL}/api/lists/${editingList.id}/members`, {
+                    entities
+                }, {
+                    withCredentials: true
+                });
+            }
+            
+            // Remove members
+            for (const entityId of toRemove) {
+                const membership = currentMembers.find(m => m.entityId === entityId);
+                if (membership) {
+                    await axios.delete(`${API_URL}/api/lists/${editingList.id}/members/${membership.id}`, {
+                        withCredentials: true
+                    });
+                }
+            }
             
             setShowEditModal(false);
             setEditingList(null);
@@ -104,15 +213,28 @@ const ListManager = ({ entityType, selectedListId, onListChange }) => {
     };
 
     // Open edit modal
-    const handleEditList = (list) => {
+    const handleEditList = async (list) => {
         setEditingList(list);
         setFormData({
             name: list.name,
             description: list.description || '',
             type: list.type,
+            entityType: list.entityType,
             color: list.color,
             icon: list.icon
         });
+        
+        // Load existing list members
+        try {
+            const response = await axios.get(`${API_URL}/api/lists/${list.id}`, {
+                withCredentials: true
+            });
+            const existingMembers = response.data.members || [];
+            setSelectedEntities(existingMembers.map(m => m.entityId));
+        } catch (error) {
+            console.error('Error loading list members:', error);
+        }
+        
         setShowEditModal(true);
     };
 
@@ -122,15 +244,55 @@ const ListManager = ({ entityType, selectedListId, onListChange }) => {
             name: '',
             description: '',
             type: 'static',
+            entityType: entityType,
             color: '#3B82F6',
             icon: 'list'
         });
+        setSelectedEntities([]);
+        setEntitySearchTerm('');
+        setAvailableEntities([]);
     };
 
     // Handle form input changes
     const handleInputChange = (e) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
+    };
+
+    // Handle entity selection
+    const handleEntitySelection = (entityId, isSelected) => {
+        setSelectedEntities(prev => {
+            if (isSelected) {
+                return [...prev, entityId];
+            } else {
+                return prev.filter(id => id !== entityId);
+            }
+        });
+    };
+
+    // Handle entity search
+    const handleEntitySearch = (e) => {
+        const searchTerm = e.target.value;
+        setEntitySearchTerm(searchTerm);
+        // Debounce the search
+        if (window.entitySearchTimeout) {
+            clearTimeout(window.entitySearchTimeout);
+        }
+        window.entitySearchTimeout = setTimeout(() => {
+            loadAvailableEntities(formData.entityType, searchTerm);
+        }, 300);
+    };
+
+    // Get entity display name
+    const getEntityDisplayName = (entity) => {
+        if (formData.entityType === 'contact') {
+            return `${entity.firstName} ${entity.lastName}`;
+        } else if (formData.entityType === 'lead') {
+            return entity.title || entity.name;
+        } else if (formData.entityType === 'opportunity') {
+            return entity.name;
+        }
+        return 'Unknown';
     };
 
     if (loading) {
@@ -255,8 +417,8 @@ const ListManager = ({ entityType, selectedListId, onListChange }) => {
             {/* Create List Modal */}
             {showCreateModal && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-lg p-6 w-full max-w-md">
-                        <h3 className="text-lg font-semibold mb-4">Create New {entityType} List</h3>
+                    <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+                        <h3 className="text-lg font-semibold mb-4">Create New List</h3>
                         <form onSubmit={handleCreateList}>
                             <div className="space-y-4">
                                 <div>
@@ -286,10 +448,51 @@ const ListManager = ({ entityType, selectedListId, onListChange }) => {
                                     />
                                 </div>
                                 
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        Entity Type
+                                    </label>
+                                    <div className="flex space-x-4">
+                                        <label className="flex items-center">
+                                            <input
+                                                type="radio"
+                                                name="entityType"
+                                                value="contact"
+                                                checked={formData.entityType === 'contact'}
+                                                onChange={handleInputChange}
+                                                className="mr-2"
+                                            />
+                                            Contacts
+                                        </label>
+                                        <label className="flex items-center">
+                                            <input
+                                                type="radio"
+                                                name="entityType"
+                                                value="lead"
+                                                checked={formData.entityType === 'lead'}
+                                                onChange={handleInputChange}
+                                                className="mr-2"
+                                            />
+                                            Leads
+                                        </label>
+                                        <label className="flex items-center">
+                                            <input
+                                                type="radio"
+                                                name="entityType"
+                                                value="opportunity"
+                                                checked={formData.entityType === 'opportunity'}
+                                                onChange={handleInputChange}
+                                                className="mr-2"
+                                            />
+                                            Opportunities
+                                        </label>
+                                    </div>
+                                </div>
+                                
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Type
+                                            List Type
                                         </label>
                                         <select
                                             name="type"
@@ -314,6 +517,48 @@ const ListManager = ({ entityType, selectedListId, onListChange }) => {
                                             className="w-full h-10 border border-gray-300 rounded"
                                         />
                                     </div>
+                                </div>
+                                
+                                {/* Entity Selection */}
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        Add {formData.entityType === 'contact' ? 'Contacts' : formData.entityType === 'lead' ? 'Leads' : 'Opportunities'} to List
+                                    </label>
+                                    <input
+                                        type="text"
+                                        placeholder={`Search ${formData.entityType}s...`}
+                                        value={entitySearchTerm}
+                                        onChange={handleEntitySearch}
+                                        className="w-full border border-gray-300 rounded px-3 py-2 mb-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                    />
+                                    
+                                    <div className="max-h-40 overflow-y-auto border border-gray-300 rounded">
+                                        {loadingEntities ? (
+                                            <div className="p-4 text-center text-gray-500">Loading...</div>
+                                        ) : availableEntities.length > 0 ? (
+                                            availableEntities.map(entity => (
+                                                <div key={entity.id} className="flex items-center p-2 hover:bg-gray-50">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={selectedEntities.includes(entity.id)}
+                                                        onChange={(e) => handleEntitySelection(entity.id, e.target.checked)}
+                                                        className="mr-2"
+                                                    />
+                                                    <span className="text-sm">{getEntityDisplayName(entity)}</span>
+                                                </div>
+                                            ))
+                                        ) : (
+                                            <div className="p-4 text-center text-gray-500">
+                                                No {formData.entityType}s found
+                                            </div>
+                                        )}
+                                    </div>
+                                    
+                                    {selectedEntities.length > 0 && (
+                                        <div className="mt-2 text-sm text-gray-600">
+                                            {selectedEntities.length} {formData.entityType}{selectedEntities.length > 1 ? 's' : ''} selected
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                             
@@ -343,7 +588,7 @@ const ListManager = ({ entityType, selectedListId, onListChange }) => {
             {/* Edit List Modal */}
             {showEditModal && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-lg p-6 w-full max-w-md">
+                    <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
                         <h3 className="text-lg font-semibold mb-4">Edit List</h3>
                         <form onSubmit={handleUpdateList}>
                             <div className="space-y-4">
@@ -374,10 +619,51 @@ const ListManager = ({ entityType, selectedListId, onListChange }) => {
                                     />
                                 </div>
                                 
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        Entity Type
+                                    </label>
+                                    <div className="flex space-x-4">
+                                        <label className="flex items-center">
+                                            <input
+                                                type="radio"
+                                                name="entityType"
+                                                value="contact"
+                                                checked={formData.entityType === 'contact'}
+                                                onChange={handleInputChange}
+                                                className="mr-2"
+                                            />
+                                            Contacts
+                                        </label>
+                                        <label className="flex items-center">
+                                            <input
+                                                type="radio"
+                                                name="entityType"
+                                                value="lead"
+                                                checked={formData.entityType === 'lead'}
+                                                onChange={handleInputChange}
+                                                className="mr-2"
+                                            />
+                                            Leads
+                                        </label>
+                                        <label className="flex items-center">
+                                            <input
+                                                type="radio"
+                                                name="entityType"
+                                                value="opportunity"
+                                                checked={formData.entityType === 'opportunity'}
+                                                onChange={handleInputChange}
+                                                className="mr-2"
+                                            />
+                                            Opportunities
+                                        </label>
+                                    </div>
+                                </div>
+                                
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Type
+                                            List Type
                                         </label>
                                         <select
                                             name="type"
@@ -402,6 +688,48 @@ const ListManager = ({ entityType, selectedListId, onListChange }) => {
                                             className="w-full h-10 border border-gray-300 rounded"
                                         />
                                     </div>
+                                </div>
+                                
+                                {/* Entity Selection */}
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        Manage {formData.entityType === 'contact' ? 'Contacts' : formData.entityType === 'lead' ? 'Leads' : 'Opportunities'} in List
+                                    </label>
+                                    <input
+                                        type="text"
+                                        placeholder={`Search ${formData.entityType}s...`}
+                                        value={entitySearchTerm}
+                                        onChange={handleEntitySearch}
+                                        className="w-full border border-gray-300 rounded px-3 py-2 mb-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                    />
+                                    
+                                    <div className="max-h-40 overflow-y-auto border border-gray-300 rounded">
+                                        {loadingEntities ? (
+                                            <div className="p-4 text-center text-gray-500">Loading...</div>
+                                        ) : availableEntities.length > 0 ? (
+                                            availableEntities.map(entity => (
+                                                <div key={entity.id} className="flex items-center p-2 hover:bg-gray-50">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={selectedEntities.includes(entity.id)}
+                                                        onChange={(e) => handleEntitySelection(entity.id, e.target.checked)}
+                                                        className="mr-2"
+                                                    />
+                                                    <span className="text-sm">{getEntityDisplayName(entity)}</span>
+                                                </div>
+                                            ))
+                                        ) : (
+                                            <div className="p-4 text-center text-gray-500">
+                                                No {formData.entityType}s found
+                                            </div>
+                                        )}
+                                    </div>
+                                    
+                                    {selectedEntities.length > 0 && (
+                                        <div className="mt-2 text-sm text-gray-600">
+                                            {selectedEntities.length} {formData.entityType}{selectedEntities.length > 1 ? 's' : ''} selected
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                             

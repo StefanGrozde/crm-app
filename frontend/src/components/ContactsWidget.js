@@ -37,6 +37,7 @@ const ContactsWidget = ({ onOpenContactProfile }) => {
     // List filtering state
     const [selectedListId, setSelectedListId] = useState(null);
     const [selectedContacts, setSelectedContacts] = useState(new Set());
+    const [availableLists, setAvailableLists] = useState([]);
     
     // Separate search state to prevent re-renders
     const [searchTerm, setSearchTerm] = useState('');
@@ -243,6 +244,11 @@ const ContactsWidget = ({ onOpenContactProfile }) => {
         setSelectedContacts(new Set()); // Clear selected contacts when changing lists
         loadContacts(1);
     }, [loadContacts]);
+
+    // Handle lists loaded from ListManager
+    const handleListsLoaded = useCallback((lists) => {
+        setAvailableLists(lists);
+    }, []);
 
     // Handle contact selection for bulk operations
     const handleContactSelection = useCallback((contactId, isSelected) => {
@@ -1066,6 +1072,7 @@ const ContactsWidget = ({ onOpenContactProfile }) => {
                 entityType="contact"
                 selectedListId={selectedListId}
                 onListChange={handleListChange}
+                onListsLoaded={handleListsLoaded}
             />
 
             {/* Search */}
@@ -1213,7 +1220,11 @@ const ContactsWidget = ({ onOpenContactProfile }) => {
                                 className="text-sm border border-gray-300 rounded px-2 py-1"
                             >
                                 <option value="">Add to List...</option>
-                                {/* This will be populated by ListManager's lists */}
+                                {availableLists.map(list => (
+                                    <option key={list.id} value={list.id}>
+                                        {list.name}
+                                    </option>
+                                ))}
                             </select>
                         </div>
                     </div>
