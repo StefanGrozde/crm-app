@@ -7,6 +7,7 @@ import LeadsWidget from './LeadsWidget';
 import OpportunitiesWidget from './OpportunitiesWidget';
 import OpportunityProfileWidget from './OpportunityProfileWidget';
 import BusinessWidget from './BusinessWidget';
+import BusinessProfileWidget from './BusinessProfileWidget';
 import UsersWidget from './UsersWidget';
 import UserProfileWidget from './UserProfileWidget';
 import InvitationsWidget from './InvitationsWidget';
@@ -23,6 +24,7 @@ const WidgetRegistry = {
     'opportunities-widget': OpportunitiesWidget,
     'opportunity-profile-widget': OpportunityProfileWidget,
     'business-widget': BusinessWidget,
+    'business-profile-widget': BusinessProfileWidget,
     'users-widget': UsersWidget,
     'user-profile-widget': UserProfileWidget,
     'invitations-widget': InvitationsWidget,
@@ -159,7 +161,7 @@ const ExternalWidgetLoader = memo(({ widgetKey, widgetPath, type, onLoad, onErro
 });
 
 // Main DynamicWidget component
-const DynamicWidget = memo(({ widgetKey, widgetPath, type, resultData, widgetData, onLoad, onError, widgetState, showLoadingSpinner, loadingSpinnerSize, onOpenContactProfile, onOpenLeadProfile, onOpenOpportunityProfile, onOpenUserProfile, ...props }) => {
+const DynamicWidget = memo(({ widgetKey, widgetPath, type, resultData, widgetData, onLoad, onError, widgetState, showLoadingSpinner, loadingSpinnerSize, onOpenContactProfile, onOpenLeadProfile, onOpenOpportunityProfile, onOpenBusinessProfile, onOpenUserProfile, ...props }) => {
     // Memoize the widget key to prevent unnecessary re-renders
     const memoizedWidgetKey = useMemo(() => widgetKey, [widgetKey]);
     // Show loading state only for external widgets

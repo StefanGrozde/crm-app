@@ -4,7 +4,7 @@ import { AuthContext } from '../context/AuthContext';
 
 const API_URL = process.env.REACT_APP_API_URL;
 
-const BusinessWidget = () => {
+const BusinessWidget = ({ onOpenBusinessProfile }) => {
     // Context
     // eslint-disable-next-line no-unused-vars
     const { user } = useContext(AuthContext);
@@ -424,7 +424,10 @@ const BusinessWidget = () => {
                                             </span>
                                         </div>
                                         <div>
-                                            <div className="text-sm font-medium text-gray-900">
+                                            <div 
+                                                className="text-sm font-medium text-gray-900 cursor-pointer hover:text-blue-600"
+                                                onClick={() => onOpenBusinessProfile && onOpenBusinessProfile(item.id, item.name)}
+                                            >
                                                 {item.name}
                                             </div>
                                             <div className="text-xs text-gray-500">
