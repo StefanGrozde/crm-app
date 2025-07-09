@@ -8,6 +8,7 @@ export const TAB_COLORS = {
     'opportunities': 'purple',
     'business': 'orange',
     'users': 'gray',
+    'my-views': 'green',
     
     // Profile pages (inherit from parent)
     'contacts-profile': 'blue',
@@ -52,6 +53,12 @@ export const getTabColor = (tabId, tabData = null) => {
     if (tabIdStr.startsWith('search-')) {
         const searchType = tabIdStr.replace('search-', '');
         return TAB_COLORS[searchType] || TAB_COLORS.default;
+    }
+    
+    // Check for page tabs (e.g., my-views-page)
+    if (tabIdStr.endsWith('-page')) {
+        const pageType = tabIdStr.replace('-page', '');
+        return TAB_COLORS[pageType] || TAB_COLORS.default;
     }
     
     // Check for basic pages

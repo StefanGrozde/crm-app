@@ -720,7 +720,12 @@ const Dashboard = () => {
         const newTab = {
             id: tabId,
             name: (result.type === 'contact' || result.type === 'contacts') ? result.title : `${result.title} (${result.type})`,
-            isDefault: false
+            isDefault: false,
+            color: result.type === 'contact' || result.type === 'contacts' ? 'blue' :
+                   result.type === 'lead' || result.type === 'leads' ? 'green' :
+                   result.type === 'opportunity' || result.type === 'opportunities' ? 'purple' :
+                   result.type === 'company' || result.type === 'business' ? 'orange' :
+                   result.type === 'user' || result.type === 'users' ? 'gray' : 'blue'
         };
         
         // Create a simple layout for the search result
@@ -865,7 +870,12 @@ const Dashboard = () => {
         const newTab = {
             id: tabId,
             name: displayName,
-            isDefault: false
+            isDefault: false,
+            color: profileType === 'contact' ? 'blue' :
+                   profileType === 'lead' ? 'green' :
+                   profileType === 'opportunity' ? 'purple' :
+                   profileType === 'business' ? 'orange' :
+                   profileType === 'user' ? 'gray' : 'blue'
         };
         
         // Create a simple layout for the profile
@@ -931,11 +941,12 @@ const Dashboard = () => {
             return;
         }
         
-        // Create a new tab
+        // Create a new tab with appropriate color
         const newTab = {
             id: tabId,
             name: pageName,
-            isDefault: false
+            isDefault: false,
+            color: pageType === 'my-views' ? 'green' : undefined // My Views gets green color
         };
         
         // Create a layout for the widget
