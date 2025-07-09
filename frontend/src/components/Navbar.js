@@ -1,5 +1,5 @@
 import React, { useState, useRef, useContext } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import SearchBar from './SearchBar';
 import EditUserPopup from './EditUserPopup';
@@ -10,13 +10,13 @@ const Navbar = ({
     onOpenSearchResult, 
     onOpenPageTab,
     onOpenUserProfile,
+    onOpenMyViews,
     currentViewId
 }) => {
     // Debug logging
     console.log('Navbar render - currentViewId:', currentViewId, 'type:', typeof currentViewId);
     console.log('Navbar render - views:', views, 'type:', typeof views);
     const { user, logout } = useContext(AuthContext);
-    const navigate = useNavigate();
     
     // Menu states
     const [menuOpen, setMenuOpen] = useState(false);
@@ -45,7 +45,7 @@ const Navbar = ({
 
     const handleLogout = () => {
         logout();
-        navigate('/login');
+        window.location.href = '/login';
     };
 
     const toggleMenu = () => setMenuOpen(!menuOpen);
@@ -215,7 +215,7 @@ const Navbar = ({
 
                             {/* My Views button */}
                             <button
-                                onClick={() => navigate('/my-views')}
+                                onClick={onOpenMyViews}
                                 className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors flex items-center space-x-2"
                                 title="Manage your dashboard views"
                             >

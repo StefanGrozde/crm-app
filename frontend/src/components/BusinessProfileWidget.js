@@ -6,6 +6,7 @@ const API_URL = process.env.REACT_APP_API_URL;
 
 const BusinessProfileWidget = ({ businessId }) => {
     // Context
+    // eslint-disable-next-line no-unused-vars
     const { user } = useContext(AuthContext);
     
     // Core data states
@@ -15,6 +16,7 @@ const BusinessProfileWidget = ({ businessId }) => {
     
     // Edit states
     const [showEditModal, setShowEditModal] = useState(false);
+    // eslint-disable-next-line no-unused-vars
     const [editingBusiness, setEditingBusiness] = useState(null);
     const [formData, setFormData] = useState({});
     
@@ -24,6 +26,7 @@ const BusinessProfileWidget = ({ businessId }) => {
         sizes: [],
         statuses: []
     });
+    // eslint-disable-next-line no-unused-vars
     const [relatedData, setRelatedData] = useState({});
 
     // Logic: Load business data

@@ -47,7 +47,7 @@ const MyViewsWidget = () => {
             setLoading(true);
             const params = new URLSearchParams({
                 page,
-                limit: pagination.itemsPerPage,
+                limit: pagination?.itemsPerPage || 10,
                 ...filters
             });
             
@@ -63,7 +63,7 @@ const MyViewsWidget = () => {
         } finally {
             setLoading(false);
         }
-    }, [filters, pagination.itemsPerPage]);
+    }, [filters, pagination?.itemsPerPage]);
 
     // Logic: Initialize component
     useEffect(() => {
@@ -184,7 +184,7 @@ const MyViewsWidget = () => {
             
             setShowAddModal(false);
             resetForm();
-            loadData(pagination.currentPage);
+            loadData(pagination?.currentPage || 1);
         } catch (error) {
             console.error('Error creating view:', error);
             alert(error.response?.data?.error || 'Failed to create view');
@@ -202,7 +202,7 @@ const MyViewsWidget = () => {
             
             setShowRenameModal(false);
             resetForm();
-            loadData(pagination.currentPage);
+            loadData(pagination?.currentPage || 1);
         } catch (error) {
             console.error('Error renaming view:', error);
             alert(error.response?.data?.error || 'Failed to rename view');
@@ -225,12 +225,12 @@ const MyViewsWidget = () => {
                 withCredentials: true
             });
             
-            loadData(pagination.currentPage);
+            loadData(pagination?.currentPage || 1);
         } catch (error) {
             console.error('Error deleting view:', error);
             alert('Failed to delete view');
         }
-    }, [loadData, pagination.currentPage]);
+    }, [loadData, pagination?.currentPage]);
 
     // Logic: Handle set as default
     const handleSetDefault = useCallback(async (itemId) => {
@@ -239,12 +239,12 @@ const MyViewsWidget = () => {
                 withCredentials: true
             });
             
-            loadData(pagination.currentPage);
+            loadData(pagination?.currentPage || 1);
         } catch (error) {
             console.error('Error setting default view:', error);
             alert('Failed to set default view');
         }
-    }, [loadData, pagination.currentPage]);
+    }, [loadData, pagination?.currentPage]);
 
     // Rendering: Loading state
     if (loading) {
@@ -427,7 +427,7 @@ const MyViewsWidget = () => {
                 </table>
                 
                 {/* Pagination */}
-                {pagination.totalPages > 1 && (
+                {pagination?.totalPages > 1 && (
                     <div className="mt-4 flex justify-between items-center px-4">
                         <div className="text-xs text-gray-500">
                             Page {pagination.currentPage} of {pagination.totalPages}

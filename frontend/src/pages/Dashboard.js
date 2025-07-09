@@ -317,6 +317,13 @@ const Dashboard = () => {
                         path: null
                     },
                     {
+                        key: 'business-profile-widget',
+                        name: 'Business Profile Widget',
+                        description: 'Display detailed business information',
+                        type: 'builtin-react',
+                        path: null
+                    },
+                    {
                         key: 'users-widget',
                         name: 'Users Widget',
                         description: 'Manage and view users',
@@ -327,6 +334,13 @@ const Dashboard = () => {
                         key: 'lead-conversion',
                         name: 'Lead Conversion Analytics',
                         description: 'Track lead conversion rates and metrics',
+                        type: 'builtin-react',
+                        path: null
+                    },
+                    {
+                        key: 'my-views-widget',
+                        name: 'My Views Widget',
+                        description: 'Manage your dashboard views',
                         type: 'builtin-react',
                         path: null
                     }
@@ -1083,6 +1097,11 @@ const Dashboard = () => {
         setTimeout(() => setIsTabSwitching(false), 50);
     };
 
+    // Handle opening My Views as a tab
+    const handleOpenMyViews = () => {
+        handleOpenPageTab('my-views', 'My Views', 'my-views-widget');
+    };
+
     // Create sample data for testing
     const createSampleData = async () => {
         try {
@@ -1338,6 +1357,7 @@ const Dashboard = () => {
                     onOpenSearchResult={handleOpenSearchResult}
                     onOpenPageTab={handleOpenPageTab}
                     onOpenUserProfile={handleOpenUserProfile}
+                    onOpenMyViews={handleOpenMyViews}
                     currentViewId={currentViewId}
                 />
 
