@@ -476,6 +476,127 @@ const ContactProfileWidget = ({ contactId }) => {
                 </div>
             )}
 
+            {/* Sales Card */}
+            <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8 hover:shadow-xl transition-shadow duration-300">
+                <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center space-x-3">
+                        <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-green-600 rounded-xl flex items-center justify-center">
+                            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                            </svg>
+                        </div>
+                        <h2 className="text-xl font-bold text-gray-900">Sales History</h2>
+                    </div>
+                    <div className="text-sm text-gray-500">
+                        {contact.sales ? contact.sales.length : 0} sale{contact.sales && contact.sales.length !== 1 ? 's' : ''}
+                    </div>
+                </div>
+                
+                {contact.sales && contact.sales.length > 0 ? (
+                    <div className="space-y-4">
+                        {contact.sales.map((sale) => (
+                            <div key={sale.id} className="border border-gray-200 rounded-xl p-4 hover:bg-gray-50 transition-colors duration-200">
+                                <div className="flex justify-between items-start mb-3">
+                                    <div className="flex-1">
+                                        <h3 className="font-semibold text-gray-900 mb-1">{sale.title}</h3>
+                                        <p className="text-sm text-gray-600 mb-2">{sale.saleNumber}</p>
+                                        {sale.description && (
+                                            <p className="text-sm text-gray-700 mb-2 line-clamp-2">{sale.description}</p>
+                                        )}
+                                    </div>
+                                    <div className="text-right ml-4">
+                                        <div className="text-lg font-bold text-gray-900">
+                                            ${parseFloat(sale.totalAmount).toLocaleString()}
+                                        </div>
+                                        <div className="text-sm text-gray-500">{sale.currency}</div>
+                                    </div>
+                                </div>
+                                
+                                <div className="flex items-center justify-between text-sm">
+                                    <div className="flex items-center space-x-4">
+                                        <div className="flex items-center space-x-1">
+                                            <span className="text-gray-500">Date:</span>
+                                            <span className="font-medium text-gray-900">
+                                                {new Date(sale.saleDate).toLocaleDateString()}
+                                            </span>
+                                        </div>
+                                        {sale.category && (
+                                            <div className="flex items-center space-x-1">
+                                                <span className="text-gray-500">Category:</span>
+                                                <span className="font-medium text-gray-900">{sale.category}</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                    
+                                    <div className="flex items-center space-x-2">
+                                        {/* Status Badge */}
+                                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                                            sale.status === 'completed' ? 'bg-green-100 text-green-800' :
+                                            sale.status === 'processing' ? 'bg-yellow-100 text-yellow-800' :
+                                            sale.status === 'pending' ? 'bg-blue-100 text-blue-800' :
+                                            sale.status === 'cancelled' ? 'bg-red-100 text-red-800' :
+                                            'bg-gray-100 text-gray-800'
+                                        }`}>
+                                            {sale.status.charAt(0).toUpperCase() + sale.status.slice(1)}
+                                        </span>
+                                        
+                                        {/* Payment Status Badge */}
+                                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                                            sale.paymentStatus === 'paid' ? 'bg-green-100 text-green-800' :
+                                            sale.paymentStatus === 'partially_paid' ? 'bg-yellow-100 text-yellow-800' :
+                                            sale.paymentStatus === 'pending' ? 'bg-blue-100 text-blue-800' :
+                                            sale.paymentStatus === 'failed' ? 'bg-red-100 text-red-800' :
+                                            'bg-gray-100 text-gray-800'
+                                        }`}>
+                                            {sale.paymentStatus === 'partially_paid' ? 'Partial' : 
+                                             sale.paymentStatus.charAt(0).toUpperCase() + sale.paymentStatus.slice(1)}
+                                        </span>
+                                    </div>
+                                </div>
+                                
+                                {/* Additional Details */}
+                                <div className="mt-3 pt-3 border-t border-gray-100">
+                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs">
+                                        <div>
+                                            <span className="text-gray-500">Amount:</span>
+                                            <div className="font-medium text-gray-900">${parseFloat(sale.amount).toLocaleString()}</div>
+                                        </div>
+                                        {parseFloat(sale.discountAmount) > 0 && (
+                                            <div>
+                                                <span className="text-gray-500">Discount:</span>
+                                                <div className="font-medium text-gray-900">${parseFloat(sale.discountAmount).toLocaleString()}</div>
+                                            </div>
+                                        )}
+                                        {parseFloat(sale.taxAmount) > 0 && (
+                                            <div>
+                                                <span className="text-gray-500">Tax:</span>
+                                                <div className="font-medium text-gray-900">${parseFloat(sale.taxAmount).toLocaleString()}</div>
+                                            </div>
+                                        )}
+                                        {sale.paymentMethod && (
+                                            <div>
+                                                <span className="text-gray-500">Payment:</span>
+                                                <div className="font-medium text-gray-900">{sale.paymentMethod}</div>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                ) : (
+                    <div className="text-center py-8">
+                        <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                            </svg>
+                        </div>
+                        <h3 className="text-lg font-medium text-gray-900 mb-2">No Sales Yet</h3>
+                        <p className="text-gray-500">This contact hasn't made any purchases yet.</p>
+                    </div>
+                )}
+            </div>
+
             {/* Enhanced Edit Modal */}
             {showEditModal && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">

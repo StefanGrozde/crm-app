@@ -925,6 +925,8 @@ const Dashboard = () => {
         if (activeTabId === updatedView.id) {
             refreshCurrentView();
         }
+        // Also refresh the views list to update the dropdown
+        refreshViewsList();
     };
 
     // Create sample data for testing

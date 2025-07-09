@@ -229,6 +229,12 @@ const EmbeddedEditLayout = ({ viewId, onExitEditMode, onSaveSuccess }) => {
             console.log("New view saved successfully:", response.data);
             
             setShowSaveModal(false);
+            
+            // Notify parent component about the new view
+            if (onSaveSuccess) {
+                onSaveSuccess(response.data);
+            }
+            
             alert('New view saved successfully!');
             
         } catch (error) { 
@@ -236,7 +242,7 @@ const EmbeddedEditLayout = ({ viewId, onExitEditMode, onSaveSuccess }) => {
             console.error("Error details:", error.response?.data);
             alert("Failed to save new view. Please try again.");
         }
-    }, [layout]);
+    }, [layout, onSaveSuccess]);
 
     // Logic: Handle edit view
     const handleEditView = useCallback(async (viewData) => {

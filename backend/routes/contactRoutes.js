@@ -4,6 +4,7 @@ const { protect } = require('../middleware/authMiddleware');
 const Contact = require('../models/Contact');
 const Company = require('../models/Company');
 const User = require('../models/User');
+const Sale = require('../models/Sale');
 const ListMembership = require('../models/ListMembership');
 const { Op } = require('sequelize');
 
@@ -264,6 +265,24 @@ router.get('/:id', protect, async (req, res) => {
                     model: User,
                     as: 'creator',
                     attributes: ['id', 'username', 'email']
+                },
+                {
+                    model: Sale,
+                    as: 'sales',
+                    attributes: ['id', 'saleNumber', 'title', 'description', 'status', 'saleDate', 'amount', 'currency', 'totalAmount', 'paymentStatus', 'paymentDate', 'category', 'source', 'createdAt'],
+                    order: [['saleDate', 'DESC']],
+                    include: [
+                        {
+                            model: User,
+                            as: 'assignedUser',
+                            attributes: ['id', 'firstName', 'lastName']
+                        },
+                        {
+                            model: User,
+                            as: 'creator',
+                            attributes: ['id', 'firstName', 'lastName']
+                        }
+                    ]
                 }
             ]
         });
