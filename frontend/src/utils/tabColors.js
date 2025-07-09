@@ -126,4 +126,10 @@ export const AVAILABLE_COLORS = [
     { name: 'Pink', value: 'pink', class: 'bg-pink-500' },
     { name: 'Indigo', value: 'indigo', class: 'bg-indigo-500' },
     { name: 'Teal', value: 'teal', class: 'bg-teal-500' }
-]; 
+];
+
+// Get color class for a color value
+export const getColorClass = (color) => {
+    const colorOption = AVAILABLE_COLORS.find(c => c.value === color);
+    return colorOption ? colorOption.class : 'bg-blue-500';
+}; 

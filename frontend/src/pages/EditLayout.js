@@ -9,7 +9,9 @@ import 'react-resizable/css/styles.css';
 import { AuthContext } from '../context/AuthContext';
 import SaveViewModal from '../components/SaveViewModal';
 import AddWidgetModal from '../components/AddWidgetModal';
+import EditViewModal from '../components/EditViewModal';
 import { WidgetRenderer } from '../components/WidgetRenderer';
+import { getColorClass } from '../utils/tabColors';
 
 const ResponsiveReactGridLayout = WidthProvider(Responsive);
 const API_URL = process.env.REACT_APP_API_URL;
@@ -32,6 +34,7 @@ const EditLayout = () => {
     // Modal states
     const [isSaveModalOpen, setSaveModalOpen] = useState(false);
     const [isAddModalOpen, setAddModalOpen] = useState(false);
+    const [isEditViewModalOpen, setEditViewModalOpen] = useState(false);
 
     // Load initial data
     useEffect(() => {
@@ -198,6 +201,40 @@ const EditLayout = () => {
             console.error("Failed to save new view", error);
             console.error("Error details:", error.response?.data);
             alert("Failed to save new view. Please try again.");
+        }
+    };
+
+    const handleEditView = async (viewData) => {
+        try {
+            console.log('Editing view:', viewData);
+            
+            if (!currentView) {
+                console.error("No current view selected");
+                return;
+            }
+
+            // Update the view with new name and color
+            const response = await axios.put(`${API_URL}/api/dashboard/views/${currentView.id}`, { 
+                name: viewData.name,
+                color: viewData.color
+            }, { withCredentials: true });
+
+            console.log("View updated successfully:", response.data);
+            
+            // Update the current view state
+            setCurrentView(prev => ({
+                ...prev,
+                name: viewData.name,
+                color: viewData.color
+            }));
+            
+            setEditViewModalOpen(false);
+            alert('View updated successfully!');
+            
+        } catch (error) { 
+            console.error("Failed to update view", error);
+            console.error("Error details:", error.response?.data);
+            alert("Failed to update view. Please try again.");
         }
     };
 
@@ -384,12 +421,31 @@ const EditLayout = () => {
                             <div className="flex items-center space-x-4">
                                 <h1 className="text-2xl font-bold text-gray-900">Edit Layout</h1>
                                 {currentView && (
-                                    <span className="text-gray-600">- {currentView.name}</span>
+                                    <div className="flex items-center space-x-2">
+                                        <span className="text-gray-600">- {currentView.name}</span>
+                                        {currentView.color && (
+                                            <div 
+                                                className={`w-4 h-4 rounded-full border border-gray-300 ${getColorClass(currentView.color)}`}
+                                                title={`Tab color: ${currentView.color}`}
+                                            />
+                                        )}
+                                    </div>
                                 )}
                             </div>
                             
                             {/* Edit controls */}
                             <div className="flex items-center space-x-4">
+                                <button
+                                    onClick={() => setEditViewModalOpen(true)}
+                                    className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 flex items-center space-x-2"
+                                    title="Edit view name and color"
+                                >
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                    </svg>
+                                    <span>Edit View</span>
+                                </button>
+                                
                                 <button
                                     onClick={() => setAddModalOpen(true)}
                                     className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 flex items-center space-x-2"
@@ -443,6 +499,14 @@ const EditLayout = () => {
                 {/* Modals */}
                 {isSaveModalOpen && <SaveViewModal onSave={handleSaveNewView} onClose={() => setSaveModalOpen(false)} />}
                 {isAddModalOpen && <AddWidgetModal availableWidgets={availableWidgets} onAddWidget={handleAddWidget} onClose={() => setAddModalOpen(false)} />}
+                {isEditViewModalOpen && (
+                    <EditViewModal 
+                        isOpen={isEditViewModalOpen}
+                        currentView={currentView}
+                        onSave={handleEditView}
+                        onClose={() => setEditViewModalOpen(false)}
+                    />
+                )}
 
                 <main className="p-4">
                     {/* Debug info */}
