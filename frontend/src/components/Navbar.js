@@ -286,28 +286,28 @@ const Navbar = ({
                                 )}
                             </div>
 
-                            {/* Edit mode toggle - always show, but disable on main pages */}
+                            {/* Edit mode toggle - only enable for DashboardViews */}
                             <button
                                 onClick={() => {
-                                    if (currentViewId && !String(currentViewId).includes('-page') && onEnterEditMode) {
+                                    if (currentViewId && !isNaN(currentViewId) && onEnterEditMode) {
                                         onEnterEditMode();
                                     }
                                 }}
                                 className={`px-4 py-2 rounded-md transition-colors ${
                                     isEditMode
                                         ? 'bg-green-600 text-white hover:bg-green-700'
-                                        : currentViewId && !String(currentViewId).includes('-page')
+                                        : currentViewId && !isNaN(currentViewId)
                                             ? 'bg-blue-600 text-white hover:bg-blue-700'
                                             : 'bg-gray-400 text-gray-200 cursor-not-allowed'
                                 }`}
-                                disabled={!currentViewId || String(currentViewId).includes('-page')}
+                                disabled={!currentViewId || isNaN(currentViewId)}
                                 title={
                                     isEditMode
                                         ? "Currently in Edit Mode"
                                         : !currentViewId 
                                             ? "No view selected - a default view should be created automatically" 
-                                            : String(currentViewId).includes('-page')
-                                                ? "Edit Layout is not available on main pages"
+                                            : isNaN(currentViewId)
+                                                ? "Edit Layout is only available on Dashboard Views"
                                                 : "Enter Edit Mode"
                                 }
                             >
