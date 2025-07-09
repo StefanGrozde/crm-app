@@ -1,6 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const { protect } = require('../middleware/authMiddleware');
+const ListMembership = require('../models/ListMembership');
+const { Op } = require('sequelize');
 
 // @desc    Get business filter options
 // @route   GET /api/businesses/filter-options
@@ -33,9 +35,11 @@ router.get('/filter-options', protect, async (req, res) => {
 // @access  Private
 router.get('/', protect, async (req, res) => {
     try {
+        const { listId } = req.query;
+        
         // For now, return mock data
         // In a real implementation, you would query your business database
-        const mockBusinesses = [
+        let mockBusinesses = [
             {
                 id: 1,
                 name: 'Tech Solutions Inc',
@@ -67,6 +71,33 @@ router.get('/', protect, async (req, res) => {
                 status: 'prospect'
             }
         ];
+        
+        // Filter by list if specified
+        if (listId) {
+            try {
+                // Get company IDs from the list
+                const listMemberships = await ListMembership.findAll({
+                    where: {
+                        listId: listId,
+                        entityType: 'company'
+                    },
+                    attributes: ['entityId']
+                });
+                
+                const companyIds = listMemberships.map(m => m.entityId);
+                
+                if (companyIds.length > 0) {
+                    // Filter mock businesses by the IDs in the list
+                    mockBusinesses = mockBusinesses.filter(business => companyIds.includes(business.id));
+                } else {
+                    // If list is empty, return no businesses
+                    mockBusinesses = [];
+                }
+            } catch (error) {
+                console.error('Error filtering by list:', error);
+                // Continue with unfiltered results if list filtering fails
+            }
+        }
         
         res.json({
             businesses: mockBusinesses,

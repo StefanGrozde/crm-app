@@ -5,6 +5,7 @@ const Lead = require('../models/Lead');
 const Company = require('../models/Company');
 const User = require('../models/User');
 const Contact = require('../models/Contact');
+const ListMembership = require('../models/ListMembership');
 const { Op } = require('sequelize');
 
 // GET /api/leads - Get all leads with pagination and filtering
@@ -19,6 +20,7 @@ router.get('/', protect, async (req, res) => {
             assignedTo,
             source,
             company,
+            listId,
             sortBy = 'created_at',
             sortOrder = 'DESC'
         } = req.query;
@@ -63,7 +65,8 @@ router.get('/', protect, async (req, res) => {
             whereClause.companyId = company;
         }
 
-        const { count, rows: leads } = await Lead.findAndCountAll({
+        // Set up query options
+        const queryOptions = {
             where: whereClause,
             include: [
                 {
@@ -90,7 +93,38 @@ router.get('/', protect, async (req, res) => {
             order: [[sortBy, sortOrder.toUpperCase()]],
             limit: parseInt(limit),
             offset: parseInt(offset)
-        });
+        };
+
+        // Filter by list if specified
+        if (listId) {
+            // Get lead IDs from the list
+            const listMemberships = await ListMembership.findAll({
+                where: {
+                    listId: listId,
+                    entityType: 'lead'
+                },
+                attributes: ['entityId']
+            });
+            
+            const leadIds = listMemberships.map(m => m.entityId);
+            
+            if (leadIds.length > 0) {
+                whereClause.id = { [Op.in]: leadIds };
+            } else {
+                // If list is empty, return no leads
+                return res.json({
+                    leads: [],
+                    pagination: {
+                        currentPage: parseInt(page),
+                        totalPages: 0,
+                        totalItems: 0,
+                        itemsPerPage: parseInt(limit)
+                    }
+                });
+            }
+        }
+
+        const { count, rows: leads } = await Lead.findAndCountAll(queryOptions);
 
         res.json({
             leads,

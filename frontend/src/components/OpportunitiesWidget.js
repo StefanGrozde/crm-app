@@ -2,6 +2,7 @@ import React, { useState, useEffect, useContext, useCallback, memo } from 'react
 import { createPortal } from 'react-dom';
 import axios from 'axios';
 import { AuthContext } from '../context/AuthContext';
+import ListManager from './ListManager';
 
 const API_URL = process.env.REACT_APP_API_URL;
 
@@ -29,6 +30,11 @@ const OpportunitiesWidget = ({ onOpenOpportunityProfile }) => {
         type: '',
         company: ''
     });
+    
+    // List filtering state
+    const [selectedListId, setSelectedListId] = useState(null);
+    const [selectedOpportunities, setSelectedOpportunities] = useState(new Set());
+    const [availableLists, setAvailableLists] = useState([]);
     
     // Separate state for search input
     const [searchInput, setSearchInput] = useState('');
@@ -80,6 +86,11 @@ const OpportunitiesWidget = ({ onOpenOpportunityProfile }) => {
                 ...filters
             });
             
+            // Add list filter if selected
+            if (selectedListId) {
+                params.append('listId', selectedListId);
+            }
+            
             const response = await axios.get(`${API_URL}/api/opportunities?${params}`, {
                 withCredentials: true
             });
@@ -92,7 +103,7 @@ const OpportunitiesWidget = ({ onOpenOpportunityProfile }) => {
         } finally {
             setLoading(false);
         }
-    }, [filters, pagination.itemsPerPage]);
+    }, [filters, pagination.itemsPerPage, selectedListId]);
 
     // Load dropdown data
     const loadDropdownData = useCallback(async () => {
@@ -295,6 +306,61 @@ const OpportunitiesWidget = ({ onOpenOpportunityProfile }) => {
         if (probability >= 40) return 'bg-orange-100 text-orange-800';
         return 'bg-red-100 text-red-800';
     }, []);
+
+    // List management callbacks
+    const handleListChange = useCallback((listId) => {
+        setSelectedListId(listId);
+        loadOpportunities(1);
+    }, [loadOpportunities]);
+
+    const handleListsLoaded = useCallback((lists) => {
+        setAvailableLists(lists);
+    }, []);
+
+    // Bulk selection handlers
+    const handleSelectAll = useCallback((isSelected) => {
+        if (isSelected) {
+            setSelectedOpportunities(new Set(opportunities.map(opportunity => opportunity.id)));
+        } else {
+            setSelectedOpportunities(new Set());
+        }
+    }, [opportunities]);
+
+    const handleOpportunitySelection = useCallback((opportunityId, isSelected) => {
+        setSelectedOpportunities(prev => {
+            const newSet = new Set(prev);
+            if (isSelected) {
+                newSet.add(opportunityId);
+            } else {
+                newSet.delete(opportunityId);
+            }
+            return newSet;
+        });
+    }, []);
+
+    // Add selected opportunities to list
+    const addSelectedToList = useCallback(async (listId) => {
+        if (selectedOpportunities.size === 0) return;
+        
+        try {
+            const entities = Array.from(selectedOpportunities).map(opportunityId => ({
+                entityType: 'opportunity',
+                entityId: opportunityId
+            }));
+            
+            await axios.post(`${API_URL}/api/lists/${listId}/members`, {
+                entities
+            }, {
+                withCredentials: true
+            });
+            
+            setSelectedOpportunities(new Set());
+            alert(`${selectedOpportunities.size} opportunities added to list successfully`);
+        } catch (error) {
+            console.error('Error adding opportunities to list:', error);
+            alert('Failed to add opportunities to list');
+        }
+    }, [selectedOpportunities]);
 
     // Filter Modal Component
     const FilterModal = ({ isOpen, onClose }) => {
@@ -625,6 +691,16 @@ const OpportunitiesWidget = ({ onOpenOpportunityProfile }) => {
                 </div>
             </div>
 
+            {/* Lists Manager */}
+            <div className="mb-4">
+                <ListManager
+                    entityType="opportunity"
+                    selectedListId={selectedListId}
+                    onListChange={handleListChange}
+                    onListsLoaded={handleListsLoaded}
+                />
+            </div>
+
             {/* Search and Filters */}
             <div className="mb-4">
                 <div className="flex space-x-2 mb-2">
@@ -670,6 +746,37 @@ const OpportunitiesWidget = ({ onOpenOpportunityProfile }) => {
                 )}
             </div>
 
+            {/* Bulk Actions */}
+            {selectedOpportunities.size > 0 && (
+                <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                    <div className="flex items-center justify-between">
+                        <span className="text-sm text-blue-800">
+                            {selectedOpportunities.size} opportunities selected
+                        </span>
+                        <div className="flex space-x-2">
+                            <select
+                                onChange={(e) => e.target.value && addSelectedToList(e.target.value)}
+                                className="text-sm border border-gray-300 rounded px-2 py-1"
+                                value=""
+                            >
+                                <option value="">Add to List</option>
+                                {availableLists.map(list => (
+                                    <option key={list.id} value={list.id}>
+                                        {list.name}
+                                    </option>
+                                ))}
+                            </select>
+                            <button
+                                onClick={() => setSelectedOpportunities(new Set())}
+                                className="text-sm text-gray-600 hover:text-gray-800"
+                            >
+                                Clear Selection
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Opportunities Table */}
             {loading ? (
                 <div className="flex items-center justify-center py-8">
@@ -681,6 +788,12 @@ const OpportunitiesWidget = ({ onOpenOpportunityProfile }) => {
                         <thead className="bg-gray-50">
                             <tr>
                                 <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    <input
+                                        type="checkbox"
+                                        checked={selectedOpportunities.size > 0 && selectedOpportunities.size === opportunities.length}
+                                        onChange={(e) => handleSelectAll(e.target.checked)}
+                                        className="mr-2"
+                                    />
                                     Name
                                 </th>
                                 <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -704,13 +817,23 @@ const OpportunitiesWidget = ({ onOpenOpportunityProfile }) => {
                             {Array.isArray(opportunities) && opportunities.map((opportunity) => (
                                 <tr key={opportunity.id} className="hover:bg-gray-50">
                                     <td className="px-3 py-2 whitespace-nowrap">
-                                        <div 
-                                            className="text-sm font-medium text-blue-600 hover:text-blue-800 cursor-pointer"
-                                            onClick={() => onOpenOpportunityProfile && onOpenOpportunityProfile(opportunity.id, opportunity.name)}
-                                        >
-                                            {opportunity.name}
+                                        <div className="flex items-center">
+                                            <input
+                                                type="checkbox"
+                                                checked={selectedOpportunities.has(opportunity.id)}
+                                                onChange={(e) => handleOpportunitySelection(opportunity.id, e.target.checked)}
+                                                className="mr-2"
+                                            />
+                                            <div>
+                                                <div 
+                                                    className="text-sm font-medium text-blue-600 hover:text-blue-800 cursor-pointer"
+                                                    onClick={() => onOpenOpportunityProfile && onOpenOpportunityProfile(opportunity.id, opportunity.name)}
+                                                >
+                                                    {opportunity.name}
+                                                </div>
+                                                <div className="text-sm text-gray-500">{opportunity.type}</div>
+                                            </div>
                                         </div>
-                                        <div className="text-sm text-gray-500">{opportunity.type}</div>
                                     </td>
                                     <td className="px-3 py-2 whitespace-nowrap">
                                         <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStageColor(opportunity.stage)}`}>

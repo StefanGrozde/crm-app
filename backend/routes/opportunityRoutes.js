@@ -5,6 +5,7 @@ const Opportunity = require('../models/Opportunity');
 const Company = require('../models/Company');
 const User = require('../models/User');
 const Contact = require('../models/Contact');
+const ListMembership = require('../models/ListMembership');
 const { Op } = require('sequelize');
 
 // GET /api/opportunities - Get all opportunities with pagination and filtering
@@ -19,6 +20,7 @@ router.get('/', protect, async (req, res) => {
             assignedTo,
             type,
             company,
+            listId,
             sortBy = 'created_at',
             sortOrder = 'DESC'
         } = req.query;
@@ -68,7 +70,8 @@ router.get('/', protect, async (req, res) => {
             whereClause.companyId = company;
         }
 
-        const { count, rows: opportunities } = await Opportunity.findAndCountAll({
+        // Set up query options
+        const queryOptions = {
             where: whereClause,
             include: [
                 {
@@ -95,7 +98,38 @@ router.get('/', protect, async (req, res) => {
             order: [[sortBy, sortOrder.toUpperCase()]],
             limit: parseInt(limit),
             offset: parseInt(offset)
-        });
+        };
+
+        // Filter by list if specified
+        if (listId) {
+            // Get opportunity IDs from the list
+            const listMemberships = await ListMembership.findAll({
+                where: {
+                    listId: listId,
+                    entityType: 'opportunity'
+                },
+                attributes: ['entityId']
+            });
+            
+            const opportunityIds = listMemberships.map(m => m.entityId);
+            
+            if (opportunityIds.length > 0) {
+                whereClause.id = { [Op.in]: opportunityIds };
+            } else {
+                // If list is empty, return no opportunities
+                return res.json({
+                    opportunities: [],
+                    pagination: {
+                        currentPage: parseInt(page),
+                        totalPages: 0,
+                        totalItems: 0,
+                        itemsPerPage: parseInt(limit)
+                    }
+                });
+            }
+        }
+
+        const { count, rows: opportunities } = await Opportunity.findAndCountAll(queryOptions);
 
         res.json({
             opportunities,

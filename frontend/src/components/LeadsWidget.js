@@ -2,6 +2,7 @@ import React, { useState, useEffect, useContext, useCallback, memo } from 'react
 import { createPortal } from 'react-dom';
 import axios from 'axios';
 import { AuthContext } from '../context/AuthContext';
+import ListManager from './ListManager';
 
 const API_URL = process.env.REACT_APP_API_URL;
 
@@ -29,6 +30,11 @@ const LeadsWidget = ({ onOpenLeadProfile }) => {
         source: '',
         company: ''
     });
+    
+    // List filtering state
+    const [selectedListId, setSelectedListId] = useState(null);
+    const [selectedLeads, setSelectedLeads] = useState(new Set());
+    const [availableLists, setAvailableLists] = useState([]);
     
     // Separate state for search input
     const [searchInput, setSearchInput] = useState('');
@@ -80,6 +86,11 @@ const LeadsWidget = ({ onOpenLeadProfile }) => {
                 ...filters
             });
             
+            // Add list filter if selected
+            if (selectedListId) {
+                params.append('listId', selectedListId);
+            }
+            
             const response = await axios.get(`${API_URL}/api/leads?${params}`, {
                 withCredentials: true
             });
@@ -92,7 +103,7 @@ const LeadsWidget = ({ onOpenLeadProfile }) => {
         } finally {
             setLoading(false);
         }
-    }, [filters, pagination.itemsPerPage]);
+    }, [filters, pagination.itemsPerPage, selectedListId]);
 
     // Load dropdown data
     const loadDropdownData = useCallback(async () => {
@@ -302,6 +313,61 @@ const LeadsWidget = ({ onOpenLeadProfile }) => {
         };
         return colors[priority] || 'bg-gray-100 text-gray-800';
     }, []);
+
+    // List management callbacks
+    const handleListChange = useCallback((listId) => {
+        setSelectedListId(listId);
+        loadLeads(1);
+    }, [loadLeads]);
+
+    const handleListsLoaded = useCallback((lists) => {
+        setAvailableLists(lists);
+    }, []);
+
+    // Bulk selection handlers
+    const handleSelectAll = useCallback((isSelected) => {
+        if (isSelected) {
+            setSelectedLeads(new Set(leads.map(lead => lead.id)));
+        } else {
+            setSelectedLeads(new Set());
+        }
+    }, [leads]);
+
+    const handleLeadSelection = useCallback((leadId, isSelected) => {
+        setSelectedLeads(prev => {
+            const newSet = new Set(prev);
+            if (isSelected) {
+                newSet.add(leadId);
+            } else {
+                newSet.delete(leadId);
+            }
+            return newSet;
+        });
+    }, []);
+
+    // Add selected leads to list
+    const addSelectedToList = useCallback(async (listId) => {
+        if (selectedLeads.size === 0) return;
+        
+        try {
+            const entities = Array.from(selectedLeads).map(leadId => ({
+                entityType: 'lead',
+                entityId: leadId
+            }));
+            
+            await axios.post(`${API_URL}/api/lists/${listId}/members`, {
+                entities
+            }, {
+                withCredentials: true
+            });
+            
+            setSelectedLeads(new Set());
+            alert(`${selectedLeads.size} leads added to list successfully`);
+        } catch (error) {
+            console.error('Error adding leads to list:', error);
+            alert('Failed to add leads to list');
+        }
+    }, [selectedLeads]);
 
     // Filter Modal Component
     const FilterModal = ({ isOpen, onClose }) => {
@@ -625,6 +691,16 @@ const LeadsWidget = ({ onOpenLeadProfile }) => {
                 </div>
             </div>
 
+            {/* Lists Manager */}
+            <div className="mb-4">
+                <ListManager
+                    entityType="lead"
+                    selectedListId={selectedListId}
+                    onListChange={handleListChange}
+                    onListsLoaded={handleListsLoaded}
+                />
+            </div>
+
             {/* Search and Filters */}
             <div className="mb-4">
                 <div className="flex space-x-2 mb-2">
@@ -670,6 +746,37 @@ const LeadsWidget = ({ onOpenLeadProfile }) => {
                 )}
             </div>
 
+            {/* Bulk Actions */}
+            {selectedLeads.size > 0 && (
+                <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                    <div className="flex items-center justify-between">
+                        <span className="text-sm text-blue-800">
+                            {selectedLeads.size} leads selected
+                        </span>
+                        <div className="flex space-x-2">
+                            <select
+                                onChange={(e) => e.target.value && addSelectedToList(e.target.value)}
+                                className="text-sm border border-gray-300 rounded px-2 py-1"
+                                value=""
+                            >
+                                <option value="">Add to List</option>
+                                {availableLists.map(list => (
+                                    <option key={list.id} value={list.id}>
+                                        {list.name}
+                                    </option>
+                                ))}
+                            </select>
+                            <button
+                                onClick={() => setSelectedLeads(new Set())}
+                                className="text-sm text-gray-600 hover:text-gray-800"
+                            >
+                                Clear Selection
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Leads Table */}
             {loading ? (
                 <div className="flex items-center justify-center py-8">
@@ -681,6 +788,12 @@ const LeadsWidget = ({ onOpenLeadProfile }) => {
                         <thead className="bg-gray-50">
                             <tr>
                                 <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    <input
+                                        type="checkbox"
+                                        checked={selectedLeads.size > 0 && selectedLeads.size === leads.length}
+                                        onChange={(e) => handleSelectAll(e.target.checked)}
+                                        className="mr-2"
+                                    />
                                     Title
                                 </th>
                                 <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -704,13 +817,23 @@ const LeadsWidget = ({ onOpenLeadProfile }) => {
                             {Array.isArray(leads) && leads.map((lead) => (
                                 <tr key={lead.id} className="hover:bg-gray-50">
                                     <td className="px-3 py-2 whitespace-nowrap">
-                                        <div 
-                                            className="text-sm font-medium text-gray-900 cursor-pointer hover:text-blue-600"
-                                            onClick={() => handleLeadClick(lead)}
-                                        >
-                                            {lead.title}
+                                        <div className="flex items-center">
+                                            <input
+                                                type="checkbox"
+                                                checked={selectedLeads.has(lead.id)}
+                                                onChange={(e) => handleLeadSelection(lead.id, e.target.checked)}
+                                                className="mr-2"
+                                            />
+                                            <div>
+                                                <div 
+                                                    className="text-sm font-medium text-gray-900 cursor-pointer hover:text-blue-600"
+                                                    onClick={() => handleLeadClick(lead)}
+                                                >
+                                                    {lead.title}
+                                                </div>
+                                                <div className="text-sm text-gray-500">{lead.source}</div>
+                                            </div>
                                         </div>
-                                        <div className="text-sm text-gray-500">{lead.source}</div>
                                     </td>
                                     <td className="px-3 py-2 whitespace-nowrap">
                                         <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(lead.status)}`}>

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useContext, useCallback, memo } from 'react';
 import axios from 'axios';
 import { AuthContext } from '../context/AuthContext';
+import ListManager from './ListManager';
 
 const API_URL = process.env.REACT_APP_API_URL;
 
@@ -27,6 +28,11 @@ const BusinessWidget = ({ onOpenBusinessProfile }) => {
         size: '',
         status: ''
     });
+    
+    // List filtering state
+    const [selectedListId, setSelectedListId] = useState(null);
+    const [selectedBusinesses, setSelectedBusinesses] = useState(new Set());
+    const [availableLists, setAvailableLists] = useState([]);
     
     // Separate search input state
     const [searchInput, setSearchInput] = useState('');
@@ -72,6 +78,11 @@ const BusinessWidget = ({ onOpenBusinessProfile }) => {
                 ...filters
             });
             
+            // Add list filter if selected
+            if (selectedListId) {
+                params.append('listId', selectedListId);
+            }
+            
             const response = await axios.get(`${API_URL}/api/businesses?${params}`, {
                 withCredentials: true
             });
@@ -84,7 +95,7 @@ const BusinessWidget = ({ onOpenBusinessProfile }) => {
         } finally {
             setLoading(false);
         }
-    }, [filters, pagination.itemsPerPage]);
+    }, [filters, pagination.itemsPerPage, selectedListId]);
 
     // Logic: Load dropdown data
     const loadDropdownData = useCallback(async () => {
@@ -263,6 +274,62 @@ const BusinessWidget = ({ onOpenBusinessProfile }) => {
         }
     }, [loadData, pagination.currentPage]);
 
+    // List management callbacks
+    const handleListChange = useCallback((listId) => {
+        setSelectedListId(listId);
+        loadData(1);
+    }, [loadData]);
+
+    const handleListsLoaded = useCallback((lists) => {
+        setAvailableLists(lists);
+    }, []);
+
+    // Bulk selection handlers
+    const handleSelectAll = useCallback((isSelected) => {
+        if (isSelected) {
+            setSelectedBusinesses(new Set(data.map(business => business.id)));
+        } else {
+            setSelectedBusinesses(new Set());
+        }
+    }, [data]);
+
+    const handleBusinessSelection = useCallback((businessId, isSelected) => {
+        setSelectedBusinesses(prev => {
+            const newSet = new Set(prev);
+            if (isSelected) {
+                newSet.add(businessId);
+            } else {
+                newSet.delete(businessId);
+            }
+            return newSet;
+        });
+    }, []);
+
+    // Add selected businesses to list
+    const addSelectedToList = useCallback(async (listId) => {
+        if (selectedBusinesses.size === 0) return;
+        
+        try {
+            // Note: Using 'company' as entityType since businesses are companies
+            const entities = Array.from(selectedBusinesses).map(businessId => ({
+                entityType: 'company',
+                entityId: businessId
+            }));
+            
+            await axios.post(`${API_URL}/api/lists/${listId}/members`, {
+                entities
+            }, {
+                withCredentials: true
+            });
+            
+            setSelectedBusinesses(new Set());
+            alert(`${selectedBusinesses.size} businesses added to list successfully`);
+        } catch (error) {
+            console.error('Error adding businesses to list:', error);
+            alert('Failed to add businesses to list');
+        }
+    }, [selectedBusinesses]);
+
     // Rendering: Loading state
     if (loading) {
         return (
@@ -324,6 +391,16 @@ const BusinessWidget = ({ onOpenBusinessProfile }) => {
                         <span>Add</span>
                     </button>
                 </div>
+            </div>
+
+            {/* Lists Manager */}
+            <div className="mb-4">
+                <ListManager
+                    entityType="company"
+                    selectedListId={selectedListId}
+                    onListChange={handleListChange}
+                    onListsLoaded={handleListsLoaded}
+                />
             </div>
 
             {/* Search */}
@@ -388,12 +465,49 @@ const BusinessWidget = ({ onOpenBusinessProfile }) => {
                 </div>
             )}
 
+            {/* Bulk Actions */}
+            {selectedBusinesses.size > 0 && (
+                <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                    <div className="flex items-center justify-between">
+                        <span className="text-sm text-blue-800">
+                            {selectedBusinesses.size} businesses selected
+                        </span>
+                        <div className="flex space-x-2">
+                            <select
+                                onChange={(e) => e.target.value && addSelectedToList(e.target.value)}
+                                className="text-sm border border-gray-300 rounded px-2 py-1"
+                                value=""
+                            >
+                                <option value="">Add to List</option>
+                                {availableLists.map(list => (
+                                    <option key={list.id} value={list.id}>
+                                        {list.name}
+                                    </option>
+                                ))}
+                            </select>
+                            <button
+                                onClick={() => setSelectedBusinesses(new Set())}
+                                className="text-sm text-gray-600 hover:text-gray-800"
+                            >
+                                Clear Selection
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Data Table */}
             <div className="overflow-x-auto" style={{ maxHeight: 'calc(100vh - 300px)' }}>
                 <table className="min-w-full bg-white border border-gray-200 rounded-lg">
                     <thead className="bg-gray-50">
                         <tr>
                             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b">
+                                <input
+                                    type="checkbox"
+                                    checked={selectedBusinesses.size > 0 && selectedBusinesses.size === data.length}
+                                    onChange={(e) => handleSelectAll(e.target.checked)}
+                                    className="mr-2"
+                                />
                                 Business
                             </th>
                             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b">
@@ -418,6 +532,12 @@ const BusinessWidget = ({ onOpenBusinessProfile }) => {
                             <tr key={item.id} className="hover:bg-gray-50 transition-colors">
                                 <td className="px-4 py-3 whitespace-nowrap">
                                     <div className="flex items-center">
+                                        <input
+                                            type="checkbox"
+                                            checked={selectedBusinesses.has(item.id)}
+                                            onChange={(e) => handleBusinessSelection(item.id, e.target.checked)}
+                                            className="mr-2"
+                                        />
                                         <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center mr-3">
                                             <span className="text-xs font-medium text-blue-600">
                                                 {item.name.charAt(0)}
