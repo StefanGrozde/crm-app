@@ -1,8 +1,11 @@
-import React, { useState, useRef, useContext } from 'react';
+import React, { useState, useRef, useContext, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import axios from 'axios';
 import { AuthContext } from '../context/AuthContext';
 import SearchBar from './SearchBar';
 import EditUserPopup from './EditUserPopup';
+
+const API_URL = process.env.REACT_APP_API_URL;
 
 const Navbar = ({ 
     views, 
@@ -20,11 +23,38 @@ const Navbar = ({
     console.log('Navbar render - views:', views, 'type:', typeof views);
     const { user, logout } = useContext(AuthContext);
     
+    // Company state
+    const [company, setCompany] = useState(null);
+    const [loadingCompany, setLoadingCompany] = useState(true);
+    
     // Menu states
     const [menuOpen, setMenuOpen] = useState(false);
     const [pagesMenuOpen, setPagesMenuOpen] = useState(false);
     const [isEditPopupOpen, setEditPopupOpen] = useState(false);
     const menuRef = useRef(null);
+
+    // Fetch company details
+    useEffect(() => {
+        const fetchCompany = async () => {
+            if (!user?.companyId) {
+                setLoadingCompany(false);
+                return;
+            }
+            
+            try {
+                const response = await axios.get(`${API_URL}/api/companies/${user.companyId}`, {
+                    withCredentials: true
+                });
+                setCompany(response.data);
+            } catch (error) {
+                console.error('Error fetching company:', error);
+            } finally {
+                setLoadingCompany(false);
+            }
+        };
+
+        fetchCompany();
+    }, [user?.companyId]);
 
     // Handle clicks outside menu
     React.useEffect(() => {
@@ -59,6 +89,13 @@ const Navbar = ({
         }
     };
 
+    const handleOpenMyViews = () => {
+        setMenuOpen(false);
+        if (onOpenMyViews) {
+            onOpenMyViews();
+        }
+    };
+
     // Convenience functions for specific pages
     const handleOpenContactsTab = () => onOpenPageTab('contacts', 'Contacts', 'contacts-widget');
     const handleOpenLeadsTab = () => onOpenPageTab('leads', 'Leads', 'leads-widget');
@@ -74,7 +111,9 @@ const Navbar = ({
             <header className="bg-white shadow-md w-full">
                 <div className="w-full px-4 sm:px-6 lg:px-8">
                     <div className="flex items-center justify-between py-4">
-                        <h1 className="text-2xl font-bold text-gray-900 flex-shrink-0">Dashboard</h1>
+                        <h1 className="text-2xl font-bold text-gray-900 flex-shrink-0">
+                            {loadingCompany ? 'Loading...' : company ? `${company.name}'s Dashboard` : 'Dashboard'}
+                        </h1>
                         
                         {/* Search Bar - Centered */}
                         <div className="flex-1 flex justify-center px-8">
@@ -219,18 +258,6 @@ const Navbar = ({
                                 {isEditMode ? 'In Edit Mode' : 'Edit Layout'}
                             </button>
 
-                            {/* My Views button */}
-                            <button
-                                onClick={onOpenMyViews}
-                                className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors flex items-center space-x-2"
-                                title="Manage your dashboard views"
-                            >
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                                </svg>
-                                <span>My Views</span>
-                            </button>
-
                             {/* User menu */}
                             <div className="relative" ref={menuRef}>
                                 <button
@@ -251,6 +278,15 @@ const Navbar = ({
                                         >
                                             View Profile
                                         </button>
+                                        <button 
+                                            onClick={handleOpenMyViews}
+                                            className="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
+                                        >
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                                            </svg>
+                                            <span>My Views</span>
+                                        </button>
                                         {user.role === 'Administrator' && (
                                             <Link 
                                                 to="/edit-company" 
@@ -260,6 +296,7 @@ const Navbar = ({
                                                 Edit Company
                                             </Link>
                                         )}
+                                        <div className="border-t border-gray-200 my-1"></div>
                                         <button 
                                             onClick={handleLogout}
                                             className="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
