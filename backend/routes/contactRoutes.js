@@ -270,19 +270,7 @@ router.get('/:id', protect, async (req, res) => {
                     model: Sale,
                     as: 'sales',
                     attributes: ['id', 'saleNumber', 'title', 'description', 'status', 'saleDate', 'amount', 'currency', 'totalAmount', 'paymentStatus', 'paymentDate', 'category', 'source'],
-                    order: [['saleDate', 'DESC']],
-                    include: [
-                        {
-                            model: User,
-                            as: 'assignedUser',
-                            attributes: ['id', 'firstName', 'lastName']
-                        },
-                        {
-                            model: User,
-                            as: 'creator',
-                            attributes: ['id', 'firstName', 'lastName']
-                        }
-                    ]
+                    order: [['saleDate', 'DESC']]
                 }
             ]
         });
