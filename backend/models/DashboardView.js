@@ -14,6 +14,7 @@ const DashboardView = sequelize.define('DashboardView', {
     },
     userId: {
         type: DataTypes.INTEGER,
+        field: 'userId', // Explicitly map to camelCase column
         references: {
             model: User,
             key: 'id',
@@ -24,6 +25,14 @@ const DashboardView = sequelize.define('DashboardView', {
         type: DataTypes.BOOLEAN,
         field: 'is_default', // Map to snake_case column
         defaultValue: false
+    },
+    createdAt: {
+        type: DataTypes.DATE,
+        field: 'createdAt' // Explicitly map to camelCase column
+    },
+    updatedAt: {
+        type: DataTypes.DATE,
+        field: 'updatedAt' // Explicitly map to camelCase column
     }
 }, {
     tableName: 'dashboard_views',
