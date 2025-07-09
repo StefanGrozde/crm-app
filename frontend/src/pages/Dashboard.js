@@ -707,14 +707,6 @@ const Dashboard = () => {
                 h: 4,
                 widgetKey: 'search-result-widget',
                 resultData: result // Store the result data in the layout item
-            }, {
-                i: `search-result-details-${result.id}`,
-                x: 12, // This extends beyond the 12-column grid
-                y: 0,
-                w: 8,
-                h: 4,
-                widgetKey: 'search-result-widget',
-                resultData: { ...result, isDetails: true } // Additional details widget
             }];
         }
         
@@ -1133,34 +1125,6 @@ const Dashboard = () => {
                         >
                             Force Refresh
                         </button>
-                        <button
-                            onClick={() => {
-                                // Test scroll functionality by creating a wide layout
-                                const testLayout = [
-                                    { i: 'test-widget-1', x: 0, y: 0, w: 12, h: 4, widgetKey: 'contacts-widget', widgetData: {} },
-                                    { i: 'test-widget-2', x: 12, y: 0, w: 8, h: 4, widgetKey: 'leads-widget', widgetData: {} },
-                                    { i: 'test-widget-3', x: 20, y: 0, w: 6, h: 4, widgetKey: 'opportunities-widget', widgetData: {} }
-                                ];
-                                const testTabId = 'test-scroll-tab';
-                                const testTab = {
-                                    id: testTabId,
-                                    name: 'Test Scroll Tab',
-                                    isDefault: false,
-                                    color: 'purple'
-                                };
-                                
-                                setOpenTabs(prev => [...prev, testTab]);
-                                setTabLayouts(prev => ({ ...prev, [testTabId]: testLayout }));
-                                setActiveTabId(testTabId);
-                                setCurrentViewId(testTabId);
-                                setLayout(testLayout);
-                                console.log('Created test scroll tab with layout:', testLayout);
-                            }}
-                            className="px-2 py-1 bg-indigo-500 text-white text-xs rounded hover:bg-indigo-600"
-                            title="Test scroll functionality"
-                        >
-                            Test Scroll
-                        </button>
                     </div>
                 </div>
 
@@ -1226,7 +1190,6 @@ const Dashboard = () => {
                             layout={layout}
                             widgetLibrary={widgetLibrary}
                             isVisible={!isTabSwitching}
-                            isDashboardView={typeof activeTabId === 'number' || (typeof activeTabId === 'string' && /^\d+$/.test(activeTabId))}
                             onWidgetReady={(widgetKey, loadTime) => {
                                 console.log(`Widget ${widgetKey} ready in ${loadTime}ms`);
                             }}
