@@ -1069,16 +1069,11 @@ const ContactsWidget = ({ onOpenContactProfile }) => {
 
             {/* Search */}
             <div className="mb-4">
-                <input
-                    ref={searchInputRef}
-                    type="text"
+                <WidgetSearchBar
                     placeholder="Search contacts..."
-                    onChange={handleSearchInputChange}
-                    onKeyDown={(e) => {
-                        // Prevent any key events from bubbling up to parent components
-                        e.stopPropagation();
-                    }}
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    onSearch={handleSearchInputChange}
+                    searchTerm={searchTerm}
+                    className="w-full"
                 />
             </div>
 
@@ -1094,9 +1089,6 @@ const ContactsWidget = ({ onOpenContactProfile }) => {
                                     <button
                                         onClick={() => {
                                             setSearchTerm('');
-                                            if (searchInputRef.current) {
-                                                searchInputRef.current.value = '';
-                                            }
                                             loadContacts(1);
                                         }}
                                         className="ml-1 inline-flex items-center justify-center w-4 h-4 rounded-full text-blue-400 hover:bg-blue-200 hover:text-blue-500"

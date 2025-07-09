@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import axios from 'axios';
 import { AuthContext } from '../context/AuthContext';
 import ListManager from './ListManager';
+import WidgetSearchBar from './WidgetSearchBar';
 
 const API_URL = process.env.REACT_APP_API_URL;
 

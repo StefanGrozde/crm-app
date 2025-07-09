@@ -2,6 +2,7 @@ import React, { useState, useEffect, useContext, useCallback, memo } from 'react
 import axios from 'axios';
 import { AuthContext } from '../context/AuthContext';
 import ListManager from './ListManager';
+import WidgetSearchBar from './WidgetSearchBar';
 
 const API_URL = process.env.REACT_APP_API_URL;
 
@@ -131,26 +132,17 @@ const BusinessWidget = ({ onOpenBusinessProfile }) => {
 
     // Logic: Handle search input changes
     const handleSearchInputChange = useCallback((value) => {
-        if (searchInput === value) return;
-        
         setSearchInput(value);
-        
-        if (window.searchTimeout) {
-            clearTimeout(window.searchTimeout);
-        }
-        
-        window.searchTimeout = setTimeout(() => {
-            setFilters(prev => {
-                const newFilters = { ...prev, search: value };
-                if (!value.trim()) {
-                    const { search, ...otherFilters } = newFilters;
-                    return otherFilters;
-                }
-                return newFilters;
-            });
-            loadData(1);
-        }, 300);
-    }, [searchInput, loadData]);
+        setFilters(prev => {
+            const newFilters = { ...prev, search: value };
+            if (!value.trim()) {
+                const { search, ...otherFilters } = newFilters;
+                return otherFilters;
+            }
+            return newFilters;
+        });
+        loadData(1);
+    }, [loadData]);
 
     // Logic: Handle filter form input changes
     const handleFilterInputChange = useCallback((e) => {
@@ -405,13 +397,11 @@ const BusinessWidget = ({ onOpenBusinessProfile }) => {
 
             {/* Search */}
             <div className="mb-4">
-                <input
-                    type="text"
+                <WidgetSearchBar
                     placeholder="Search businesses..."
-                    value={searchInput}
-                    onChange={(e) => handleSearchInputChange(e.target.value)}
-                    onKeyDown={(e) => e.stopPropagation()}
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    onSearch={handleSearchInputChange}
+                    searchTerm={searchInput}
+                    className="w-full"
                 />
             </div>
 

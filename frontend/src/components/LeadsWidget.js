@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import axios from 'axios';
 import { AuthContext } from '../context/AuthContext';
 import ListManager from './ListManager';
+import WidgetSearchBar from './WidgetSearchBar';
 
 const API_URL = process.env.REACT_APP_API_URL;
 
@@ -146,26 +147,17 @@ const LeadsWidget = ({ onOpenLeadProfile }) => {
 
     // Handle search input changes
     const handleSearchInputChange = useCallback((value) => {
-        if (searchInput === value) return;
-        
         setSearchInput(value);
-        
-        if (window.searchTimeout) {
-            clearTimeout(window.searchTimeout);
-        }
-        
-        window.searchTimeout = setTimeout(() => {
-            setFilters(prev => {
-                const newFilters = { ...prev, search: value };
-                if (!value.trim()) {
-                    const { search, ...otherFilters } = newFilters;
-                    return otherFilters;
-                }
-                return newFilters;
-            });
-            loadLeads(1);
-        }, 300);
-    }, [searchInput, loadLeads]);
+        setFilters(prev => {
+            const newFilters = { ...prev, search: value };
+            if (!value.trim()) {
+                const { search, ...otherFilters } = newFilters;
+                return otherFilters;
+            }
+            return newFilters;
+        });
+        loadLeads(1);
+    }, [loadLeads]);
 
     // Handle filter form input changes
     const handleFilterInputChange = useCallback((e) => {
@@ -704,12 +696,11 @@ const LeadsWidget = ({ onOpenLeadProfile }) => {
             {/* Search and Filters */}
             <div className="mb-4">
                 <div className="flex space-x-2 mb-2">
-                    <input
-                        type="text"
+                    <WidgetSearchBar
                         placeholder="Search leads..."
-                        value={searchInput}
-                        onChange={(e) => handleSearchInputChange(e.target.value)}
-                        className="flex-1 border border-gray-300 rounded-md px-3 py-2 text-sm"
+                        onSearch={handleSearchInputChange}
+                        searchTerm={searchInput}
+                        className="flex-1"
                     />
                 </div>
                 

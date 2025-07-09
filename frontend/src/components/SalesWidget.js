@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import axios from 'axios';
 import { AuthContext } from '../context/AuthContext';
 import ListManager from './ListManager';
+import WidgetSearchBar from './WidgetSearchBar';
 
 const API_URL = process.env.REACT_APP_API_URL;
 
@@ -233,18 +234,9 @@ const SalesWidget = ({ onOpenSaleProfile }) => {
 
     // Handle search input changes
     const handleSearchChange = useCallback((value) => {
-        if (searchTerm === value) return;
-        
         setSearchTerm(value);
-        
-        if (window.salesSearchTimeout) {
-            clearTimeout(window.salesSearchTimeout);
-        }
-        
-        window.salesSearchTimeout = setTimeout(() => {
-            loadSales(1);
-        }, 300);
-    }, [searchTerm, loadSales]);
+        loadSales(1);
+    }, [loadSales]);
 
     // Handle filter form input changes
     const handleFilterInputChange = useCallback((e) => {
@@ -591,14 +583,11 @@ const SalesWidget = ({ onOpenSaleProfile }) => {
 
             {/* Search */}
             <div className="mb-4">
-                <input
-                    ref={searchInputRef}
-                    type="text"
+                <WidgetSearchBar
                     placeholder="Search sales..."
-                    defaultValue={searchTerm}
-                    onChange={(e) => handleSearchChange(e.target.value)}
-                    onKeyDown={(e) => e.stopPropagation()}
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    onSearch={handleSearchChange}
+                    searchTerm={searchTerm}
+                    className="w-full"
                 />
             </div>
 
