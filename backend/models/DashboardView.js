@@ -22,6 +22,7 @@ const DashboardView = sequelize.define('DashboardView', {
     },
     is_default: {
         type: DataTypes.BOOLEAN,
+        field: 'is_default', // Map to snake_case column
         defaultValue: false
     }
 }, {
@@ -37,6 +38,7 @@ const DashboardWidget = sequelize.define('DashboardWidget', {
     },
     widgetKey: {
         type: DataTypes.STRING,
+        field: 'widgetKey', // Map to camelCase column
         allowNull: false,
     },
     x: {
@@ -57,6 +59,7 @@ const DashboardWidget = sequelize.define('DashboardWidget', {
     },
     viewId: {
         type: DataTypes.INTEGER,
+        field: 'viewId', // Map to camelCase column
         references: {
             model: DashboardView,
             key: 'id',
