@@ -359,8 +359,11 @@ const Dashboard = () => {
                 console.log('Fetching views...');
                 const viewsResponse = await axios.get(`${API_URL}/api/dashboard/views`, { withCredentials: true });
                 console.log('Views response:', viewsResponse);
-                setViews(viewsResponse.data);
-                console.log('Views loaded:', viewsResponse.data);
+                
+                // Extract views from the paginated response
+                const viewsData = viewsResponse.data.items || viewsResponse.data;
+                setViews(viewsData);
+                console.log('Views loaded:', viewsData);
 
                 // Check if we have a saved session
                 const sessionExists = hasSession();
@@ -376,12 +379,19 @@ const Dashboard = () => {
                     const savedTabs = openTabs || [];
                     
                     // Validate that all saved tabs correspond to existing views
+                    console.log('Validating saved tabs against views...');
+                    console.log('Saved tabs:', savedTabs);
+                    console.log('Available views:', viewsData.map(v => ({ id: v.id, name: v.name, isDefault: v.isDefault })));
+                    
                     const validTabs = savedTabs.filter(tab => {
                         // Check if it's a search result tab, main page tab, or a regular view tab
                         if (String(tab.id).startsWith('search-') || String(tab.id).includes('-page')) {
+                            console.log('Tab is special type (search/page):', tab.id);
                             return true; // Search result tabs and main page tabs are always valid
                         }
-                        return viewsResponse.data.some(view => String(view.id) === String(tab.id));
+                        const isValid = viewsData.some(view => String(view.id) === String(tab.id));
+                        console.log(`Tab ${tab.id} validation:`, isValid);
+                        return isValid;
                     });
 
                     if (validTabs.length > 0) {
@@ -402,17 +412,29 @@ const Dashboard = () => {
                             await switchToTab(validTabs[0].id);
                         }
                     } else {
-                        console.log('No valid tabs in session, creating default view');
-                        await createDefaultView();
+                        console.log('No valid tabs in session, checking if views exist...');
+                        if (viewsData && viewsData.length > 0) {
+                            console.log('Views exist but no valid tabs, opening first view');
+                            const firstView = viewsData.find(v => v.isDefault) || viewsData[0];
+                            await openViewAsTab(firstView);
+                        } else {
+                            console.log('No views exist, creating default view');
+                            await createDefaultView();
+                        }
                     }
                 } else {
                     // No saved session, check if user has any views
-                    if (!viewsResponse.data || viewsResponse.data.length === 0) {
+                    console.log('No saved session, checking for existing views...');
+                    console.log('Views data:', viewsData);
+                    console.log('Views data length:', viewsData ? viewsData.length : 'undefined');
+                    
+                    if (!viewsData || viewsData.length === 0) {
                         console.log('No views found, creating default view...');
                         await createDefaultView();
                     } else {
                         // Load the first view (or a view marked as default) as the first tab
-                        const defaultView = viewsResponse.data.find(v => v.isDefault) || viewsResponse.data[0];
+                        console.log('Found existing views:', viewsData.map(v => ({ id: v.id, name: v.name, isDefault: v.isDefault })));
+                        const defaultView = viewsData.find(v => v.isDefault) || viewsData[0];
                         console.log('Loading default view as first tab:', defaultView);
                         await openViewAsTab(defaultView);
                     }
@@ -422,9 +444,13 @@ const Dashboard = () => {
                 console.error("Error details:", error.response?.data);
                 console.error("Error status:", error.response?.status);
                 
-                // Create a fallback default view
-                console.log('Creating fallback default view due to error');
-                await createDefaultView();
+                // Only create a fallback default view if we don't have any views
+                if (!views || views.length === 0) {
+                    console.log('Creating fallback default view due to error');
+                    await createDefaultView();
+                } else {
+                    console.log('Error occurred but views exist, not creating fallback');
+                }
             } finally {
                 setIsLoading(false);
             }
@@ -440,6 +466,14 @@ const Dashboard = () => {
     const createDefaultView = async () => {
         try {
             console.log('Creating default view...');
+            
+            // Check if a default view already exists
+            const existingDefaultView = views.find(v => v.isDefault);
+            if (existingDefaultView) {
+                console.log('Default view already exists, opening it instead:', existingDefaultView);
+                await openViewAsTab(existingDefaultView);
+                return;
+            }
             
             // Get available widgets to populate the default view
             const availableWidgets = widgetLibrary.slice(0, 4); // Take first 4 widgets
@@ -466,8 +500,7 @@ const Dashboard = () => {
             console.log('Default view created:', response.data);
             
             // Update state with the new default view
-            const newViews = [response.data];
-            setViews(newViews);
+            setViews(prevViews => [response.data, ...prevViews]);
             
             // Open the newly created default view as a tab
             await openViewAsTab(response.data);
@@ -615,15 +648,18 @@ const Dashboard = () => {
         try {
             console.log('Refreshing views list from backend');
             const { data } = await axios.get(`${API_URL}/api/dashboard/views`, { withCredentials: true });
-            setViews(data);
-            console.log('Views list refreshed successfully:', data.length, 'views');
+            
+            // Extract views from the paginated response
+            const viewsData = data.items || data;
+            setViews(viewsData);
+            console.log('Views list refreshed successfully:', viewsData.length, 'views');
             
             // Validate that current tabs still exist
             const validTabs = openTabs.filter(tab => {
                 if (String(tab.id).startsWith('search-') || String(tab.id).includes('-page')) {
                     return true; // Search result tabs and main page tabs are always valid
                 }
-                return data.some(view => String(view.id) === String(tab.id));
+                return viewsData.some(view => String(view.id) === String(tab.id));
             });
             
             if (validTabs.length !== openTabs.length) {

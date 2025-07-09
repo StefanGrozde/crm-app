@@ -17,6 +17,10 @@ const sequelize = new Sequelize(
       }
     },
     logging: false, // Set to console.log to see the generated SQL queries
+    define: {
+      underscored: true, // This enables automatic snake_case to camelCase conversion
+      freezeTableName: true // This prevents Sequelize from pluralizing table names
+    }
   }
 );
 

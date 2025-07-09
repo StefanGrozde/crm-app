@@ -20,9 +20,10 @@ const DashboardView = sequelize.define('DashboardView', {
         },
         allowNull: false,
     },
-    is_default: {
+    isDefault: {
         type: DataTypes.BOOLEAN,
-        defaultValue: false
+        defaultValue: false,
+        field: 'is_default' // Explicitly map to the snake_case column
     }
 }, {
     tableName: 'dashboard_views',
@@ -79,13 +80,13 @@ DashboardView.belongsTo(User, { foreignKey: 'userId' });
 DashboardView.setDefaultForUser = async function(viewId, userId) {
     // First, remove default from all user's views
     await this.update(
-        { is_default: false },
+        { isDefault: false },
         { where: { userId: userId } }
     );
     
     // Then set the specified view as default
     await this.update(
-        { is_default: true },
+        { isDefault: true },
         { where: { id: viewId, userId: userId } }
     );
 };
@@ -94,7 +95,7 @@ DashboardView.findDefaultForUser = async function(userId) {
     return await this.findOne({
         where: { 
             userId: userId,
-            is_default: true 
+            isDefault: true 
         },
         include: [{ model: DashboardWidget, as: 'widgets' }]
     });

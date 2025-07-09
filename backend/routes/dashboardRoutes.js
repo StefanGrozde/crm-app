@@ -31,7 +31,7 @@ router.get('/views', protect, async (req, res) => {
         const { count, rows: views } = await DashboardView.findAndCountAll({
             where: whereClause,
             include: [{ model: DashboardWidget, as: 'widgets' }],
-            order: [['is_default', 'DESC'], ['createdAt', sortOrder.toUpperCase()]],
+            order: [['isDefault', 'DESC'], ['createdAt', sortOrder.toUpperCase()]],
             limit: parseInt(limit),
             offset: parseInt(offset)
         });
@@ -93,7 +93,7 @@ router.post('/views', protect, async (req, res) => {
         const view = await DashboardView.create({
             name: name.trim(),
             userId: req.user.id,
-            is_default: isDefault
+            isDefault: isDefault
         });
         
         // Add widgets if provided
@@ -143,7 +143,7 @@ router.put('/views/:id', protect, async (req, res) => {
         // Update view properties
         const updateData = {};
         if (name !== undefined) updateData.name = name.trim();
-        if (isDefault !== undefined) updateData.is_default = isDefault;
+        if (isDefault !== undefined) updateData.isDefault = isDefault;
         
         if (Object.keys(updateData).length > 0) {
             await view.update(updateData);
