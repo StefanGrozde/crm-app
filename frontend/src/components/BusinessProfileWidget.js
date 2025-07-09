@@ -6,7 +6,6 @@ const API_URL = process.env.REACT_APP_API_URL;
 
 const BusinessProfileWidget = ({ businessId }) => {
     // Context
-    // eslint-disable-next-line no-unused-vars
     const { user } = useContext(AuthContext);
     
     // Core data states
@@ -16,16 +15,16 @@ const BusinessProfileWidget = ({ businessId }) => {
     
     // Edit states
     const [showEditModal, setShowEditModal] = useState(false);
-    // eslint-disable-next-line no-unused-vars
     const [editingBusiness, setEditingBusiness] = useState(null);
     const [formData, setFormData] = useState({});
     
-    // Additional data for dropdowns
+    // Additional data for dropdowns and relationships
     const [dropdownData, setDropdownData] = useState({
         industries: [],
         sizes: [],
         statuses: []
     });
+    const [relatedData, setRelatedData] = useState({});
 
     // Logic: Load business data
     const loadBusiness = useCallback(async () => {
@@ -48,15 +47,15 @@ const BusinessProfileWidget = ({ businessId }) => {
         }
     }, [businessId]);
 
-    // Logic: Load dropdown data
-    const loadDropdownData = useCallback(async () => {
+    // Logic: Load dropdown and related data
+    const loadAdditionalData = useCallback(async () => {
         try {
             const response = await axios.get(`${API_URL}/api/businesses/filter-options`, { 
                 withCredentials: true 
             });
             setDropdownData(response.data);
         } catch (error) {
-            console.error('Error loading dropdown data:', error);
+            console.error('Error loading additional data:', error);
         }
     }, []);
 
@@ -66,7 +65,7 @@ const BusinessProfileWidget = ({ businessId }) => {
             try {
                 await Promise.all([
                     loadBusiness(),
-                    loadDropdownData()
+                    loadAdditionalData()
                 ]);
             } catch (error) {
                 console.error('Error initializing BusinessProfileWidget:', error);
@@ -75,7 +74,7 @@ const BusinessProfileWidget = ({ businessId }) => {
         };
 
         initializeComponent();
-    }, [loadBusiness, loadDropdownData]);
+    }, [loadBusiness, loadAdditionalData]);
 
     // Logic: Handle form input changes
     const handleInputChange = useCallback((e) => {
@@ -142,21 +141,6 @@ const BusinessProfileWidget = ({ businessId }) => {
         }
     }, [businessId]);
 
-    // Helper function to get status badge
-    const getStatusBadge = (status) => {
-        const statusClasses = {
-            active: 'bg-green-100 text-green-800',
-            inactive: 'bg-red-100 text-red-800',
-            pending: 'bg-yellow-100 text-yellow-800'
-        };
-        
-        return (
-            <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${statusClasses[status] || 'bg-gray-100 text-gray-800'}`}>
-                {status}
-            </span>
-        );
-    };
-
     // Rendering: Loading state
     if (loading) {
         return (
@@ -190,114 +174,182 @@ const BusinessProfileWidget = ({ businessId }) => {
         );
     }
 
+    // Helper functions for rendering
+    const getStatusBadge = (status) => {
+        const statusColors = {
+            active: 'bg-green-100 text-green-800',
+            inactive: 'bg-red-100 text-red-800',
+            pending: 'bg-yellow-100 text-yellow-800'
+        };
+        
+        return (
+            <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${statusColors[status] || 'bg-gray-100 text-gray-800'}`}>
+                {status}
+            </span>
+        );
+    };
+
+    const getDisplayName = () => {
+        return business.name || 'Unknown Business';
+    };
+
+    const getInitials = () => {
+        return getDisplayName().charAt(0);
+    };
+
     return (
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <div className="h-full overflow-hidden">
             {/* Header */}
-            <div className="flex justify-between items-start mb-6">
-                <div className="flex items-center">
-                    <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center mr-4">
-                        <span className="text-lg font-medium text-blue-600">
-                            {business.name.charAt(0)}
+            <div className="flex justify-between items-center mb-6">
+                <div className="flex items-center space-x-4">
+                    <div className="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center">
+                        <span className="text-xl font-bold text-blue-600">
+                            {getInitials()}
                         </span>
                     </div>
                     <div>
-                        <h2 className="text-xl font-semibold text-gray-900">{business.name}</h2>
-                        <p className="text-sm text-gray-500">{business.industry || 'No Industry'}</p>
+                        <h1 className="text-2xl font-bold text-gray-900">
+                            {getDisplayName()}
+                        </h1>
+                        <p className="text-sm text-gray-500">{business.industry || 'No industry'}</p>
                     </div>
                 </div>
                 <div className="flex space-x-2">
                     <button
                         onClick={openEditModal}
-                        className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700"
+                        className="px-4 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 flex items-center space-x-1"
                     >
-                        Edit
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                        <span>Edit</span>
                     </button>
                     <button
                         onClick={handleDelete}
-                        className="px-3 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700"
+                        className="px-4 py-2 bg-red-600 text-white text-sm rounded hover:bg-red-700 flex items-center space-x-1"
                     >
-                        Delete
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                        <span>Delete</span>
                     </button>
                 </div>
             </div>
 
-            {/* Business Details */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                <div>
-                    <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-3">Business Information</h3>
-                    <div className="space-y-3">
-                        <div>
-                            <span className="text-sm font-medium text-gray-700">Industry:</span>
-                            <span className="ml-2 text-sm text-gray-900">{business.industry || 'Not specified'}</span>
-                        </div>
-                        <div>
-                            <span className="text-sm font-medium text-gray-700">Size:</span>
-                            <span className="ml-2 text-sm text-gray-900">{business.size || 'Not specified'}</span>
-                        </div>
-                        <div>
-                            <span className="text-sm font-medium text-gray-700">Status:</span>
-                            <span className="ml-2">{getStatusBadge(business.status)}</span>
-                        </div>
-                        <div>
-                            <span className="text-sm font-medium text-gray-700">Website:</span>
-                            <span className="ml-2 text-sm text-gray-900">
-                                {business.website ? (
+            {/* Business Information Grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Basic Information */}
+                <div className="bg-white rounded-lg border border-gray-200 p-6">
+                    <h2 className="text-lg font-semibold text-gray-900 mb-4">Basic Information</h2>
+                    <div className="space-y-4">
+                        {business.status && (
+                            <div className="flex justify-between items-center">
+                                <span className="text-sm font-medium text-gray-500">Status</span>
+                                {getStatusBadge(business.status)}
+                            </div>
+                        )}
+                        
+                        {business.industry && (
+                            <div className="flex justify-between items-center">
+                                <span className="text-sm font-medium text-gray-500">Industry</span>
+                                <span className="text-sm text-gray-900">{business.industry}</span>
+                            </div>
+                        )}
+                        
+                        {business.size && (
+                            <div className="flex justify-between items-center">
+                                <span className="text-sm font-medium text-gray-500">Size</span>
+                                <span className="text-sm text-gray-900">{business.size} employees</span>
+                            </div>
+                        )}
+                        
+                        {business.website && (
+                            <div className="flex justify-between items-center">
+                                <span className="text-sm font-medium text-gray-500">Website</span>
+                                <span className="text-sm text-gray-900">
                                     <a href={business.website} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800">
                                         {business.website}
                                     </a>
-                                ) : 'Not specified'}
-                            </span>
-                        </div>
+                                </span>
+                            </div>
+                        )}
                     </div>
                 </div>
 
-                <div>
-                    <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-3">Contact Information</h3>
-                    <div className="space-y-3">
-                        <div>
-                            <span className="text-sm font-medium text-gray-700">Phone:</span>
-                            <span className="ml-2 text-sm text-gray-900">{business.phoneNumber || 'Not specified'}</span>
-                        </div>
-                        <div>
-                            <span className="text-sm font-medium text-gray-700">Email:</span>
-                            <span className="ml-2 text-sm text-gray-900">
-                                {business.email ? (
-                                    <a href={`mailto:${business.email}`} className="text-blue-600 hover:text-blue-800">
-                                        {business.email}
-                                    </a>
-                                ) : 'Not specified'}
-                            </span>
-                        </div>
-                        <div>
-                            <span className="text-sm font-medium text-gray-700">Address:</span>
-                            <span className="ml-2 text-sm text-gray-900">
-                                {business.address ? (
-                                    <div>
-                                        <div>{business.address}</div>
-                                        <div>{business.city}, {business.state} {business.zipCode}</div>
-                                        <div>{business.country}</div>
-                                    </div>
-                                ) : 'Not specified'}
-                            </span>
+                {/* Contact Details */}
+                {(business.email || business.phoneNumber) && (
+                    <div className="bg-white rounded-lg border border-gray-200 p-6">
+                        <h2 className="text-lg font-semibold text-gray-900 mb-4">Contact Details</h2>
+                        <div className="space-y-4">
+                            {business.email && (
+                                <div>
+                                    <span className="text-sm font-medium text-gray-500">Email</span>
+                                    <p className="text-sm text-gray-900 mt-1">
+                                        <a href={`mailto:${business.email}`} className="text-blue-600 hover:text-blue-800">
+                                            {business.email}
+                                        </a>
+                                    </p>
+                                </div>
+                            )}
+                            {business.phoneNumber && (
+                                <div>
+                                    <span className="text-sm font-medium text-gray-500">Phone</span>
+                                    <p className="text-sm text-gray-900 mt-1">
+                                        <a href={`tel:${business.phoneNumber}`} className="text-blue-600 hover:text-blue-800">
+                                            {business.phoneNumber}
+                                        </a>
+                                    </p>
+                                </div>
+                            )}
                         </div>
                     </div>
-                </div>
+                )}
+
+                {/* Address Information */}
+                {(business.address || business.city || business.state || business.country) && (
+                    <div className="bg-white rounded-lg border border-gray-200 p-6">
+                        <h2 className="text-lg font-semibold text-gray-900 mb-4">Address</h2>
+                        <div className="space-y-2">
+                            {business.address && (
+                                <p className="text-sm text-gray-900">{business.address}</p>
+                            )}
+                            <p className="text-sm text-gray-900">
+                                {[business.city, business.state, business.zipCode].filter(Boolean).join(', ')}
+                            </p>
+                            {business.country && (
+                                <p className="text-sm text-gray-900">{business.country}</p>
+                            )}
+                        </div>
+                    </div>
+                )}
             </div>
 
             {/* Description */}
             {business.description && (
-                <div className="mb-6">
-                    <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-3">Description</h3>
-                    <p className="text-sm text-gray-900">{business.description}</p>
+                <div className="mt-6 bg-white rounded-lg border border-gray-200 p-6">
+                    <h2 className="text-lg font-semibold text-gray-900 mb-4">Description</h2>
+                    <p className="text-sm text-gray-900 whitespace-pre-wrap">{business.description}</p>
                 </div>
             )}
 
             {/* Edit Modal */}
             {showEditModal && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-                        <h3 className="text-lg font-semibold mb-4">Edit Business</h3>
+                    <div className="bg-white rounded-lg p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+                        <div className="flex justify-between items-center mb-4">
+                            <h2 className="text-xl font-bold">Edit Business</h2>
+                            <button
+                                onClick={() => setShowEditModal(false)}
+                                className="text-gray-500 hover:text-gray-700"
+                            >
+                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        </div>
+                        
                         <form onSubmit={handleSubmit} className="space-y-4">
+                            {/* Basic Information */}
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700">Business Name *</label>
@@ -339,6 +391,23 @@ const BusinessProfileWidget = ({ businessId }) => {
                                     </select>
                                 </div>
                                 <div>
+                                    <label className="block text-sm font-medium text-gray-700">Status</label>
+                                    <select
+                                        name="status"
+                                        value={formData.status}
+                                        onChange={handleInputChange}
+                                        className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
+                                    >
+                                        {dropdownData.statuses.map(status => (
+                                            <option key={status} value={status}>{status}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                            </div>
+
+                            {/* Contact Information */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
                                     <label className="block text-sm font-medium text-gray-700">Website</label>
                                     <input
                                         type="url"
@@ -369,19 +438,6 @@ const BusinessProfileWidget = ({ businessId }) => {
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700">Status</label>
-                                    <select
-                                        name="status"
-                                        value={formData.status}
-                                        onChange={handleInputChange}
-                                        className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
-                                    >
-                                        {dropdownData.statuses.map(status => (
-                                            <option key={status} value={status}>{status}</option>
-                                        ))}
-                                    </select>
-                                </div>
-                                <div>
                                     <label className="block text-sm font-medium text-gray-700">Country</label>
                                     <input
                                         type="text"
@@ -392,6 +448,8 @@ const BusinessProfileWidget = ({ businessId }) => {
                                     />
                                 </div>
                             </div>
+
+                            {/* Address Information */}
                             <div>
                                 <label className="block text-sm font-medium text-gray-700">Address</label>
                                 <input
@@ -434,6 +492,8 @@ const BusinessProfileWidget = ({ businessId }) => {
                                     />
                                 </div>
                             </div>
+
+                            {/* Additional Information */}
                             <div>
                                 <label className="block text-sm font-medium text-gray-700">Description</label>
                                 <textarea
@@ -444,11 +504,12 @@ const BusinessProfileWidget = ({ businessId }) => {
                                     className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
                                 />
                             </div>
-                            <div className="flex justify-end space-x-3">
+                            
+                            <div className="flex justify-end space-x-3 pt-4">
                                 <button
                                     type="button"
                                     onClick={() => setShowEditModal(false)}
-                                    className="px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50"
+                                    className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
                                 >
                                     Cancel
                                 </button>
