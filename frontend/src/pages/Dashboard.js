@@ -121,11 +121,7 @@ const Dashboard = () => {
                 } : view
             ));
             
-            // Clear the EditLayout return flag after successful refresh
-            if (isReturningFromEditLayoutRef.current) {
-                console.log('Clearing EditLayout return flag after successful refresh');
-                isReturningFromEditLayoutRef.current = false;
-            }
+            // Note: EditLayout return flag logic removed since we now use embedded edit mode
             
             console.log('View refreshed successfully:', data.name, 'Layout:', refreshedLayout);
         } catch (error) {
