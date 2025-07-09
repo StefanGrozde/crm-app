@@ -249,12 +249,6 @@ router.get('/filter-options', protect, async (req, res) => {
 // GET /api/contacts/:id - Get a specific contact
 router.get('/:id', protect, async (req, res) => {
     try {
-        console.log('Fetching contact with ID:', req.params.id);
-        
-        // First, let's check if there are any sales for this contact
-        const salesCount = await Sale.count({ where: { contactId: req.params.id } });
-        console.log('Sales count for contact:', salesCount);
-        
         const contact = await Contact.findByPk(req.params.id, {
             include: [
                 {
@@ -296,10 +290,6 @@ router.get('/:id', protect, async (req, res) => {
         if (!contact) {
             return res.status(404).json({ message: 'Contact not found' });
         }
-
-        console.log('Contact found:', contact.id);
-        console.log('Sales included:', contact.sales ? contact.sales.length : 0);
-        console.log('Sales data:', JSON.stringify(contact.sales, null, 2));
 
         res.json(contact);
     } catch (error) {
@@ -615,55 +605,6 @@ router.get('/stats/overview', protect, async (req, res) => {
     } catch (error) {
         console.error('Error fetching contact stats:', error);
         res.status(500).json({ message: 'Failed to fetch contact statistics' });
-    }
-});
-
-// Debug endpoint to check sales data
-router.get('/debug/sales/:contactId', protect, async (req, res) => {
-    try {
-        const contactId = req.params.contactId;
-        console.log('Debug: Checking sales for contact ID:', contactId);
-        
-        // Check if contact exists
-        const contact = await Contact.findByPk(contactId);
-        if (!contact) {
-            return res.status(404).json({ message: 'Contact not found' });
-        }
-        
-        // Check sales count directly
-        const salesCount = await Sale.count({ where: { contactId: contactId } });
-        console.log('Debug: Direct sales count:', salesCount);
-        
-        // Get all sales for this contact
-        const sales = await Sale.findAll({ 
-            where: { contactId: contactId },
-            attributes: ['id', 'saleNumber', 'title', 'contactId', 'companyId', 'amount', 'totalAmount']
-        });
-        console.log('Debug: Sales found:', sales.length);
-        console.log('Debug: Sales data:', JSON.stringify(sales, null, 2));
-        
-        // Check if there are any sales at all in the database
-        const totalSales = await Sale.count();
-        console.log('Debug: Total sales in database:', totalSales);
-        
-        // Get a few sample sales to see their contactId values
-        const sampleSales = await Sale.findAll({
-            limit: 5,
-            attributes: ['id', 'saleNumber', 'title', 'contactId', 'companyId']
-        });
-        console.log('Debug: Sample sales:', JSON.stringify(sampleSales, null, 2));
-        
-        res.json({
-            contactId: contactId,
-            contactExists: true,
-            salesCount: salesCount,
-            sales: sales,
-            totalSalesInDatabase: totalSales,
-            sampleSales: sampleSales
-        });
-    } catch (error) {
-        console.error('Debug error:', error);
-        res.status(500).json({ message: 'Debug failed', error: error.message });
     }
 });
 
