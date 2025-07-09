@@ -11,7 +11,7 @@ const Sale = sequelize.define('Sale', {
   },
   saleNumber: {
     type: DataTypes.STRING(100),
-    allowNull: false,
+    allowNull: true, // Allow null temporarily so hook can generate it
     unique: true,
     field: 'sale_number'
   },
@@ -192,9 +192,17 @@ const Sale = sequelize.define('Sale', {
   hooks: {
     beforeCreate: async (sale) => {
       if (!sale.saleNumber) {
-        // Generate sale number if not provided
-        const result = await sequelize.query("SELECT generate_sale_number() as sale_number");
-        sale.saleNumber = result[0][0].sale_number;
+        try {
+          // Try to use the database function first
+          const result = await sequelize.query("SELECT generate_sale_number() as sale_number");
+          sale.saleNumber = result[0][0].sale_number;
+        } catch (error) {
+          // Fallback: generate manually if function doesn't exist
+          console.warn('Database function generate_sale_number() not found, using fallback');
+          const currentYear = new Date().getFullYear();
+          const randomNumber = Math.floor(Math.random() * 999999) + 1;
+          sale.saleNumber = `SALE-${currentYear}-${String(randomNumber).padStart(6, '0')}`;
+        }
       }
     }
   }

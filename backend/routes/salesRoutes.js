@@ -333,9 +333,25 @@ router.post('/', protect, async (req, res) => {
             return res.status(400).json({ message: 'Title, sale date, amount, and total amount are required' });
         }
 
+        // Generate sale number if not provided
+        let generatedSaleNumber = saleNumber;
+        if (!generatedSaleNumber) {
+            try {
+                // Try to use the database function first
+                const result = await Sale.sequelize.query("SELECT generate_sale_number() as sale_number");
+                generatedSaleNumber = result[0][0].sale_number;
+            } catch (error) {
+                // Fallback: generate manually if function doesn't exist
+                console.warn('Database function generate_sale_number() not found, using fallback');
+                const currentYear = new Date().getFullYear();
+                const randomNumber = Math.floor(Math.random() * 999999) + 1;
+                generatedSaleNumber = `SALE-${currentYear}-${String(randomNumber).padStart(6, '0')}`;
+            }
+        }
+
         // Sanitize data
         const sanitizedData = {
-            saleNumber,
+            saleNumber: generatedSaleNumber,
             title,
             description: description || null,
             status,

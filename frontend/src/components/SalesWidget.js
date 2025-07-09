@@ -84,6 +84,7 @@ const SalesWidget = ({ onOpenSaleProfile }) => {
     // Form states
     const [showAddModal, setShowAddModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
+    const [showAddContactModal, setShowAddContactModal] = useState(false);
     const [editingSale, setEditingSale] = useState(null);
     const [formData, setFormData] = useState({
         title: '',
@@ -98,6 +99,7 @@ const SalesWidget = ({ onOpenSaleProfile }) => {
         paymentMethod: '',
         paymentStatus: 'pending',
         paymentDate: '',
+        partialPaymentPercentage: 0,
         commissionRate: '0',
         commissionAmount: '0',
         category: '',
@@ -111,6 +113,25 @@ const SalesWidget = ({ onOpenSaleProfile }) => {
     });
     const [tags, setTags] = useState([]);
     const [tagInput, setTagInput] = useState('');
+    
+    // Contact form data for adding new contacts
+    const [contactFormData, setContactFormData] = useState({
+        firstName: '',
+        lastName: '',
+        email: '',
+        phone: '',
+        mobile: '',
+        jobTitle: '',
+        department: '',
+        address: '',
+        city: '',
+        state: '',
+        zipCode: '',
+        country: '',
+        notes: '',
+        status: 'active',
+        source: ''
+    });
     
     // Dropdown data
     const [users, setUsers] = useState([]);
@@ -276,6 +297,7 @@ const SalesWidget = ({ onOpenSaleProfile }) => {
             paymentMethod: '',
             paymentStatus: 'pending',
             paymentDate: '',
+            partialPaymentPercentage: 0,
             commissionRate: '0',
             commissionAmount: '0',
             category: '',
@@ -319,6 +341,7 @@ const SalesWidget = ({ onOpenSaleProfile }) => {
             paymentMethod: sale.paymentMethod || '',
             paymentStatus: sale.paymentStatus || 'pending',
             paymentDate: sale.paymentDate || '',
+            partialPaymentPercentage: sale.partialPaymentPercentage || 0,
             commissionRate: sale.commissionRate || '0',
             commissionAmount: sale.commissionAmount || '0',
             category: sale.category || '',
@@ -333,6 +356,54 @@ const SalesWidget = ({ onOpenSaleProfile }) => {
         setTags(sale.tags || []);
         setShowEditModal(true);
     }, []);
+
+    // Handle contact form input changes
+    const handleContactInputChange = useCallback((e) => {
+        const { name, value } = e.target;
+        setContactFormData(prev => ({ ...prev, [name]: value }));
+    }, []);
+
+    // Handle contact form submission
+    const handleContactSubmit = useCallback(async (e) => {
+        e.preventDefault();
+        
+        try {
+            const response = await axios.post(`${API_URL}/api/contacts`, contactFormData, {
+                withCredentials: true
+            });
+            
+            // Add the new contact to the contacts list
+            setContacts(prev => [...prev, response.data]);
+            
+            // Select the new contact in the form
+            setFormData(prev => ({ ...prev, contactId: response.data.id }));
+            
+            // Reset contact form and close modal
+            setContactFormData({
+                firstName: '',
+                lastName: '',
+                email: '',
+                phone: '',
+                mobile: '',
+                jobTitle: '',
+                department: '',
+                address: '',
+                city: '',
+                state: '',
+                zipCode: '',
+                country: '',
+                notes: '',
+                status: 'active',
+                source: ''
+            });
+            setShowAddContactModal(false);
+            
+            alert('Contact created successfully!');
+        } catch (error) {
+            console.error('Error creating contact:', error);
+            alert(error.response?.data?.message || 'Failed to create contact');
+        }
+    }, [contactFormData]);
 
     // Handle form submission
     const handleSubmit = useCallback(async (e) => {
@@ -447,6 +518,13 @@ const SalesWidget = ({ onOpenSaleProfile }) => {
             setFormData(prev => ({ ...prev, totalAmount: total.toFixed(2) }));
         }
     }, [formData.amount, formData.discountAmount, formData.taxAmount, formData.totalAmount]);
+
+    // Calculate partial payment amount
+    const getPartialPaymentAmount = useCallback(() => {
+        const total = parseFloat(formData.totalAmount) || 0;
+        const percentage = parseFloat(formData.partialPaymentPercentage) || 0;
+        return (total * percentage / 100).toFixed(2);
+    }, [formData.totalAmount, formData.partialPaymentPercentage]);
 
     // Loading state
     if (loading) {
@@ -933,6 +1011,24 @@ const SalesWidget = ({ onOpenSaleProfile }) => {
                                         <option value="refunded">Refunded</option>
                                     </select>
                                 </div>
+                                {formData.paymentStatus === 'partially_paid' && (
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                                            Partial Payment Percentage (${getPartialPaymentAmount()})
+                                        </label>
+                                        <input
+                                            type="number"
+                                            name="partialPaymentPercentage"
+                                            value={formData.partialPaymentPercentage}
+                                            onChange={handleInputChange}
+                                            min="0"
+                                            max="100"
+                                            step="0.01"
+                                            className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                            placeholder="Enter percentage paid"
+                                        />
+                                    </div>
+                                )}
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">Payment Date</label>
                                     <input
@@ -986,7 +1082,19 @@ const SalesWidget = ({ onOpenSaleProfile }) => {
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Contact</label>
+                                    <div className="flex items-center justify-between mb-1">
+                                        <label className="block text-sm font-medium text-gray-700">Contact</label>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowAddContactModal(true)}
+                                            className="text-sm text-blue-600 hover:text-blue-800 flex items-center space-x-1"
+                                        >
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                            </svg>
+                                            <span>Add Contact</span>
+                                        </button>
+                                    </div>
                                     <select
                                         name="contactId"
                                         value={formData.contactId}
@@ -1119,6 +1227,160 @@ const SalesWidget = ({ onOpenSaleProfile }) => {
                                     className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
                                 >
                                     {showEditModal ? 'Update' : 'Create'} Sale
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>,
+                document.body
+            )}
+
+            {/* Add Contact Modal */}
+            {showAddContactModal && createPortal(
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+                        <h3 className="text-lg font-semibold mb-4">Add New Contact</h3>
+                        <form onSubmit={handleContactSubmit} className="space-y-4">
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">First Name *</label>
+                                    <input
+                                        type="text"
+                                        name="firstName"
+                                        value={contactFormData.firstName}
+                                        onChange={handleContactInputChange}
+                                        required
+                                        className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Last Name *</label>
+                                    <input
+                                        type="text"
+                                        name="lastName"
+                                        value={contactFormData.lastName}
+                                        onChange={handleContactInputChange}
+                                        required
+                                        className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                                    <input
+                                        type="email"
+                                        name="email"
+                                        value={contactFormData.email}
+                                        onChange={handleContactInputChange}
+                                        className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                                    <input
+                                        type="tel"
+                                        name="phone"
+                                        value={contactFormData.phone}
+                                        onChange={handleContactInputChange}
+                                        className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Mobile</label>
+                                    <input
+                                        type="tel"
+                                        name="mobile"
+                                        value={contactFormData.mobile}
+                                        onChange={handleContactInputChange}
+                                        className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Job Title</label>
+                                    <input
+                                        type="text"
+                                        name="jobTitle"
+                                        value={contactFormData.jobTitle}
+                                        onChange={handleContactInputChange}
+                                        className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Department</label>
+                                    <input
+                                        type="text"
+                                        name="department"
+                                        value={contactFormData.department}
+                                        onChange={handleContactInputChange}
+                                        className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">City</label>
+                                    <input
+                                        type="text"
+                                        name="city"
+                                        value={contactFormData.city}
+                                        onChange={handleContactInputChange}
+                                        className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">State</label>
+                                    <input
+                                        type="text"
+                                        name="state"
+                                        value={contactFormData.state}
+                                        onChange={handleContactInputChange}
+                                        className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Country</label>
+                                    <input
+                                        type="text"
+                                        name="country"
+                                        value={contactFormData.country}
+                                        onChange={handleContactInputChange}
+                                        className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                    />
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
+                                <textarea
+                                    name="address"
+                                    value={contactFormData.address}
+                                    onChange={handleContactInputChange}
+                                    rows={2}
+                                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                />
+                            </div>
+                            
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+                                <textarea
+                                    name="notes"
+                                    value={contactFormData.notes}
+                                    onChange={handleContactInputChange}
+                                    rows={3}
+                                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                />
+                            </div>
+                            
+                            <div className="flex justify-end space-x-2 pt-4">
+                                <button
+                                    type="button"
+                                    onClick={() => setShowAddContactModal(false)}
+                                    className="px-4 py-2 text-gray-600 border border-gray-300 rounded hover:bg-gray-50"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                                >
+                                    Create Contact
                                 </button>
                             </div>
                         </form>
