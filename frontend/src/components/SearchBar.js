@@ -142,8 +142,7 @@ const SearchBar = ({ className = '', placeholder = "Search contacts, leads, oppo
     if (!results) return null;
     
     let currentIndex = 0;
-    for (const [type, typeResults] of Object.entries(results.results || {})) {
-      // eslint-disable-next-line no-unused-vars
+    for (const [, typeResults] of Object.entries(results.results || {})) {
       for (const result of typeResults) {
         if (currentIndex === index) {
           // Keep the original type from the result, don't override with the key

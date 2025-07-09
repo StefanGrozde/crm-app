@@ -56,10 +56,10 @@ const UserProfileWidget = ({ userId }) => {
     // Logic: Load dropdown and related data
     const loadAdditionalData = useCallback(async () => {
         try {
-            const responses = await Promise.all([
-                // Add API calls for dropdown data if needed
-                // Example: axios.get(`${API_URL}/api/companies`, { withCredentials: true }),
-            ]);
+            // Add API calls for dropdown data if needed
+            // Example: const responses = await Promise.all([
+            //     axios.get(`${API_URL}/api/companies`, { withCredentials: true }),
+            // ]);
             
             // Map responses to state
             // setDropdownData({ companies: responses[0].data });

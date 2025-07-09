@@ -27,6 +27,7 @@ const DashboardView = sequelize.define('DashboardView', {
 }, {
     tableName: 'dashboard_views',
     timestamps: true,
+    underscored: true
 });
 
 const DashboardWidget = sequelize.define('DashboardWidget', {
@@ -65,7 +66,8 @@ const DashboardWidget = sequelize.define('DashboardWidget', {
     }
 }, {
     tableName: 'dashboard_widgets',
-    timestamps: false // No need for timestamps on the widgets themselves
+    timestamps: false, // No need for timestamps on the widgets themselves
+    underscored: true
 });
 
 // Associations

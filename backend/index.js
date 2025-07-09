@@ -117,6 +117,7 @@ const startServer = async () => {
     const User = require('./models/User');
     const Widget = require('./models/Widget');
     const UserInvitation = require('./models/UserInvitation');
+    const { DashboardView, DashboardWidget } = require('./models/DashboardView');
     
     // Define associations
     // Company associations
@@ -155,6 +156,12 @@ const startServer = async () => {
     // UserInvitation associations
     UserInvitation.belongsTo(Company, { foreignKey: 'companyId' });
     UserInvitation.belongsTo(User, { foreignKey: 'invitedBy', as: 'InvitedBy' });
+    
+    // DashboardView associations
+    User.hasMany(DashboardView, { foreignKey: 'userId' });
+    DashboardView.belongsTo(User, { foreignKey: 'userId' });
+    DashboardView.hasMany(DashboardWidget, { foreignKey: 'viewId', as: 'widgets' });
+    DashboardWidget.belongsTo(DashboardView, { foreignKey: 'viewId' });
     
     // Sync all models
     // Use { force: true } only in development to drop and re-create tables

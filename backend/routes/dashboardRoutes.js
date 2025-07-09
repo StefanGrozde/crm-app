@@ -8,11 +8,13 @@ const router = express.Router();
 // Get all views for the authenticated user
 router.get('/views', protect, async (req, res) => {
     try {
+        console.log('Fetching dashboard views for user:', req.user.id);
+        
         const {
             page = 1,
             limit = 20,
             search,
-            sortBy = 'created_at',
+            sortBy = 'createdAt',
             sortOrder = 'DESC'
         } = req.query;
 
@@ -22,18 +24,22 @@ router.get('/views', protect, async (req, res) => {
         // Search functionality
         if (search) {
             whereClause.name = {
-                [Op.iLike]: `%${search}%`
+                [Op.like]: `%${search}%`
             };
         }
 
         const { count, rows: views } = await DashboardView.findAndCountAll({
             where: whereClause,
             include: [{ model: DashboardWidget, as: 'widgets' }],
-            order: [['is_default', 'DESC'], [sortBy, sortOrder.toUpperCase()]],
+            order: [['is_default', 'DESC'], ['createdAt', sortOrder.toUpperCase()]],
             limit: parseInt(limit),
-            offset: parseInt(offset)
+            offset: parseInt(offset),
+            raw: false
         });
 
+        console.log('Found views:', views.length);
+        console.log('Sample view:', views[0] ? JSON.stringify(views[0].toJSON(), null, 2) : 'No views found');
+        
         res.json({
             items: views,
             pagination: {
@@ -45,7 +51,11 @@ router.get('/views', protect, async (req, res) => {
         });
     } catch (error) {
         console.error('Error fetching dashboard views:', error);
-        res.status(500).json({ error: 'Failed to fetch dashboard views' });
+        console.error('Error details:', error.message);
+        console.error('Error stack:', error.stack);
+        console.error('Query params:', req.query);
+        console.error('User ID:', req.user.id);
+        res.status(500).json({ error: 'Failed to fetch dashboard views', details: error.message });
     }
 });
 

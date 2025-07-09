@@ -1,13 +1,11 @@
-import React, { useState, useEffect, useContext, useCallback, memo } from 'react';
+import React, { useState, useEffect, useCallback, memo } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import { AuthContext } from '../context/AuthContext';
 
 const API_URL = process.env.REACT_APP_API_URL;
 
 const MyViewsWidget = () => {
     // Context
-    const { user } = useContext(AuthContext);
     const navigate = useNavigate();
     
     // Core data states
@@ -32,7 +30,6 @@ const MyViewsWidget = () => {
     // Modal states
     const [showFilterModal, setShowFilterModal] = useState(false);
     const [showAddModal, setShowAddModal] = useState(false);
-    const [showEditModal, setShowEditModal] = useState(false);
     const [showRenameModal, setShowRenameModal] = useState(false);
     const [editingItem, setEditingItem] = useState(null);
     
@@ -159,12 +156,7 @@ const MyViewsWidget = () => {
         setShowFilterModal(true);
     }, [filters]);
 
-    // Logic: Open edit modal
-    const openEditModal = useCallback((item) => {
-        setEditingItem(item);
-        setFormData(item);
-        setShowEditModal(true);
-    }, []);
+
 
     // Logic: Open rename modal
     const openRenameModal = useCallback((item) => {
@@ -189,7 +181,7 @@ const MyViewsWidget = () => {
             console.error('Error creating view:', error);
             alert(error.response?.data?.error || 'Failed to create view');
         }
-    }, [formData, resetForm, loadData, pagination.currentPage]);
+    }, [formData, resetForm, loadData, pagination?.currentPage]);
 
     // Logic: Handle rename submission
     const handleRenameSubmit = useCallback(async (e) => {
@@ -207,7 +199,7 @@ const MyViewsWidget = () => {
             console.error('Error renaming view:', error);
             alert(error.response?.data?.error || 'Failed to rename view');
         }
-    }, [renameData, editingItem, resetForm, loadData, pagination.currentPage]);
+    }, [renameData, editingItem, resetForm, loadData, pagination?.currentPage]);
 
     // Logic: Handle edit (navigate to EditLayout)
     const handleEdit = useCallback((item) => {
