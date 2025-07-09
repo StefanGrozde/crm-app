@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import axios from 'axios';
 import { AuthContext } from '../context/AuthContext';
 import ListManager from './ListManager';
+import WidgetSearchBar from './WidgetSearchBar';
 
 const API_URL = process.env.REACT_APP_API_URL;
 
@@ -187,18 +188,9 @@ const ContactsWidget = ({ onOpenContactProfile }) => {
     }, [loadContacts, loadDropdownData]);
 
     // Handle search input changes - optimized to prevent re-rendering
-    const handleSearchInputChange = useCallback(() => {
-        // Clear existing timeout
-        if (window.searchTimeout) {
-            clearTimeout(window.searchTimeout);
-        }
-        
-        // Set new timeout for search
-        window.searchTimeout = setTimeout(() => {
-            const value = searchInputRef.current?.value || '';
-            setSearchTerm(value);
-            loadContacts(1);
-        }, 300); // Shorter delay for more responsive feel
+    const handleSearchInputChange = useCallback((value) => {
+        setSearchTerm(value);
+        loadContacts(1);
     }, [loadContacts]);
 
     // Handle filter form input changes
