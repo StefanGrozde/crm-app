@@ -26,6 +26,11 @@ const DashboardView = sequelize.define('DashboardView', {
         field: 'is_default', // Map to snake_case column
         defaultValue: false
     },
+    color: {
+        type: DataTypes.STRING(20),
+        field: 'color',
+        defaultValue: 'blue'
+    },
     createdAt: {
         type: DataTypes.DATE,
         field: 'createdAt' // Explicitly map to camelCase column

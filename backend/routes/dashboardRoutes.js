@@ -85,7 +85,7 @@ router.get('/views/:id', protect, async (req, res) => {
 // Create a new view
 router.post('/views', protect, async (req, res) => {
     try {
-        const { name, widgets = [], isDefault = false } = req.body;
+        const { name, widgets = [], isDefault = false, color = 'blue' } = req.body;
         
         if (!name || name.trim() === '') {
             return res.status(400).json({ error: 'View name is required' });
@@ -95,7 +95,8 @@ router.post('/views', protect, async (req, res) => {
         const view = await DashboardView.create({
             name: name.trim(),
             userId: req.user.id,
-            is_default: isDefault
+            is_default: isDefault,
+            color: color
         });
         
         // Add widgets if provided
@@ -128,7 +129,7 @@ router.post('/views', protect, async (req, res) => {
 // Update a view
 router.put('/views/:id', protect, async (req, res) => {
     try {
-        const { name, widgets = [], isDefault } = req.body;
+        const { name, widgets = [], isDefault, color } = req.body;
         
         // Find the view
         const view = await DashboardView.findOne({
@@ -146,6 +147,7 @@ router.put('/views/:id', protect, async (req, res) => {
         const updateData = {};
         if (name !== undefined) updateData.name = name.trim();
         if (isDefault !== undefined) updateData.is_default = isDefault;
+        if (color !== undefined) updateData.color = color;
         
         if (Object.keys(updateData).length > 0) {
             await view.update(updateData);
@@ -245,6 +247,35 @@ router.get('/default', protect, async (req, res) => {
     } catch (error) {
         console.error('Error fetching default view:', error);
         res.status(500).json({ error: 'Failed to fetch default view' });
+    }
+});
+
+// Update view color
+router.patch('/views/:id/color', protect, async (req, res) => {
+    try {
+        const { color } = req.body;
+        
+        if (!color) {
+            return res.status(400).json({ error: 'Color is required' });
+        }
+        
+        const view = await DashboardView.findOne({
+            where: { 
+                id: req.params.id,
+                userId: req.user.id 
+            }
+        });
+        
+        if (!view) {
+            return res.status(404).json({ error: 'Dashboard view not found' });
+        }
+        
+        await view.update({ color });
+        
+        res.json({ message: 'View color updated successfully', color });
+    } catch (error) {
+        console.error('Error updating view color:', error);
+        res.status(500).json({ error: 'Failed to update view color' });
     }
 });
 

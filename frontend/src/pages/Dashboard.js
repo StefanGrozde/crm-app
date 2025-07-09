@@ -562,7 +562,8 @@ const Dashboard = () => {
                 const newTab = {
                     id: view.id,
                     name: view.name,
-                    isDefault: view.is_default
+                    isDefault: view.is_default,
+                    color: view.color
                 };
                 
                 // Update all state synchronously
@@ -1032,6 +1033,38 @@ const Dashboard = () => {
         setIsDraggingTab(true);
     };
 
+    // Handle tab color update
+    const handleUpdateTabColor = async (tabId, newColor) => {
+        try {
+            console.log('Updating tab color:', tabId, 'to:', newColor);
+            
+            // Update the view color in the backend
+            await axios.patch(`${API_URL}/api/dashboard/views/${tabId}/color`, 
+                { color: newColor }, 
+                { withCredentials: true }
+            );
+            
+            // Update the tab data in the openTabs state
+            setOpenTabs(prev => prev.map(tab => 
+                tab.id === tabId 
+                    ? { ...tab, color: newColor }
+                    : tab
+            ));
+            
+            // Update the views state to reflect the change
+            setViews(prev => prev.map(view => 
+                view.id === tabId 
+                    ? { ...view, color: newColor }
+                    : view
+            ));
+            
+            console.log('Tab color updated successfully');
+        } catch (error) {
+            console.error('Failed to update tab color:', error);
+            // You could show a toast notification here
+        }
+    };
+
     // Cleanup timeout on unmount
     useEffect(() => {
         return () => {
@@ -1238,6 +1271,7 @@ const Dashboard = () => {
                     isDraggingTab={isDraggingTab}
                     onRefreshTab={refreshCurrentView}
                     isRefreshing={isRefreshing}
+                    onUpdateTabColor={handleUpdateTabColor}
                 />
 
                 <main className="p-4">
