@@ -743,312 +743,123 @@ const Dashboard = () => {
         setTimeout(() => setIsTabSwitching(false), 50);
     };
 
-    // Handle opening contact profiles as new tabs
+    // Consolidated main function to handle opening any profile type as a tab
+    const handleOpenProfile = async (profileType, profileId, profileName = null) => {
+        console.log(`Opening ${profileType} profile as tab:`, profileId, profileName);
+        
+        // Create a unique ID for the profile tab
+        const tabId = `${profileType}-profile-${profileId}`;
+        
+        // Check if tab is already open
+        const isTabOpen = openTabs.find(tab => tab.id === tabId);
+        if (isTabOpen) {
+            // If already open, just switch to it
+            switchToTab(tabId);
+            return;
+        }
+        
+        // Profile type configurations
+        const profileConfigs = {
+            contact: {
+                endpoint: 'contacts',
+                nameFields: (data) => `${data.firstName} ${data.lastName}`,
+                defaultName: 'Contact Profile'
+            },
+            opportunity: {
+                endpoint: 'opportunities',
+                nameFields: (data) => data.name,
+                defaultName: 'Opportunity Profile'
+            },
+            lead: {
+                endpoint: 'leads',
+                nameFields: (data) => data.title,
+                defaultName: 'Lead Profile'
+            },
+            user: {
+                endpoint: 'users',
+                nameFields: (data) => data.username || data.email,
+                defaultName: 'User Profile'
+            },
+            business: {
+                endpoint: 'businesses',
+                nameFields: (data) => data.name,
+                defaultName: 'Business Profile'
+            }
+        };
+        
+        const config = profileConfigs[profileType];
+        if (!config) {
+            console.error(`Unknown profile type: ${profileType}`);
+            return;
+        }
+        
+        // Use provided name or fetch it from API
+        let displayName = profileName || config.defaultName;
+        if (!profileName) {
+            try {
+                const response = await axios.get(`${API_URL}/api/${config.endpoint}/${profileId}`, {
+                    withCredentials: true
+                });
+                displayName = config.nameFields(response.data);
+            } catch (error) {
+                console.error(`Failed to fetch ${profileType} details for tab name:`, error);
+            }
+        }
+        
+        // Create a new tab for the profile
+        const newTab = {
+            id: tabId,
+            name: displayName,
+            isDefault: false
+        };
+        
+        // Create a simple layout for the profile
+        const profileLayout = [{
+            i: `${profileType}-profile-${profileId}`,
+            x: 0,
+            y: 0,
+            w: 12,
+            h: 8,
+            widgetKey: `${profileType}-profile-widget`,
+            widgetData: { [`${profileType}Id`]: profileId }
+        }];
+        
+        // Update all state synchronously
+        setOpenTabs(prev => [...prev, newTab]);
+        setTabLayouts(prev => ({ ...prev, [tabId]: profileLayout }));
+        
+        // Switch to the new tab immediately
+        setIsTabSwitching(true);
+        setActiveTabId(tabId);
+        setCurrentViewId(tabId);
+        setLayout(profileLayout);
+        
+        console.log(`Opened ${profileType} profile tab:`, tabId, 'with layout:', profileLayout);
+        
+        // Small delay to ensure state updates are processed
+        setTimeout(() => setIsTabSwitching(false), 50);
+    };
+
+    // Simplified individual functions that call the main function
     const handleOpenContactProfile = async (contactId) => {
         console.log('Dashboard handleOpenContactProfile called with contactId:', contactId);
-        
-        // Create a unique ID for the contact profile tab
-        const tabId = `contact-profile-${contactId}`;
-        
-        // Check if tab is already open
-        const isTabOpen = openTabs.find(tab => tab.id === tabId);
-        if (isTabOpen) {
-            // If already open, just switch to it
-            switchToTab(tabId);
-            return;
-        }
-        
-        // Fetch contact details to get the name for the tab
-        let contactName = 'Contact Profile';
-        try {
-            const response = await axios.get(`${API_URL}/api/contacts/${contactId}`, {
-                withCredentials: true
-            });
-            contactName = `${response.data.firstName} ${response.data.lastName}`;
-        } catch (error) {
-            console.error('Failed to fetch contact details for tab name:', error);
-        }
-        
-        // Create a new tab for the contact profile
-        const newTab = {
-            id: tabId,
-            name: contactName,
-            isDefault: false
-        };
-        
-        // Create a simple layout for the contact profile
-        const profileLayout = [{
-            i: `contact-profile-${contactId}`,
-            x: 0,
-            y: 0,
-            w: 12,
-            h: 8,
-            widgetKey: 'contact-profile-widget',
-            widgetData: { contactId }
-        }];
-        
-        // Update all state synchronously
-        setOpenTabs(prev => [...prev, newTab]);
-        setTabLayouts(prev => ({ ...prev, [tabId]: profileLayout }));
-        
-        // Switch to the new tab immediately
-        setIsTabSwitching(true);
-        setActiveTabId(tabId);
-        setCurrentViewId(tabId);
-        setLayout(profileLayout);
-        
-        console.log('Opened contact profile tab:', tabId, 'with layout:', profileLayout);
-        
-        // Small delay to ensure state updates are processed
-        setTimeout(() => setIsTabSwitching(false), 50);
+        await handleOpenProfile('contact', contactId);
     };
 
-    // Handle opening opportunity profiles as new tabs
     const handleOpenOpportunityProfile = async (opportunityId, opportunityTitle) => {
-        console.log('Opening opportunity profile as tab:', opportunityId, opportunityTitle);
-        
-        // Create a unique ID for the opportunity profile tab
-        const tabId = `opportunity-profile-${opportunityId}`;
-        
-        // Check if tab is already open
-        const isTabOpen = openTabs.find(tab => tab.id === tabId);
-        if (isTabOpen) {
-            // If already open, just switch to it
-            switchToTab(tabId);
-            return;
-        }
-        
-        // Use the provided opportunity title or fetch it if not provided
-        let opportunityName = opportunityTitle || 'Opportunity Profile';
-        if (!opportunityTitle) {
-            try {
-                const response = await axios.get(`${API_URL}/api/opportunities/${opportunityId}`, {
-                    withCredentials: true
-                });
-                opportunityName = response.data.name;
-            } catch (error) {
-                console.error('Failed to fetch opportunity details for tab name:', error);
-            }
-        }
-        
-        // Create a new tab for the opportunity profile
-        const newTab = {
-            id: tabId,
-            name: opportunityName,
-            isDefault: false
-        };
-        
-        // Create a simple layout for the opportunity profile
-        const profileLayout = [{
-            i: `opportunity-profile-${opportunityId}`,
-            x: 0,
-            y: 0,
-            w: 12,
-            h: 8,
-            widgetKey: 'opportunity-profile-widget',
-            widgetData: { opportunityId }
-        }];
-        
-        // Update all state synchronously
-        setOpenTabs(prev => [...prev, newTab]);
-        setTabLayouts(prev => ({ ...prev, [tabId]: profileLayout }));
-        
-        // Switch to the new tab immediately
-        setIsTabSwitching(true);
-        setActiveTabId(tabId);
-        setCurrentViewId(tabId);
-        setLayout(profileLayout);
-        
-        console.log('Opened opportunity profile tab:', tabId, 'with layout:', profileLayout);
-        
-        // Small delay to ensure state updates are processed
-        setTimeout(() => setIsTabSwitching(false), 50);
+        await handleOpenProfile('opportunity', opportunityId, opportunityTitle);
     };
 
-    // Handle opening lead profiles as new tabs
     const handleOpenLeadProfile = async (leadId, leadTitle) => {
-        console.log('Opening lead profile as tab:', leadId, leadTitle);
-        
-        // Create a unique ID for the lead profile tab
-        const tabId = `lead-profile-${leadId}`;
-        
-        // Check if tab is already open
-        const isTabOpen = openTabs.find(tab => tab.id === tabId);
-        if (isTabOpen) {
-            // If already open, just switch to it
-            switchToTab(tabId);
-            return;
-        }
-        
-        // Use the provided lead title or fetch it if not provided
-        let leadName = leadTitle || 'Lead Profile';
-        if (!leadTitle) {
-            try {
-                const response = await axios.get(`${API_URL}/api/leads/${leadId}`, {
-                    withCredentials: true
-                });
-                leadName = response.data.title;
-            } catch (error) {
-                console.error('Failed to fetch lead details for tab name:', error);
-            }
-        }
-        
-        // Create a new tab for the lead profile
-        const newTab = {
-            id: tabId,
-            name: leadName,
-            isDefault: false
-        };
-        
-        // Create a simple layout for the lead profile
-        const profileLayout = [{
-            i: `lead-profile-${leadId}`,
-            x: 0,
-            y: 0,
-            w: 12,
-            h: 8,
-            widgetKey: 'lead-profile-widget',
-            widgetData: { leadId }
-        }];
-        
-        // Update all state synchronously
-        setOpenTabs(prev => [...prev, newTab]);
-        setTabLayouts(prev => ({ ...prev, [tabId]: profileLayout }));
-        
-        // Switch to the new tab immediately
-        setIsTabSwitching(true);
-        setActiveTabId(tabId);
-        setCurrentViewId(tabId);
-        setLayout(profileLayout);
-        
-        console.log('Opened lead profile tab:', tabId, 'with layout:', profileLayout);
-        
-        // Small delay to ensure state updates are processed
-        setTimeout(() => setIsTabSwitching(false), 50);
+        await handleOpenProfile('lead', leadId, leadTitle);
     };
 
-    // Handle opening user profiles as new tabs
     const handleOpenUserProfile = async (userId, userName) => {
-        console.log('Opening user profile as tab:', userId, userName);
-        
-        // Create a unique ID for the user profile tab
-        const tabId = `user-profile-${userId}`;
-        
-        // Check if tab is already open
-        const isTabOpen = openTabs.find(tab => tab.id === tabId);
-        if (isTabOpen) {
-            // If already open, just switch to it
-            switchToTab(tabId);
-            return;
-        }
-        
-        // Use the provided user name or fetch it if not provided
-        let userNameToUse = userName || 'User Profile';
-        if (!userName) {
-            try {
-                const response = await axios.get(`${API_URL}/api/users/${userId}`, {
-                    withCredentials: true
-                });
-                userNameToUse = response.data.username || response.data.email;
-            } catch (error) {
-                console.error('Failed to fetch user details for tab name:', error);
-            }
-        }
-        
-        // Create a new tab for the user profile
-        const newTab = {
-            id: tabId,
-            name: userNameToUse,
-            isDefault: false
-        };
-        
-        // Create a simple layout for the user profile
-        const profileLayout = [{
-            i: `user-profile-${userId}`,
-            x: 0,
-            y: 0,
-            w: 12,
-            h: 8,
-            widgetKey: 'user-profile-widget',
-            widgetData: { userId }
-        }];
-        
-        // Update all state synchronously
-        setOpenTabs(prev => [...prev, newTab]);
-        setTabLayouts(prev => ({ ...prev, [tabId]: profileLayout }));
-        
-        // Switch to the new tab immediately
-        setIsTabSwitching(true);
-        setActiveTabId(tabId);
-        setCurrentViewId(tabId);
-        setLayout(profileLayout);
-        
-        console.log('Opened user profile tab:', tabId, 'with layout:', profileLayout);
-        
-        // Small delay to ensure state updates are processed
-        setTimeout(() => setIsTabSwitching(false), 50);
+        await handleOpenProfile('user', userId, userName);
     };
 
-    // Handle opening business profiles as new tabs
     const handleOpenBusinessProfile = async (businessId, businessName) => {
-        console.log('Opening business profile as tab:', businessId, businessName);
-        
-        // Create a unique ID for the business profile tab
-        const tabId = `business-profile-${businessId}`;
-        
-        // Check if tab is already open
-        const isTabOpen = openTabs.find(tab => tab.id === tabId);
-        if (isTabOpen) {
-            // If already open, just switch to it
-            switchToTab(tabId);
-            return;
-        }
-        
-        // Use the provided business name or fetch it if not provided
-        let businessNameToUse = businessName || 'Business Profile';
-        if (!businessName) {
-            try {
-                const response = await axios.get(`${API_URL}/api/businesses/${businessId}`, {
-                    withCredentials: true
-                });
-                businessNameToUse = response.data.name;
-            } catch (error) {
-                console.error('Failed to fetch business details for tab name:', error);
-            }
-        }
-        
-        // Create a new tab for the business profile
-        const newTab = {
-            id: tabId,
-            name: businessNameToUse,
-            isDefault: false
-        };
-        
-        // Create a simple layout for the business profile
-        const profileLayout = [{
-            i: `business-profile-${businessId}`,
-            x: 0,
-            y: 0,
-            w: 12,
-            h: 8,
-            widgetKey: 'business-profile-widget',
-            widgetData: { businessId }
-        }];
-        
-        // Update all state synchronously
-        setOpenTabs(prev => [...prev, newTab]);
-        setTabLayouts(prev => ({ ...prev, [tabId]: profileLayout }));
-        
-        // Switch to the new tab immediately
-        setIsTabSwitching(true);
-        setActiveTabId(tabId);
-        setCurrentViewId(tabId);
-        setLayout(profileLayout);
-        
-        console.log('Opened business profile tab:', tabId, 'with layout:', profileLayout);
-        
-        // Small delay to ensure state updates are processed
-        setTimeout(() => setIsTabSwitching(false), 50);
+        await handleOpenProfile('business', businessId, businessName);
     };
 
     // Generic function to open any page as a new tab
