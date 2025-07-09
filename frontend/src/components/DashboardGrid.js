@@ -74,6 +74,30 @@ const DashboardGrid = ({
                    .react-grid-item.react-grid-item.react-draggable.react-resizable.react-resizable-handle {
                        transition: none;
                    }
+                   
+                   /* Enhanced widget border styles */
+                   .widget-container {
+                       border: 2px solid #e5e7eb;
+                       border-radius: 0.5rem;
+                       transition: all 0.2s ease;
+                       box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+                   }
+                   
+                   .widget-container:hover {
+                       border-color: #3b82f6;
+                       box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+                       transform: translateY(-1px);
+                   }
+                   
+                   .widget-container.error {
+                       border-color: #fecaca;
+                       background-color: #fef2f2;
+                   }
+                   
+                   .widget-container.loading {
+                       border-color: #d1d5db;
+                       background-color: #f9fafb;
+                   }
                `}
             </style>
             
@@ -118,7 +142,7 @@ const DashboardGrid = ({
                     // Skip rendering if widget library is not loaded yet
                     if (widgetLibrary.length === 0) {
                         return (
-                            <div key={item.i} className="bg-white rounded-lg shadow-lg p-4">
+                            <div key={item.i} className="widget-container loading p-4">
                                 <div className="text-gray-500">Loading widget library...</div>
                             </div>
                         );
@@ -126,11 +150,11 @@ const DashboardGrid = ({
                     
                     if (!widget) {
                         return (
-                            <div 
-                                key={item.i} 
-                                className="bg-white rounded-lg shadow-lg p-4 overflow-hidden transition-all duration-200 relative"
-                                data-widget-key={item.i}
-                            >
+                                                    <div 
+                            key={item.i} 
+                            className="widget-container error p-4 overflow-hidden relative"
+                            data-widget-key={item.i}
+                        >
                                 <div className="text-center">
                                     <div className="text-red-600 text-sm font-medium">
                                         Widget not found: {item.i}
@@ -152,7 +176,7 @@ const DashboardGrid = ({
                     return (
                         <div 
                             key={item.i} 
-                            className="bg-white rounded-lg shadow-lg p-2 overflow-hidden transition-all duration-200 relative"
+                            className="widget-container bg-white p-2 overflow-hidden relative"
                             data-widget-key={item.i}
                             data-grid-x={item.x}
                             data-grid-y={item.y}
