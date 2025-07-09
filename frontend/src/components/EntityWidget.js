@@ -929,6 +929,62 @@ const EntityWidget = ({
                 document.body
             )}
             
+            {/* Pagination */}
+            {pagination.totalPages > 1 && (
+                <div className="mt-4 flex justify-between items-center px-4">
+                    <div className="text-xs text-gray-500">
+                        Showing {((pagination.currentPage - 1) * pagination.itemsPerPage) + 1} to{' '}
+                        {Math.min(pagination.currentPage * pagination.itemsPerPage, pagination.totalItems)} of{' '}
+                        {pagination.totalItems} entries
+                    </div>
+                    <div className="flex space-x-1">
+                        <button
+                            onClick={() => loadData(pagination.currentPage - 1)}
+                            disabled={pagination.currentPage <= 1}
+                            className="px-2 py-1 text-xs border border-gray-300 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                        >
+                            Previous
+                        </button>
+                        
+                        {/* Page numbers */}
+                        {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
+                            let pageNum;
+                            if (pagination.totalPages <= 5) {
+                                pageNum = i + 1;
+                            } else if (pagination.currentPage <= 3) {
+                                pageNum = i + 1;
+                            } else if (pagination.currentPage >= pagination.totalPages - 2) {
+                                pageNum = pagination.totalPages - 4 + i;
+                            } else {
+                                pageNum = pagination.currentPage - 2 + i;
+                            }
+                            
+                            return (
+                                <button
+                                    key={pageNum}
+                                    onClick={() => loadData(pageNum)}
+                                    className={`px-2 py-1 text-xs border border-gray-300 rounded hover:bg-gray-50 ${
+                                        pageNum === pagination.currentPage 
+                                            ? 'bg-blue-600 text-white border-blue-600' 
+                                            : ''
+                                    }`}
+                                >
+                                    {pageNum}
+                                </button>
+                            );
+                        })}
+                        
+                        <button
+                            onClick={() => loadData(pagination.currentPage + 1)}
+                            disabled={pagination.currentPage >= pagination.totalPages}
+                            className="px-2 py-1 text-xs border border-gray-300 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                        >
+                            Next
+                        </button>
+                    </div>
+                </div>
+            )}
+            
             {/* Undo Notification */}
             {config.features?.undoDelete && showUndoNotification && deletedItem && createPortal(
                 <div className="fixed bottom-4 right-4 bg-red-600 text-white px-4 py-2 rounded-lg shadow-lg flex items-center space-x-2 z-50">
