@@ -26,8 +26,7 @@ const DashboardView = sequelize.define('DashboardView', {
     }
 }, {
     tableName: 'dashboard_views',
-    timestamps: true,
-    underscored: true
+    timestamps: true
 });
 
 const DashboardWidget = sequelize.define('DashboardWidget', {
@@ -66,13 +65,15 @@ const DashboardWidget = sequelize.define('DashboardWidget', {
     }
 }, {
     tableName: 'dashboard_widgets',
-    timestamps: false, // No need for timestamps on the widgets themselves
-    underscored: true
+    timestamps: false // No need for timestamps on the widgets themselves
 });
 
 // Associations
 DashboardView.hasMany(DashboardWidget, { as: 'widgets', foreignKey: 'viewId', onDelete: 'CASCADE' });
 DashboardWidget.belongsTo(DashboardView, { foreignKey: 'viewId' });
+
+// User association
+DashboardView.belongsTo(User, { foreignKey: 'userId' });
 
 // Static methods for DashboardView
 DashboardView.setDefaultForUser = async function(viewId, userId) {

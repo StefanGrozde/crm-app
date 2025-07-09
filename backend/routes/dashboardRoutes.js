@@ -33,8 +33,7 @@ router.get('/views', protect, async (req, res) => {
             include: [{ model: DashboardWidget, as: 'widgets' }],
             order: [['is_default', 'DESC'], ['createdAt', sortOrder.toUpperCase()]],
             limit: parseInt(limit),
-            offset: parseInt(offset),
-            raw: false
+            offset: parseInt(offset)
         });
 
         console.log('Found views:', views.length);

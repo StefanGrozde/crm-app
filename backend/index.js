@@ -157,11 +157,7 @@ const startServer = async () => {
     UserInvitation.belongsTo(Company, { foreignKey: 'companyId' });
     UserInvitation.belongsTo(User, { foreignKey: 'invitedBy', as: 'InvitedBy' });
     
-    // DashboardView associations
-    User.hasMany(DashboardView, { foreignKey: 'userId' });
-    DashboardView.belongsTo(User, { foreignKey: 'userId' });
-    DashboardView.hasMany(DashboardWidget, { foreignKey: 'viewId', as: 'widgets' });
-    DashboardWidget.belongsTo(DashboardView, { foreignKey: 'viewId' });
+    // DashboardView associations are already defined in the DashboardView.js model file
     
     // Sync all models
     // Use { force: true } only in development to drop and re-create tables
