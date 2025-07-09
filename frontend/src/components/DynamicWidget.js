@@ -243,8 +243,14 @@ const DynamicWidget = memo(({ widgetKey, widgetPath, type, resultData, widgetDat
     
     // Handle builtin-react widgets (these are handled by the registry)
     if (type === 'builtin-react') {
+        // Handle dynamic widget keys (e.g., lead-profile-widget-35 -> lead-profile-widget)
+        let baseWidgetKey = memoizedWidgetKey;
+        if (memoizedWidgetKey.includes('-widget-')) {
+            baseWidgetKey = memoizedWidgetKey.split('-widget-')[0] + '-widget';
+        }
+        
         // Check if widget is in our registry
-        const RegisteredWidget = WidgetRegistry[memoizedWidgetKey];
+        const RegisteredWidget = WidgetRegistry[baseWidgetKey];
         
         if (RegisteredWidget) {
             // Create a wrapper component that calls onLoad after render
@@ -280,23 +286,23 @@ const DynamicWidget = memo(({ widgetKey, widgetPath, type, resultData, widgetDat
                     return <RegisteredWidget onOpenUserProfile={onOpenUserProfile} />;
                 }
                 // Pass widgetData to ContactProfileWidget
-                if (memoizedWidgetKey === 'contact-profile-widget' && widgetData) {
+                if (baseWidgetKey === 'contact-profile-widget' && widgetData) {
                     return <RegisteredWidget contactId={widgetData.contactId} />;
                 }
                 // Pass widgetData to LeadProfileWidget
-                if (memoizedWidgetKey === 'lead-profile-widget' && widgetData) {
+                if (baseWidgetKey === 'lead-profile-widget' && widgetData) {
                     return <RegisteredWidget leadId={widgetData.leadId} />;
                 }
                 // Pass widgetData to OpportunityProfileWidget
-                if (memoizedWidgetKey === 'opportunity-profile-widget' && widgetData) {
+                if (baseWidgetKey === 'opportunity-profile-widget' && widgetData) {
                     return <RegisteredWidget opportunityId={widgetData.opportunityId} />;
                 }
                 // Pass widgetData to BusinessProfileWidget
-                if (memoizedWidgetKey === 'business-profile-widget' && widgetData) {
+                if (baseWidgetKey === 'business-profile-widget' && widgetData) {
                     return <RegisteredWidget businessId={widgetData.businessId} />;
                 }
                 // Pass widgetData to UserProfileWidget
-                if (memoizedWidgetKey === 'user-profile-widget' && widgetData) {
+                if (baseWidgetKey === 'user-profile-widget' && widgetData) {
                     return <RegisteredWidget userId={widgetData.userId} />;
                 }
                 return <RegisteredWidget {...props} />;
@@ -308,6 +314,7 @@ const DynamicWidget = memo(({ widgetKey, widgetPath, type, resultData, widgetDat
                 <div className="p-4 text-red-500 border border-red-200 rounded-lg bg-red-50">
                     <div className="font-medium">Built-in React Widget Not Found</div>
                     <div className="text-sm">Widget key: {memoizedWidgetKey}</div>
+                    <div className="text-sm">Base widget key: {baseWidgetKey}</div>
                     <div className="text-sm">Available keys: {Object.keys(WidgetRegistry).join(', ')}</div>
                 </div>
             );
