@@ -4,6 +4,7 @@ const { protect } = require('../middleware/authMiddleware');
 const Contact = require('../models/Contact');
 const Company = require('../models/Company');
 const User = require('../models/User');
+const ListMembership = require('../models/ListMembership');
 const { Op } = require('sequelize');
 
 // GET /api/contacts - Get all contacts with pagination and filtering
@@ -20,6 +21,7 @@ router.get('/', protect, async (req, res) => {
             city,
             state,
             country,
+            listId,
             sortBy = 'created_at',
             sortOrder = 'DESC'
         } = req.query;
@@ -86,7 +88,8 @@ router.get('/', protect, async (req, res) => {
             whereClause.country = { [Op.iLike]: `%${country}%` };
         }
 
-        const { count, rows: contacts } = await Contact.findAndCountAll({
+        // Set up query options
+        const queryOptions = {
             where: whereClause,
             include: [
                 {
@@ -108,7 +111,38 @@ router.get('/', protect, async (req, res) => {
             order: [[sortBy, sortOrder.toUpperCase()]],
             limit: parseInt(limit),
             offset: parseInt(offset)
-        });
+        };
+
+        // Filter by list if specified
+        if (listId) {
+            // Get contact IDs from the list
+            const listMemberships = await ListMembership.findAll({
+                where: {
+                    listId: listId,
+                    entityType: 'contact'
+                },
+                attributes: ['entityId']
+            });
+            
+            const contactIds = listMemberships.map(m => m.entityId);
+            
+            if (contactIds.length > 0) {
+                whereClause.id = { [Op.in]: contactIds };
+            } else {
+                // If list is empty, return no contacts
+                return res.json({
+                    contacts: [],
+                    pagination: {
+                        currentPage: parseInt(page),
+                        totalPages: 0,
+                        totalItems: 0,
+                        itemsPerPage: parseInt(limit)
+                    }
+                });
+            }
+        }
+
+        const { count, rows: contacts } = await Contact.findAndCountAll(queryOptions);
 
         res.json({
             contacts,

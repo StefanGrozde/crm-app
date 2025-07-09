@@ -2,6 +2,7 @@ import React, { useState, useEffect, useContext, useCallback, memo, useRef } fro
 import { createPortal } from 'react-dom';
 import axios from 'axios';
 import { AuthContext } from '../context/AuthContext';
+import ListManager from './ListManager';
 
 const API_URL = process.env.REACT_APP_API_URL;
 
@@ -32,6 +33,10 @@ const ContactsWidget = ({ onOpenContactProfile }) => {
         state: '',
         country: ''
     });
+    
+    // List filtering state
+    const [selectedListId, setSelectedListId] = useState(null);
+    const [selectedContacts, setSelectedContacts] = useState(new Set());
     
     // Separate search state to prevent re-renders
     const [searchTerm, setSearchTerm] = useState('');
@@ -120,6 +125,11 @@ const ContactsWidget = ({ onOpenContactProfile }) => {
                 ...filters
             });
             
+            // Add list filtering if a list is selected
+            if (selectedListId) {
+                params.append('listId', selectedListId);
+            }
+            
             const response = await axios.get(`${API_URL}/api/contacts?${params}`, {
                 withCredentials: true
             });
@@ -132,7 +142,7 @@ const ContactsWidget = ({ onOpenContactProfile }) => {
         } finally {
             setLoading(false);
         }
-    }, [filters, searchTerm, pagination.itemsPerPage]);
+    }, [filters, searchTerm, pagination.itemsPerPage, selectedListId]);
 
     // Load users and filter options for dropdowns - memoized
     const loadDropdownData = useCallback(async () => {
@@ -226,6 +236,95 @@ const ContactsWidget = ({ onOpenContactProfile }) => {
         });
         loadContacts(1);
     }, [loadContacts]);
+
+    // Handle list selection
+    const handleListChange = useCallback((listId) => {
+        setSelectedListId(listId);
+        setSelectedContacts(new Set()); // Clear selected contacts when changing lists
+        loadContacts(1);
+    }, [loadContacts]);
+
+    // Handle contact selection for bulk operations
+    const handleContactSelection = useCallback((contactId, isSelected) => {
+        setSelectedContacts(prev => {
+            const newSelected = new Set(prev);
+            if (isSelected) {
+                newSelected.add(contactId);
+            } else {
+                newSelected.delete(contactId);
+            }
+            return newSelected;
+        });
+    }, []);
+
+    // Add selected contacts to a list
+    const addContactsToList = useCallback(async (listId) => {
+        if (selectedContacts.size === 0) {
+            alert('Please select contacts to add to the list');
+            return;
+        }
+
+        try {
+            const entities = Array.from(selectedContacts).map(contactId => ({
+                entityType: 'contact',
+                entityId: contactId
+            }));
+
+            const response = await axios.post(`${API_URL}/api/lists/${listId}/members`, {
+                entities
+            }, {
+                withCredentials: true
+            });
+
+            alert(`Added ${response.data.added} contacts to the list`);
+            setSelectedContacts(new Set());
+            loadContacts(pagination.currentPage);
+        } catch (error) {
+            console.error('Error adding contacts to list:', error);
+            alert('Failed to add contacts to list: ' + (error.response?.data?.message || error.message));
+        }
+    }, [selectedContacts, pagination.currentPage, loadContacts]);
+
+    // Remove selected contacts from current list
+    const removeContactsFromList = useCallback(async () => {
+        if (!selectedListId || selectedContacts.size === 0) {
+            alert('Please select contacts to remove from the list');
+            return;
+        }
+
+        if (!window.confirm('Are you sure you want to remove the selected contacts from this list?')) {
+            return;
+        }
+
+        try {
+            // Get list memberships for the selected contacts
+            const listResponse = await axios.get(`${API_URL}/api/lists/${selectedListId}`, {
+                withCredentials: true
+            });
+
+            const membershipPromises = [];
+            for (const contactId of selectedContacts) {
+                const membership = listResponse.data.members.find(
+                    m => m.entityType === 'contact' && m.entityId === contactId
+                );
+                if (membership) {
+                    membershipPromises.push(
+                        axios.delete(`${API_URL}/api/lists/${selectedListId}/members/${membership.id}`, {
+                            withCredentials: true
+                        })
+                    );
+                }
+            }
+
+            await Promise.all(membershipPromises);
+            alert('Contacts removed from list successfully');
+            setSelectedContacts(new Set());
+            loadContacts(pagination.currentPage);
+        } catch (error) {
+            console.error('Error removing contacts from list:', error);
+            alert('Failed to remove contacts from list: ' + (error.response?.data?.message || error.message));
+        }
+    }, [selectedListId, selectedContacts, pagination.currentPage, loadContacts]);
 
     // Handle form input changes - now using refs
     // eslint-disable-next-line no-unused-vars
@@ -962,6 +1061,13 @@ const ContactsWidget = ({ onOpenContactProfile }) => {
                 </div>
             </div>
 
+            {/* List Management */}
+            <ListManager
+                entityType="contact"
+                selectedListId={selectedListId}
+                onListChange={handleListChange}
+            />
+
             {/* Search */}
             <div className="mb-4">
                 <input
@@ -1073,11 +1179,66 @@ const ContactsWidget = ({ onOpenContactProfile }) => {
                 </div>
             )}
 
+            {/* Bulk Actions */}
+            {selectedContacts.size > 0 && (
+                <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-2">
+                            <span className="text-sm text-yellow-800">
+                                {selectedContacts.size} contact{selectedContacts.size > 1 ? 's' : ''} selected
+                            </span>
+                            <button
+                                onClick={() => setSelectedContacts(new Set())}
+                                className="text-xs text-yellow-600 hover:text-yellow-800"
+                            >
+                                Clear selection
+                            </button>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                            {selectedListId && (
+                                <button
+                                    onClick={removeContactsFromList}
+                                    className="px-3 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700"
+                                >
+                                    Remove from List
+                                </button>
+                            )}
+                            <select
+                                onChange={(e) => {
+                                    if (e.target.value) {
+                                        addContactsToList(e.target.value);
+                                        e.target.value = '';
+                                    }
+                                }}
+                                className="text-sm border border-gray-300 rounded px-2 py-1"
+                            >
+                                <option value="">Add to List...</option>
+                                {/* This will be populated by ListManager's lists */}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Contacts Table */}
             <div className="overflow-x-auto" style={{ maxHeight: 'calc(100vh - 300px)' }}>
                 <table className="min-w-full bg-white border border-gray-200 rounded-lg">
                     <thead className="bg-gray-50">
                         <tr>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b">
+                                <input
+                                    type="checkbox"
+                                    checked={contacts.length > 0 && contacts.every(c => selectedContacts.has(c.id))}
+                                    onChange={(e) => {
+                                        if (e.target.checked) {
+                                            setSelectedContacts(new Set(contacts.map(c => c.id)));
+                                        } else {
+                                            setSelectedContacts(new Set());
+                                        }
+                                    }}
+                                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                />
+                            </th>
                             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b">
                                 Contact
                             </th>
@@ -1107,6 +1268,14 @@ const ContactsWidget = ({ onOpenContactProfile }) => {
                     <tbody className="divide-y divide-gray-200">
                         {Array.isArray(contacts) && contacts.map((contact) => (
                             <tr key={contact.id} className="hover:bg-gray-50 transition-colors">
+                                <td className="px-4 py-3 whitespace-nowrap">
+                                    <input
+                                        type="checkbox"
+                                        checked={selectedContacts.has(contact.id)}
+                                        onChange={(e) => handleContactSelection(contact.id, e.target.checked)}
+                                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                    />
+                                </td>
                                 <td className="px-4 py-3 whitespace-nowrap">
                                     <div className="flex items-center">
                                         <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center mr-3">

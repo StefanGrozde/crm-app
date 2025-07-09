@@ -17,6 +17,7 @@ const leadRoutes = require('./routes/leadRoutes');
 const opportunityRoutes = require('./routes/opportunityRoutes');
 const businessRoutes = require('./routes/businessRoutes');
 const invitationRoutes = require('./routes/invitationRoutes');
+const listRoutes = require('./routes/listRoutes');
 const path = require('path');
 
 console.log("Application starting...");
@@ -77,6 +78,7 @@ app.use('/api/leads', leadRoutes);
 app.use('/api/opportunities', opportunityRoutes);
 app.use('/api/businesses', businessRoutes);
 app.use('/api/invitations', invitationRoutes);
+app.use('/api/lists', listRoutes);
 app.use('/api/widgets/buildin', express.static(path.join(__dirname, 'widgets', 'buildin')));
 app.use('/api/widgets/custom', express.static(path.join(__dirname, 'widgets', 'custom')));
 // Test Route to check DB connection
@@ -118,6 +120,9 @@ const startServer = async () => {
     const Widget = require('./models/Widget');
     const UserInvitation = require('./models/UserInvitation');
     const { DashboardView, DashboardWidget } = require('./models/DashboardView');
+    const List = require('./models/List');
+    const ListMembership = require('./models/ListMembership');
+    const ListShare = require('./models/ListShare');
     
     // Define associations
     // Company associations
@@ -158,6 +163,30 @@ const startServer = async () => {
     UserInvitation.belongsTo(User, { foreignKey: 'invitedBy', as: 'InvitedBy' });
     
     // DashboardView associations are already defined in the DashboardView.js model file
+    
+    // List associations
+    List.belongsTo(Company, { foreignKey: 'companyId', as: 'company' });
+    List.belongsTo(User, { foreignKey: 'createdBy', as: 'creator' });
+    List.hasMany(ListMembership, { foreignKey: 'listId', as: 'memberships' });
+    List.hasMany(ListShare, { foreignKey: 'listId', as: 'shares' });
+    
+    // ListMembership associations
+    ListMembership.belongsTo(List, { foreignKey: 'listId', as: 'list' });
+    ListMembership.belongsTo(User, { foreignKey: 'addedBy', as: 'addedByUser' });
+    
+    // ListShare associations
+    ListShare.belongsTo(List, { foreignKey: 'listId', as: 'list' });
+    ListShare.belongsTo(User, { foreignKey: 'sharedWith', as: 'sharedWithUser' });
+    ListShare.belongsTo(User, { foreignKey: 'sharedBy', as: 'sharedByUser' });
+    
+    // Company associations for Lists
+    Company.hasMany(List, { foreignKey: 'companyId' });
+    
+    // User associations for Lists
+    User.hasMany(List, { foreignKey: 'createdBy', as: 'createdLists' });
+    User.hasMany(ListMembership, { foreignKey: 'addedBy', as: 'addedMemberships' });
+    User.hasMany(ListShare, { foreignKey: 'sharedWith', as: 'sharedLists' });
+    User.hasMany(ListShare, { foreignKey: 'sharedBy', as: 'listsShared' });
     
     // Sync all models
     // Use { force: true } only in development to drop and re-create tables
