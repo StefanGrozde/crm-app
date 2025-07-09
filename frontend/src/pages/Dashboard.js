@@ -298,6 +298,13 @@ const Dashboard = () => {
                         path: null
                     },
                     {
+                        key: 'lead-profile-widget',
+                        name: 'Lead Profile Widget',
+                        description: 'Display detailed lead information',
+                        type: 'builtin-react',
+                        path: null
+                    },
+                    {
                         key: 'opportunities-widget',
                         name: 'Opportunities Widget',
                         description: 'Manage and view opportunities',
@@ -329,6 +336,13 @@ const Dashboard = () => {
                         key: 'users-widget',
                         name: 'Users Widget',
                         description: 'Manage and view users',
+                        type: 'builtin-react',
+                        path: null
+                    },
+                    {
+                        key: 'user-profile-widget',
+                        name: 'User Profile Widget',
+                        description: 'Display detailed user information',
                         type: 'builtin-react',
                         path: null
                     },
