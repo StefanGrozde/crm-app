@@ -14,7 +14,6 @@ const DashboardView = sequelize.define('DashboardView', {
     },
     userId: {
         type: DataTypes.INTEGER,
-        field: 'user_id', // Map to snake_case column
         references: {
             model: User,
             key: 'id',
