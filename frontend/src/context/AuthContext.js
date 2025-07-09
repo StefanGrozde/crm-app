@@ -4,6 +4,8 @@ import axios from 'axios';
 // Exporting AuthContext directly to resolve the import error.
 export const AuthContext = createContext(null);
 
+const API_URL = process.env.REACT_APP_API_URL;
+
 export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider = ({ children }) => {
@@ -15,7 +17,7 @@ export const AuthProvider = ({ children }) => {
         setLoading(true);
         try {
             // We use axios here but ensure cookies are sent
-            const response = await axios.get('https://backend.svnikolaturs.mk/api/auth/me', {
+            const response = await axios.get(`${API_URL}/api/auth/me`, {
                 withCredentials: true, 
             });
             
@@ -39,7 +41,7 @@ export const AuthProvider = ({ children }) => {
 
     // Standard login
     const login = async (email, password) => {
-        const response = await axios.post('https://backend.svnikolaturs.mk/api/auth/login', { email, password }, {
+        const response = await axios.post(`${API_URL}/api/auth/login`, { email, password }, {
             withCredentials: true,
         });
         await checkUserLoggedIn(); // Re-check user status to get full user object
@@ -48,7 +50,7 @@ export const AuthProvider = ({ children }) => {
 
     // Microsoft Login
     const completeMicrosoftLogin = async (mscode) => {
-        const response = await axios.post('https://backend.svnikolaturs.mk/api/auth/microsoft/complete', { mscode }, {
+        const response = await axios.post(`${API_URL}/api/auth/microsoft/complete`, { mscode }, {
             withCredentials: true,
         });
         await checkUserLoggedIn(); // Re-check user status
