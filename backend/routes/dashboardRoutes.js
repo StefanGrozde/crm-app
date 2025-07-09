@@ -31,13 +31,15 @@ router.get('/views', protect, async (req, res) => {
         const { count, rows: views } = await DashboardView.findAndCountAll({
             where: whereClause,
             include: [{ model: DashboardWidget, as: 'widgets' }],
-            order: [['isDefault', 'DESC'], ['createdAt', sortOrder.toUpperCase()]],
+            order: [['is_default', 'DESC'], ['createdAt', sortOrder.toUpperCase()]],
             limit: parseInt(limit),
             offset: parseInt(offset)
         });
 
         console.log('Found views:', views.length);
         console.log('Sample view:', views[0] ? JSON.stringify(views[0].toJSON(), null, 2) : 'No views found');
+        console.log('Sample view isDefault field:', views[0] ? views[0].isDefault : 'No views');
+        console.log('Sample view is_default field:', views[0] ? views[0].is_default : 'No views');
         
         res.json({
             items: views,
