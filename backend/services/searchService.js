@@ -4,6 +4,7 @@ const Company = require('../models/Company');
 const Contact = require('../models/Contact');
 const Lead = require('../models/Lead');
 const Opportunity = require('../models/Opportunity');
+const Sale = require('../models/Sale');
 
 class SearchService {
   /**
@@ -12,7 +13,7 @@ class SearchService {
    * @param {Object} options - Search options
    * @param {number} options.userId - Current user ID for filtering
    * @param {number} options.companyId - Company ID for filtering
-   * @param {Array} options.types - Array of entity types to search ('contacts', 'leads', 'opportunities', 'companies', 'users')
+   * @param {Array} options.types - Array of entity types to search ('contacts', 'leads', 'opportunities', 'companies', 'users', 'sales')
    * @param {number} options.limit - Maximum number of results per type
    * @param {number} options.offset - Offset for pagination
    * @returns {Object} Search results grouped by entity type
@@ -24,7 +25,7 @@ class SearchService {
     const {
       userId,
       companyId,
-      types = ['contacts', 'leads', 'opportunities', 'companies', 'users'],
+      types = ['contacts', 'leads', 'opportunities', 'companies', 'users', 'sales'],
       limit = 10,
       offset = 0
     } = options;
@@ -88,6 +89,18 @@ class SearchService {
           .then(users => { 
             console.log('🔍 SearchService: Users results:', users);
             results.users = users; 
+          })
+      );
+    }
+
+    // Search sales
+    if (types.includes('sales')) {
+      console.log('🔍 SearchService: Searching sales...');
+      searchPromises.push(
+        this.searchSales(query, { userId, companyId, limit, offset })
+          .then(sales => { 
+            console.log('🔍 SearchService: Sales results:', sales);
+            results.sales = sales; 
           })
       );
     }
@@ -377,6 +390,66 @@ class SearchService {
   }
 
   /**
+   * Search sales with simple search
+   */
+  static async searchSales(query, options = {}) {
+    const { userId, companyId, limit = 10, offset = 0 } = options;
+
+    const whereClause = {
+      [Op.or]: [
+        // Sale number search
+        { saleNumber: { [Op.iLike]: `%${query}%` } },
+        // Title search
+        { title: { [Op.iLike]: `%${query}%` } },
+        // Description search
+        { description: { [Op.iLike]: `%${query}%` } },
+        // Category search
+        { category: { [Op.iLike]: `%${query}%` } },
+        // Source search
+        { source: { [Op.iLike]: `%${query}%` } },
+        // Notes search
+        { notes: { [Op.iLike]: `%${query}%` } }
+      ]
+    };
+
+    if (companyId) {
+      whereClause.companyId = companyId;
+    }
+
+    try {
+      const sales = await Sale.findAll({
+        where: whereClause,
+        order: [
+          ['totalAmount', 'DESC'],
+          ['saleDate', 'DESC']
+        ],
+        limit,
+        offset,
+        raw: true
+      });
+
+      return sales.map(sale => ({
+        id: sale.id,
+        type: 'sale',
+        title: sale.title,
+        subtitle: sale.saleNumber,
+        status: sale.status,
+        paymentStatus: sale.paymentStatus,
+        amount: sale.totalAmount,
+        currency: sale.currency,
+        saleDate: sale.saleDate,
+        category: sale.category,
+        source: sale.source,
+        relevance: 0
+      }));
+    } catch (error) {
+      console.error('🔍 SearchService: Error in searchSales:', error);
+      console.error('🔍 SearchService: Error stack:', error.stack);
+      return [];
+    }
+  }
+
+  /**
    * Get search suggestions based on recent searches and popular terms
    */
   static async getSearchSuggestions(query, options = {}) {
@@ -413,12 +486,26 @@ class SearchService {
           name: { [Op.iLike]: `${query}%` }
         },
         attributes: ['name'],
-        limit: Math.ceil(limit / 2),
+        limit: Math.ceil(limit / 3),
         raw: true
       });
       console.log('🔍 SearchService: Company suggestions found:', companySuggestions.length);
 
       suggestions.push(...companySuggestions.map(c => c.name));
+
+      // Simple sales suggestions
+      console.log('🔍 SearchService: Fetching sales suggestions...');
+      const salesSuggestions = await Sale.findAll({
+        where: {
+          title: { [Op.iLike]: `${query}%` }
+        },
+        attributes: ['title'],
+        limit: Math.ceil(limit / 3),
+        raw: true
+      });
+      console.log('🔍 SearchService: Sales suggestions found:', salesSuggestions.length);
+
+      suggestions.push(...salesSuggestions.map(s => s.title));
 
       const result = suggestions.slice(0, limit);
       console.log('🔍 SearchService: Final suggestions:', result);
@@ -441,11 +528,12 @@ class SearchService {
       whereClause.companyId = companyId;
     }
 
-    const [contactCount, leadCount, opportunityCount, companyCount] = await Promise.all([
+    const [contactCount, leadCount, opportunityCount, companyCount, saleCount] = await Promise.all([
       Contact.count({ where: whereClause }),
       Lead.count({ where: whereClause }),
       Opportunity.count({ where: whereClause }),
-      Company.count({ where: companyId ? { id: companyId } : {} })
+      Company.count({ where: companyId ? { id: companyId } : {} }),
+      Sale.count({ where: whereClause })
     ]);
 
     return {
@@ -453,7 +541,8 @@ class SearchService {
       totalLeads: leadCount,
       totalOpportunities: opportunityCount,
       totalCompanies: companyCount,
-      searchableEntities: contactCount + leadCount + opportunityCount + companyCount
+      totalSales: saleCount,
+      searchableEntities: contactCount + leadCount + opportunityCount + companyCount + saleCount
     };
   }
 }

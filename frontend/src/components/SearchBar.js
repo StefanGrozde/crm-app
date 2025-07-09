@@ -5,7 +5,7 @@ import { useAuth } from '../context/AuthContext';
 
 const API_URL = process.env.REACT_APP_API_URL;
 
-const SearchBar = ({ className = '', placeholder = "Search contacts, leads, opportunities...", onOpenResult }) => {
+const SearchBar = ({ className = '', placeholder = "Search contacts, leads, opportunities, sales...", onOpenResult }) => {
   const [query, setQuery] = useState('');
   const [suggestions, setSuggestions] = useState([]);
   const [results, setResults] = useState(null);
@@ -190,6 +190,10 @@ const SearchBar = ({ className = '', placeholder = "Search contacts, leads, oppo
         // Navigate to user detail page
         navigate(`/users/${result.id}`);
         break;
+      case 'sale':
+        // Navigate to sale detail page
+        navigate(`/sales/${result.id}`);
+        break;
       default:
         console.log('Unknown result type:', result.type);
     }
@@ -256,6 +260,12 @@ const SearchBar = ({ className = '', placeholder = "Search contacts, leads, oppo
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
         );
+      case 'sale':
+        return (
+          <svg className="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+          </svg>
+        );
       default:
         return (
           <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -280,7 +290,16 @@ const SearchBar = ({ className = '', placeholder = "Search contacts, leads, oppo
       negotiation: 'bg-orange-100 text-orange-800',
       closed_won: 'bg-green-100 text-green-800',
       closed_lost: 'bg-red-100 text-red-800',
-      prospecting: 'bg-yellow-100 text-yellow-800'
+      prospecting: 'bg-yellow-100 text-yellow-800',
+      // Sales statuses
+      pending: 'bg-yellow-100 text-yellow-800',
+      processing: 'bg-blue-100 text-blue-800',
+      completed: 'bg-green-100 text-green-800',
+      cancelled: 'bg-red-100 text-red-800',
+      refunded: 'bg-gray-100 text-gray-800',
+      paid: 'bg-green-100 text-green-800',
+      partially_paid: 'bg-orange-100 text-orange-800',
+      failed: 'bg-red-100 text-red-800'
     };
 
     return (
@@ -433,6 +452,10 @@ const SearchBar = ({ className = '', placeholder = "Search contacts, leads, oppo
                 <div className="flex justify-between">
                   <span className="text-gray-600">Companies:</span>
                   <span className="font-medium">{analytics.totalCompanies}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Sales:</span>
+                  <span className="font-medium">{analytics.totalSales || 0}</span>
                 </div>
               </div>
             </div>

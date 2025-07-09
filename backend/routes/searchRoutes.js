@@ -7,6 +7,7 @@ const Lead = require('../models/Lead');
 const Opportunity = require('../models/Opportunity');
 const Company = require('../models/Company');
 const User = require('../models/User');
+const Sale = require('../models/Sale');
 
 /**
  * @route   POST /api/search/sample-data
@@ -142,12 +143,91 @@ router.post('/sample-data', protect, async (req, res) => {
 
     const createdOpportunities = await Opportunity.bulkCreate(sampleOpportunities);
 
+    // Create sample sales
+    const sampleSales = [
+      {
+        saleNumber: 'SALE-001',
+        title: 'Enterprise Software License',
+        description: 'Annual software license for enterprise client',
+        status: 'completed',
+        saleDate: new Date(),
+        amount: 50000.00,
+        currency: 'USD',
+        discountAmount: 0.00,
+        taxAmount: 4000.00,
+        totalAmount: 54000.00,
+        paymentMethod: 'Credit Card',
+        paymentStatus: 'paid',
+        paymentDate: new Date(),
+        commissionRate: 10.00,
+        commissionAmount: 5000.00,
+        category: 'Software License',
+        source: 'Lead Conversion',
+        companyId: user.companyId,
+        contactId: createdContacts[0].id,
+        leadId: createdLeads[0].id,
+        opportunityId: createdOpportunities[0].id,
+        createdBy: user.id
+      },
+      {
+        saleNumber: 'SALE-002',
+        title: 'Website Redesign Project',
+        description: 'Complete website redesign and development',
+        status: 'processing',
+        saleDate: new Date(),
+        amount: 25000.00,
+        currency: 'USD',
+        discountAmount: 1000.00,
+        taxAmount: 2000.00,
+        totalAmount: 26000.00,
+        paymentMethod: 'Bank Transfer',
+        paymentStatus: 'partially_paid',
+        paymentDate: new Date(),
+        commissionRate: 8.00,
+        commissionAmount: 2000.00,
+        category: 'Services',
+        source: 'Referral',
+        companyId: user.companyId,
+        contactId: createdContacts[1].id,
+        leadId: createdLeads[1].id,
+        opportunityId: createdOpportunities[1].id,
+        createdBy: user.id
+      },
+      {
+        saleNumber: 'SALE-003',
+        title: 'Consulting Services',
+        description: 'Strategic business consulting project',
+        status: 'pending',
+        saleDate: new Date(),
+        amount: 15000.00,
+        currency: 'USD',
+        discountAmount: 0.00,
+        taxAmount: 1200.00,
+        totalAmount: 16200.00,
+        paymentMethod: 'Invoice',
+        paymentStatus: 'pending',
+        paymentDate: null,
+        commissionRate: 12.00,
+        commissionAmount: 1800.00,
+        category: 'Consulting',
+        source: 'Cold Call',
+        companyId: user.companyId,
+        contactId: createdContacts[2].id,
+        leadId: createdLeads[2].id,
+        opportunityId: createdOpportunities[2].id,
+        createdBy: user.id
+      }
+    ];
+
+    const createdSales = await Sale.bulkCreate(sampleSales);
+
     res.json({
       message: 'Sample data created successfully',
       created: {
         contacts: createdContacts.length,
         leads: createdLeads.length,
-        opportunities: createdOpportunities.length
+        opportunities: createdOpportunities.length,
+        sales: createdSales.length
       }
     });
 
@@ -185,7 +265,7 @@ router.get('/', protect, async (req, res) => {
       });
     }
 
-    const searchTypes = types ? types.split(',') : ['contacts', 'leads', 'opportunities', 'companies', 'users'];
+    const searchTypes = types ? types.split(',') : ['contacts', 'leads', 'opportunities', 'companies', 'users', 'sales'];
     console.log('🔍 Backend: Search types:', searchTypes);
     
     const results = await SearchService.searchAll(query.trim(), {
@@ -389,6 +469,51 @@ router.get('/companies', protect, async (req, res) => {
 });
 
 /**
+ * @route   GET /api/search/sales
+ * @desc    Search sales specifically
+ * @access  Private
+ */
+router.get('/sales', protect, async (req, res) => {
+  try {
+    const { 
+      q: query, 
+      limit = 10, 
+      offset = 0 
+    } = req.query;
+
+    if (!query || query.trim().length < 2) {
+      return res.status(400).json({ 
+        message: 'Search query must be at least 2 characters long' 
+      });
+    }
+
+    const results = await SearchService.searchSales(query.trim(), {
+      userId: req.user.id,
+      companyId: req.user.companyId,
+      limit: parseInt(limit),
+      offset: parseInt(offset)
+    });
+
+    res.json({
+      query: query.trim(),
+      totalResults: results.length,
+      results,
+      pagination: {
+        limit: parseInt(limit),
+        offset: parseInt(offset),
+        hasMore: results.length === parseInt(limit)
+      }
+    });
+  } catch (error) {
+    console.error('Sales search error:', error);
+    res.status(500).json({ 
+      message: 'Sales search failed. Please try again.',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+});
+
+/**
  * @route   GET /api/search/suggestions
  * @desc    Get search suggestions
  * @access  Private
@@ -510,6 +635,16 @@ router.get('/test-tables', protect, async (req, res) => {
     } catch (error) {
       results.users = { exists: false, error: error.message };
       console.error('🔍 User table error:', error.message);
+    }
+    
+    // Test Sale table
+    try {
+      const saleCount = await Sale.count();
+      results.sales = { exists: true, count: saleCount };
+      console.log('🔍 Sale table accessible, count:', saleCount);
+    } catch (error) {
+      results.sales = { exists: false, error: error.message };
+      console.error('🔍 Sale table error:', error.message);
     }
     
     res.json(results);
