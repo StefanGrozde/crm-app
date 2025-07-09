@@ -203,6 +203,8 @@ const MyViewsWidget = () => {
 
     // Logic: Handle edit (navigate to EditLayout)
     const handleEdit = useCallback((item) => {
+        // For now, keep the navigation to the separate EditLayout page
+        // This could be updated to use embedded edit mode in the future
         navigate(`/edit-layout/${item.id}`);
     }, [navigate]);
 

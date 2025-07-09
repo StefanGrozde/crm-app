@@ -9,6 +9,7 @@ import { AuthContext } from '../context/AuthContext';
 import Navbar from '../components/Navbar';
 import TabBar from '../components/TabBar';
 import DashboardGrid from '../components/DashboardGrid';
+import EmbeddedEditLayout from '../components/EmbeddedEditLayout';
 import { useTabSession } from '../hooks/useTabSession';
 
 const API_URL = process.env.REACT_APP_API_URL;
@@ -26,6 +27,7 @@ const Dashboard = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [isTabSwitching, setIsTabSwitching] = useState(false);
     const [isRefreshing, setIsRefreshing] = useState(false);
+    const [isEditMode, setIsEditMode] = useState(false);
 
     
     // Tab management state with session persistence
@@ -981,6 +983,29 @@ const Dashboard = () => {
         handleOpenPageTab('my-views', 'My Views', 'my-views-widget');
     };
 
+    // Handle entering edit mode
+    const handleEnterEditMode = () => {
+        if (activeTabId && !String(activeTabId).includes('-page') && !String(activeTabId).includes('search-')) {
+            console.log('Entering edit mode for view:', activeTabId);
+            setIsEditMode(true);
+        }
+    };
+
+    // Handle exiting edit mode
+    const handleExitEditMode = () => {
+        console.log('Exiting edit mode');
+        setIsEditMode(false);
+    };
+
+    // Handle save success from edit mode
+    const handleEditSaveSuccess = (updatedView) => {
+        console.log('Edit save success:', updatedView);
+        // Refresh the current view data
+        if (activeTabId === updatedView.id) {
+            refreshCurrentView();
+        }
+    };
+
     // Create sample data for testing
     const createSampleData = async () => {
         try {
@@ -1270,6 +1295,8 @@ const Dashboard = () => {
                     onOpenUserProfile={handleOpenUserProfile}
                     onOpenMyViews={handleOpenMyViews}
                     currentViewId={currentViewId}
+                    onEnterEditMode={handleEnterEditMode}
+                    isEditMode={isEditMode}
                 />
 
                 <TabBar 
@@ -1296,7 +1323,7 @@ const Dashboard = () => {
                     )}
 
                     {/* Grid layout - only show if there's an active tab and layout is ready */}
-                    {activeTabId && layout && (
+                    {activeTabId && layout && !isEditMode && (
                         <>
                             {/* Layout Debug */}
                             <div className="mb-4 p-2 bg-green-100 rounded text-xs">
@@ -1308,7 +1335,7 @@ const Dashboard = () => {
                             </div>
                         </>
                     )}
-                    {activeTabId && layout && (
+                    {activeTabId && layout && !isEditMode && (
                         <DashboardGrid
                             layout={layout}
                             widgetLibrary={widgetLibrary}
@@ -1324,6 +1351,15 @@ const Dashboard = () => {
                             onOpenOpportunityProfile={handleOpenOpportunityProfile}
                             onOpenBusinessProfile={handleOpenBusinessProfile}
                             onOpenUserProfile={handleOpenUserProfile}
+                        />
+                    )}
+                    
+                    {/* Edit Layout Mode */}
+                    {activeTabId && isEditMode && !String(activeTabId).includes('-page') && !String(activeTabId).includes('search-') && (
+                        <EmbeddedEditLayout
+                            viewId={activeTabId}
+                            onExitEditMode={handleExitEditMode}
+                            onSaveSuccess={handleEditSaveSuccess}
                         />
                     )}
                     

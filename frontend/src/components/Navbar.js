@@ -11,7 +11,9 @@ const Navbar = ({
     onOpenPageTab,
     onOpenUserProfile,
     onOpenMyViews,
-    currentViewId
+    currentViewId,
+    onEnterEditMode,
+    isEditMode
 }) => {
     // Debug logging
     console.log('Navbar render - currentViewId:', currentViewId, 'type:', typeof currentViewId);
@@ -192,25 +194,29 @@ const Navbar = ({
                             {/* Edit mode toggle - always show, but disable on main pages */}
                             <button
                                 onClick={() => {
-                                    if (currentViewId && !String(currentViewId).includes('-page')) {
-                                        window.location.href = `/edit-layout/${currentViewId}`;
+                                    if (currentViewId && !String(currentViewId).includes('-page') && onEnterEditMode) {
+                                        onEnterEditMode();
                                     }
                                 }}
                                 className={`px-4 py-2 rounded-md transition-colors ${
-                                    currentViewId && !String(currentViewId).includes('-page')
-                                        ? 'bg-blue-600 text-white hover:bg-blue-700'
-                                        : 'bg-gray-400 text-gray-200 cursor-not-allowed'
+                                    isEditMode
+                                        ? 'bg-green-600 text-white hover:bg-green-700'
+                                        : currentViewId && !String(currentViewId).includes('-page')
+                                            ? 'bg-blue-600 text-white hover:bg-blue-700'
+                                            : 'bg-gray-400 text-gray-200 cursor-not-allowed'
                                 }`}
                                 disabled={!currentViewId || String(currentViewId).includes('-page')}
                                 title={
-                                    !currentViewId 
-                                        ? "No view selected - a default view should be created automatically" 
-                                        : String(currentViewId).includes('-page')
-                                            ? "Edit Layout is not available on main pages"
-                                            : "Open Edit Layout"
+                                    isEditMode
+                                        ? "Currently in Edit Mode"
+                                        : !currentViewId 
+                                            ? "No view selected - a default view should be created automatically" 
+                                            : String(currentViewId).includes('-page')
+                                                ? "Edit Layout is not available on main pages"
+                                                : "Enter Edit Mode"
                                 }
                             >
-                                Edit Layout
+                                {isEditMode ? 'In Edit Mode' : 'Edit Layout'}
                             </button>
 
                             {/* My Views button */}
