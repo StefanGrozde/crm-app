@@ -77,26 +77,21 @@ const DashboardGrid = ({
                    
                    /* Enhanced widget border styles */
                    .widget-container {
-                       border: 2px solid #e5e7eb;
+                       border: 2px solid #9ca3af;
                        border-radius: 0.5rem;
-                       transition: all 0.2s ease;
-                       box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+                       transition: border-color 0.2s ease;
                    }
                    
                    .widget-container:hover {
                        border-color: #3b82f6;
-                       box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-                       transform: translateY(-1px);
                    }
                    
                    .widget-container.error {
-                       border-color: #fecaca;
-                       background-color: #fef2f2;
+                       border-color: #ef4444;
                    }
                    
                    .widget-container.loading {
-                       border-color: #d1d5db;
-                       background-color: #f9fafb;
+                       border-color: #6b7280;
                    }
                `}
             </style>
