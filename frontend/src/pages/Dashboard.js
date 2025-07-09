@@ -395,7 +395,7 @@ const Dashboard = () => {
                     // Validate that all saved tabs correspond to existing views
                     console.log('Validating saved tabs against views...');
                     console.log('Saved tabs:', savedTabs);
-                    console.log('Available views:', viewsData.map(v => ({ id: v.id, name: v.name, isDefault: v.isDefault })));
+                    console.log('Available views:', viewsData.map(v => ({ id: v.id, name: v.name, is_default: v.is_default })));
                     
                     const validTabs = savedTabs.filter(tab => {
                         // Check if it's a search result tab, main page tab, or a regular view tab
@@ -429,7 +429,7 @@ const Dashboard = () => {
                         console.log('No valid tabs in session, checking if views exist...');
                         if (viewsData && viewsData.length > 0) {
                             console.log('Views exist but no valid tabs, opening first view');
-                            const firstView = viewsData.find(v => v.isDefault) || viewsData[0];
+                            const firstView = viewsData.find(v => v.is_default) || viewsData[0];
                             await openViewAsTab(firstView);
                         } else {
                             console.log('No views exist, creating default view');
@@ -447,8 +447,8 @@ const Dashboard = () => {
                         await createDefaultView();
                     } else {
                         // Load the first view (or a view marked as default) as the first tab
-                        console.log('Found existing views:', viewsData.map(v => ({ id: v.id, name: v.name, isDefault: v.isDefault })));
-                        const defaultView = viewsData.find(v => v.isDefault) || viewsData[0];
+                        console.log('Found existing views:', viewsData.map(v => ({ id: v.id, name: v.name, is_default: v.is_default })));
+                        const defaultView = viewsData.find(v => v.is_default) || viewsData[0];
                         console.log('Loading default view as first tab:', defaultView);
                         await openViewAsTab(defaultView);
                     }
@@ -482,7 +482,7 @@ const Dashboard = () => {
             console.log('Creating default view...');
             
             // Check if a default view already exists
-            const existingDefaultView = views.find(v => v.isDefault);
+            const existingDefaultView = views.find(v => v.is_default);
             if (existingDefaultView) {
                 console.log('Default view already exists, opening it instead:', existingDefaultView);
                 await openViewAsTab(existingDefaultView);
@@ -527,7 +527,7 @@ const Dashboard = () => {
                 id: 'fallback-default',
                 name: 'My Dashboard',
                 widgets: [],
-                isDefault: true
+                is_default: true
             };
             
             const fallbackLayout = [];
@@ -562,7 +562,7 @@ const Dashboard = () => {
                 const newTab = {
                     id: view.id,
                     name: view.name,
-                    isDefault: view.isDefault
+                    isDefault: view.is_default
                 };
                 
                 // Update all state synchronously

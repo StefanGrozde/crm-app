@@ -363,7 +363,7 @@ const MyViewsWidget = () => {
                                     </div>
                                 </td>
                                 <td className="px-4 py-3 whitespace-nowrap">
-                                    {item.isDefault ? (
+                                    {item.is_default ? (
                                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                                             Default
                                         </span>
@@ -391,7 +391,7 @@ const MyViewsWidget = () => {
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                                             </svg>
                                         </button>
-                                        {!item.isDefault && (
+                                        {!item.is_default && (
                                             <button
                                                 onClick={() => handleSetDefault(item.id)}
                                                 className="text-purple-600 hover:text-purple-900"

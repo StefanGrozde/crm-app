@@ -33,13 +33,12 @@ router.get('/views', protect, async (req, res) => {
             include: [{ model: DashboardWidget, as: 'widgets' }],
             order: [['is_default', 'DESC'], ['createdAt', sortOrder.toUpperCase()]],
             limit: parseInt(limit),
-            offset: parseInt(offset)
+            offset: parseInt(offset),
+            raw: false
         });
 
         console.log('Found views:', views.length);
         console.log('Sample view:', views[0] ? JSON.stringify(views[0].toJSON(), null, 2) : 'No views found');
-        console.log('Sample view isDefault field:', views[0] ? views[0].isDefault : 'No views');
-        console.log('Sample view is_default field:', views[0] ? views[0].is_default : 'No views');
         
         res.json({
             items: views,
@@ -56,6 +55,7 @@ router.get('/views', protect, async (req, res) => {
         console.error('Error stack:', error.stack);
         console.error('Query params:', req.query);
         console.error('User ID:', req.user.id);
+
         res.status(500).json({ error: 'Failed to fetch dashboard views', details: error.message });
     }
 });
@@ -95,7 +95,7 @@ router.post('/views', protect, async (req, res) => {
         const view = await DashboardView.create({
             name: name.trim(),
             userId: req.user.id,
-            isDefault: isDefault
+            is_default: isDefault
         });
         
         // Add widgets if provided
@@ -145,7 +145,7 @@ router.put('/views/:id', protect, async (req, res) => {
         // Update view properties
         const updateData = {};
         if (name !== undefined) updateData.name = name.trim();
-        if (isDefault !== undefined) updateData.isDefault = isDefault;
+        if (isDefault !== undefined) updateData.is_default = isDefault;
         
         if (Object.keys(updateData).length > 0) {
             await view.update(updateData);
