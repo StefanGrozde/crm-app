@@ -30,43 +30,59 @@ export const TAB_COLORS = {
 
 // Get color for a specific tab
 export const getTabColor = (tabId, tabData = null) => {
+    console.log('getTabColor called with:', { tabId, tabData, tabIdType: typeof tabId });
+    
     // If tab has custom color data (for dashboard views)
     if (tabData && tabData.color) {
+        console.log('Using tabData color:', tabData.color);
         return tabData.color;
     }
     
     // Check if it's a dashboard view (numeric ID)
     if (typeof tabId === 'number' || (typeof tabId === 'string' && /^\d+$/.test(tabId))) {
-        return tabData?.color || TAB_COLORS.default;
+        const color = tabData?.color || TAB_COLORS.default;
+        console.log('Dashboard view color:', color);
+        return color;
     }
     
     // Check for specific tab types
     const tabIdStr = String(tabId).toLowerCase();
+    console.log('Processing tabIdStr:', tabIdStr);
     
     // Check for profile pages
     if (tabIdStr.includes('-profile')) {
         const baseType = tabIdStr.replace('-profile', '');
-        return TAB_COLORS[baseType] || TAB_COLORS.default;
+        const color = TAB_COLORS[baseType] || TAB_COLORS.default;
+        console.log('Profile page color:', color, 'for baseType:', baseType);
+        return color;
     }
     
     // Check for search results
     if (tabIdStr.startsWith('search-')) {
         const searchType = tabIdStr.replace('search-', '');
-        return TAB_COLORS[searchType] || TAB_COLORS.default;
+        const color = TAB_COLORS[searchType] || TAB_COLORS.default;
+        console.log('Search result color:', color, 'for searchType:', searchType);
+        return color;
     }
     
     // Check for page tabs (e.g., my-views-page)
     if (tabIdStr.endsWith('-page')) {
         const pageType = tabIdStr.replace('-page', '');
-        return TAB_COLORS[pageType] || TAB_COLORS.default;
+        const color = TAB_COLORS[pageType] || TAB_COLORS.default;
+        console.log('Page tab color:', color, 'for pageType:', pageType);
+        return color;
     }
     
     // Check for basic pages
-    return TAB_COLORS[tabIdStr] || TAB_COLORS.default;
+    const color = TAB_COLORS[tabIdStr] || TAB_COLORS.default;
+    console.log('Basic page color:', color, 'for tabIdStr:', tabIdStr);
+    return color;
 };
 
 // Get CSS classes for tab styling
 export const getTabColorClasses = (color, isActive = false) => {
+    console.log('getTabColorClasses called with:', { color, isActive });
+    
     const colorMap = {
         'blue': {
             active: 'border-blue-500 bg-blue-50 text-blue-700',
@@ -111,7 +127,9 @@ export const getTabColorClasses = (color, isActive = false) => {
     };
     
     const colorClasses = colorMap[color] || colorMap['blue'];
-    return isActive ? colorClasses.active : colorClasses.inactive;
+    const result = isActive ? colorClasses.active : colorClasses.inactive;
+    console.log('Returning color classes:', result);
+    return result;
 };
 
 // Available colors for user selection

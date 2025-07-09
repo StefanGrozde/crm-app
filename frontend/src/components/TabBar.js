@@ -88,9 +88,11 @@ const TabBar = ({
                                 <SortableContext items={openTabs.map(tab => tab.id)} strategy={horizontalListSortingStrategy}>
                                     <div className="flex space-x-1 overflow-x-auto justify-start">
                                         {openTabs.map((tab) => {
+                                            console.log('Rendering tab:', tab);
                                             const tabColor = getTabColor(tab.id, tab);
                                             const colorClasses = getTabColorClasses(tabColor, activeTabId === tab.id);
                                             const isDashboardView = typeof tab.id === 'number' || (typeof tab.id === 'string' && /^\d+$/.test(tab.id));
+                                            console.log('Tab rendering result:', { tabId: tab.id, tabColor, colorClasses, isDashboardView });
                                             
                                             return (
                                                 <SortableTab key={tab.id} id={tab.id}>
