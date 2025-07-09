@@ -93,23 +93,24 @@ const DashboardGrid = ({
                        transition: none;
                    }
                    
-                   /* Enhanced widget border styles */
+                   /* Enhanced widget separation styles */
                    .widget-container {
-                       border: 2px solid #9ca3af;
+                       background: #ffffff;
                        border-radius: 0.5rem;
-                       transition: border-color 0.2s ease;
+                       box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+                       transition: box-shadow 0.2s ease;
                    }
                    
                    .widget-container:hover {
-                       border-color: #3b82f6;
+                       box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
                    }
                    
                    .widget-container.error {
-                       border-color: #ef4444;
+                       box-shadow: 0 1px 3px 0 rgba(239, 68, 68, 0.2), 0 1px 2px 0 rgba(239, 68, 68, 0.1);
                    }
                    
                    .widget-container.loading {
-                       border-color: #6b7280;
+                       box-shadow: 0 1px 3px 0 rgba(107, 114, 128, 0.2), 0 1px 2px 0 rgba(107, 114, 128, 0.1);
                    }
 
                    /* Scroll container for non-DashboardView tabs */

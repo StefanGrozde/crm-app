@@ -1225,7 +1225,7 @@ const ContactsWidget = ({ onOpenContactProfile }) => {
 
             {/* Contacts Table */}
             <div className="overflow-x-auto" style={{ maxHeight: 'calc(100vh - 300px)' }}>
-                <table className="min-w-full bg-white border border-gray-200 rounded-lg">
+                <table className="min-w-full bg-white">
                     <thead className="bg-gray-50">
                         <tr>
                             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b">
