@@ -58,7 +58,6 @@ const Dashboard = () => {
     
     // Track navigation state
     const lastNavigationTimeRef = useRef(0);
-    const isReturningFromEditLayoutRef = useRef(false);
 
     // Debug: Log state changes
     useEffect(() => {
@@ -160,108 +159,21 @@ const Dashboard = () => {
         // Update navigation timestamp
         lastNavigationTimeRef.current = currentTime;
         
-        // If we're returning from EditLayout to Dashboard
-        if (previousPath.includes('/edit-layout/') && currentPath === '/dashboard') {
-            console.log('Returning from EditLayout - triggering refresh');
-            isReturningFromEditLayoutRef.current = true;
-            
-            // Add a delay to ensure everything is loaded
-            setTimeout(() => {
-                if (activeTabId && !String(activeTabId).includes('-page') && !String(activeTabId).includes('search-')) {
-                    console.log('Refreshing view after returning from EditLayout');
-                    refreshCurrentView();
-                }
-            }, 1000); // Increased delay to ensure session is fully loaded
-        }
+        // Note: Removed EditLayout navigation logic since we now use embedded edit mode
+        // The refresh logic is now handled by the embedded edit mode save success callback
         
         prevLocationRef.current = currentPath;
     }, [location.pathname, activeTabId, refreshCurrentView]);
 
-    // Enhanced refresh trigger when session is loaded and we're returning from EditLayout
-    useEffect(() => {
-        if (isReturningFromEditLayoutRef.current && !isSessionLoading && activeTabId) {
-            console.log('Session loaded after returning from EditLayout - triggering refresh');
-            isReturningFromEditLayoutRef.current = false;
-            
-            // Add a delay to ensure everything is fully loaded
-            setTimeout(() => {
-                if (activeTabId && !String(activeTabId).includes('-page') && !String(activeTabId).includes('search-')) {
-                    console.log('Refreshing view after session load');
-                    refreshCurrentView();
-                }
-            }, 500);
-        }
-    }, [isSessionLoading, activeTabId, refreshCurrentView]);
+    // Note: Removed EditLayout return refresh logic since we now use embedded edit mode
 
-    // Fallback refresh mechanism when session is loaded and we have an active view tab
-    useEffect(() => {
-        if (!isSessionLoading && !isLoading && activeTabId && !String(activeTabId).includes('-page') && !String(activeTabId).includes('search-')) {
-            const timeSinceNavigation = Date.now() - lastNavigationTimeRef.current;
-            
-            // Only refresh if we're returning from EditLayout (within last 30 seconds)
-            if (timeSinceNavigation < 30000 && timeSinceNavigation > 2000 && isReturningFromEditLayoutRef.current) {
-                console.log('Fallback refresh mechanism - returning from EditLayout');
-                setTimeout(() => {
-                    console.log('Performing EditLayout return refresh');
-                    refreshCurrentView();
-                }, 1000);
-            }
-        }
-    }, [isSessionLoading, isLoading, activeTabId, refreshCurrentView]);
+    // Note: Removed EditLayout fallback refresh logic since we now use embedded edit mode
 
-    // Aggressive refresh when layout is loaded from session but might be stale
-    useEffect(() => {
-        if (layout.length > 0 && activeTabId && !String(activeTabId).includes('-page') && !String(activeTabId).includes('search-')) {
-            const timeSinceNavigation = Date.now() - lastNavigationTimeRef.current;
-            
-            // Only refresh if we're returning from EditLayout (within last 30 seconds)
-            if (timeSinceNavigation < 30000 && timeSinceNavigation > 1000 && isReturningFromEditLayoutRef.current) {
-                console.log('Layout loaded from session - returning from EditLayout');
-                setTimeout(() => {
-                    console.log('Performing EditLayout return layout-based refresh');
-                    refreshCurrentView();
-                }, 1500);
-            }
-        }
-    }, [layout, activeTabId, refreshCurrentView]);
+    // Note: Removed EditLayout aggressive refresh logic since we now use embedded edit mode
 
-    // Check for EditLayout return flag
-    useEffect(() => {
-        const returningFromEditLayout = localStorage.getItem('returningFromEditLayout');
-        if (returningFromEditLayout && !isSessionLoading && activeTabId) {
-            const flagTime = parseInt(returningFromEditLayout);
-            const timeSinceFlag = Date.now() - flagTime;
-            
-            // If the flag is recent (within last 30 seconds) and we have an active view tab
-            if (timeSinceFlag < 30000 && !String(activeTabId).includes('-page') && !String(activeTabId).includes('search-')) {
-                console.log('EditLayout return flag detected - triggering refresh');
-                localStorage.removeItem('returningFromEditLayout'); // Clear the flag
-                
-                setTimeout(() => {
-                    console.log('Performing EditLayout return refresh');
-                    refreshCurrentView();
-                }, 1000);
-            } else {
-                // Clear old flags
-                localStorage.removeItem('returningFromEditLayout');
-            }
-        }
-    }, [isSessionLoading, activeTabId, refreshCurrentView]);
+    // Note: Removed EditLayout return flag logic since we now use embedded edit mode
 
-    // Check if we need to refresh view data on mount (e.g., returning from EditLayout)
-    useEffect(() => {
-        if (activeTabId && !String(activeTabId).includes('-page') && !String(activeTabId).includes('search-')) {
-            console.log('Dashboard mounted with active view tab - checking if refresh is needed');
-            
-            // Only refresh if we're returning from EditLayout
-            if (isReturningFromEditLayoutRef.current) {
-                console.log('Returning from EditLayout detected on mount, refreshing view');
-                setTimeout(() => {
-                    refreshCurrentView();
-                }, 1000);
-            }
-        }
-    }, [activeTabId, refreshCurrentView]);
+    // Note: Removed EditLayout mount refresh logic since we now use embedded edit mode
 
     // Load initial data
     useEffect(() => {
@@ -1121,67 +1033,7 @@ const Dashboard = () => {
         };
     }, []);
 
-    // Enhanced refresh mechanism specifically for EditLayout returns
-    useEffect(() => {
-        let lastRefreshTime = 0;
-        const REFRESH_DEBOUNCE = 2000; // 2 seconds debounce
-        
-        const shouldRefresh = () => {
-            const now = Date.now();
-            const timeSinceLastRefresh = now - lastRefreshTime;
-            
-            // Refresh if enough time has passed since last refresh
-            if (timeSinceLastRefresh < REFRESH_DEBOUNCE) {
-                console.log('Skipping refresh due to debounce');
-                return false;
-            }
-            
-            // Refresh if we have an active view tab and it's not a special tab
-            if (!activeTabId || String(activeTabId).includes('-page') || String(activeTabId).includes('search-')) {
-                console.log('Skipping refresh - no valid active view tab');
-                return false;
-            }
-            
-            // Only refresh if we're returning from EditLayout
-            if (isReturningFromEditLayoutRef.current) {
-                console.log('Triggering refresh - returning from EditLayout');
-                return true;
-            }
-            
-            return false;
-        };
-        
-        const performRefresh = () => {
-            if (shouldRefresh()) {
-                console.log('Performing EditLayout return refresh');
-                lastRefreshTime = Date.now();
-                setTimeout(() => {
-                    refreshCurrentView();
-                }, 100);
-            }
-        };
-        
-        const handleFocus = () => {
-            console.log('Dashboard focused - checking if refresh is needed');
-            performRefresh();
-        };
-
-        const handleVisibilityChange = () => {
-            if (!document.hidden) {
-                console.log('Dashboard became visible - checking if refresh is needed');
-                performRefresh();
-            }
-        };
-
-        // Listen for focus and visibility changes
-        window.addEventListener('focus', handleFocus);
-        document.addEventListener('visibilitychange', handleVisibilityChange);
-
-        return () => {
-            window.removeEventListener('focus', handleFocus);
-            document.removeEventListener('visibilitychange', handleVisibilityChange);
-        };
-    }, [activeTabId, currentViewId, refreshCurrentView]);
+    // Note: Removed EditLayout enhanced refresh mechanism since we now use embedded edit mode
 
     if (!user) return <div>Loading...</div>;
     if (isLoading || isSessionLoading) return <div className="min-h-screen bg-gray-100 flex items-center justify-center">Loading dashboard...</div>;
@@ -1218,7 +1070,6 @@ const Dashboard = () => {
                             Session Loading: {isSessionLoading ? 'Yes' : 'No'} |
                             Refreshing: {isRefreshing ? 'Yes' : 'No'} |
                             Nav Time: {Math.round((Date.now() - lastNavigationTimeRef.current) / 1000)}s |
-                            EditLayout Flag: {localStorage.getItem('returningFromEditLayout') ? 'Yes' : 'No'} |
                             Grid: 12 cols (Responsive) |
                             Layout: {layout.length > 0 ? `${layout.length} items` : 'Empty'}
                         </div>

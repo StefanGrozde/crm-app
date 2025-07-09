@@ -26,7 +26,7 @@ The Edit Layout feature provides a dedicated interface for editing dashboard lay
 ### Accessing Edit Layout
 
 1. **From Dashboard**: Click the "Edit Layout" button in the navbar when a dashboard view is active
-2. **Direct URL**: Navigate to `/edit-layout/:viewId` where `:viewId` is the ID of the view to edit
+2. **Embedded Mode**: The edit layout now renders within the current dashboard tab for a seamless experience
 
 ### Editing Workflow
 
@@ -40,14 +40,15 @@ The Edit Layout feature provides a dedicated interface for editing dashboard lay
    - Click "Save Changes" to update the current view
    - Click "Save as New View" to create a new view with the current layout
    - Click "Reset" to revert all changes
-4. **Return to Dashboard**: Click "Back to Dashboard" to return to the main dashboard
+4. **Exit Edit Mode**: Click "Exit Edit Mode" to return to normal dashboard view
 
 ## Technical Implementation
 
 ### Frontend Components
 
-#### EditLayout.js
-- Main component for the edit layout page
+#### EmbeddedEditLayout.js
+- Main component for the embedded edit layout functionality
+- Renders within the dashboard tab system
 - Handles all layout editing functionality
 - Manages widget state and grid interactions
 - Provides save/reset/cancel operations

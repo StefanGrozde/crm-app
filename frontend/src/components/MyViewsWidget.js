@@ -203,9 +203,11 @@ const MyViewsWidget = () => {
 
     // Logic: Handle edit (navigate to EditLayout)
     const handleEdit = useCallback((item) => {
-        // For now, keep the navigation to the separate EditLayout page
-        // This could be updated to use embedded edit mode in the future
-        navigate(`/edit-layout/${item.id}`);
+        // Navigate to dashboard and open the view for editing
+        // The user will need to click "Edit Layout" in the navbar
+        navigate(`/dashboard`);
+        // Note: In the future, this could be enhanced to automatically enter edit mode
+        // by passing a query parameter or using a callback
     }, [navigate]);
 
     // Logic: Handle delete
