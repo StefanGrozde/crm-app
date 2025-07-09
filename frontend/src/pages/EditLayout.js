@@ -229,6 +229,10 @@ const EditLayout = () => {
             }));
             
             setEditViewModalOpen(false);
+            
+            // Set a flag to indicate we're returning from EditLayout with changes
+            localStorage.setItem('returningFromEditLayout', Date.now().toString());
+            
             alert('View updated successfully!');
             
         } catch (error) { 

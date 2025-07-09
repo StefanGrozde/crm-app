@@ -264,6 +264,12 @@ const EmbeddedEditLayout = ({ viewId, onExitEditMode, onSaveSuccess }) => {
             }));
             
             setShowEditViewModal(false);
+            
+            // Notify parent component about the view update
+            if (onSaveSuccess) {
+                onSaveSuccess(response.data);
+            }
+            
             alert('View updated successfully!');
             
         } catch (error) { 
@@ -271,7 +277,7 @@ const EmbeddedEditLayout = ({ viewId, onExitEditMode, onSaveSuccess }) => {
             console.error("Error details:", error.response?.data);
             alert("Failed to update view. Please try again.");
         }
-    }, [currentView]);
+    }, [currentView, onSaveSuccess]);
 
     // Logic: Handle cancel edit
     const handleCancelEdit = useCallback(() => {

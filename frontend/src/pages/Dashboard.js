@@ -100,14 +100,27 @@ const Dashboard = () => {
             setLayout(refreshedLayout);
             console.log('Current layout updated with refreshed data:', refreshedLayout);
             
-            // Update the tab name if it changed
+            // Update the tab name and color if they changed
             const currentTab = openTabs.find(tab => tab.id === activeTabId);
-            if (currentTab && currentTab.name !== data.name) {
+            if (currentTab && (currentTab.name !== data.name || currentTab.color !== data.color)) {
                 setOpenTabs(prev => prev.map(tab => 
-                    tab.id === activeTabId ? { ...tab, name: data.name } : tab
+                    tab.id === activeTabId ? { 
+                        ...tab, 
+                        name: data.name,
+                        color: data.color 
+                    } : tab
                 ));
-                console.log('Tab name updated:', data.name);
+                console.log('Tab updated:', { name: data.name, color: data.color });
             }
+            
+            // Also update the views state to keep it in sync
+            setViews(prev => prev.map(view => 
+                view.id === activeTabId ? { 
+                    ...view, 
+                    name: data.name,
+                    color: data.color 
+                } : view
+            ));
             
             // Clear the EditLayout return flag after successful refresh
             if (isReturningFromEditLayoutRef.current) {
