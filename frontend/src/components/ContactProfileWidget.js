@@ -598,284 +598,177 @@ const ContactProfileWidget = ({ contactId }) => {
             </div>
 
             {/* Enhanced Edit Modal */}
-            {showEditModal && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-                    <div className="bg-white rounded-2xl p-8 w-full max-w-5xl max-h-[90vh] overflow-y-auto shadow-2xl">
-                        <div className="flex justify-between items-center mb-6">
-                            <h2 className="text-2xl font-bold text-gray-900">Edit Contact Profile</h2>
-                            <button
-                                onClick={() => setShowEditModal(false)}
-                                className="text-gray-500 hover:text-gray-700 p-2 hover:bg-gray-100 rounded-lg transition-colors duration-200"
-                            >
-                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                </svg>
-                            </button>
+            return createPortal(
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+                    <div className="flex justify-between items-center mb-4">
+                        <h2 className="text-xl font-bold">Filter Contacts</h2>
+                        <button
+                            onClick={onClose}
+                            className="text-gray-500 hover:text-gray-700"
+                        >
+                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
+                    
+                    {filterOptionsLoading ? (
+                        <div className="flex items-center justify-center py-8">
+                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                            <span className="ml-2 text-gray-600">Loading filter options...</span>
+                        </div>
+                    ) : (
+                    
+                    <div className="space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                                <select
+                                    name="status"
+                                    value={filterFormData.status}
+                                    onChange={handleFilterInputChange}
+                                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                >
+                                    <option value="">All Statuses</option>
+                                    <option value="active">Active</option>
+                                    <option value="inactive">Inactive</option>
+                                    <option value="prospect">Prospect</option>
+                                </select>
+                            </div>
+                            
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Assigned To</label>
+                                <select
+                                    name="assignedTo"
+                                    value={filterFormData.assignedTo}
+                                    onChange={handleFilterInputChange}
+                                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                >
+                                    <option value="">All Users</option>
+                                    {Array.isArray(users) && users.map(user => (
+                                        <option key={user.id} value={user.id}>
+                                            {user.firstName} {user.lastName}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                            
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Source</label>
+                                <select
+                                    name="source"
+                                    value={filterFormData.source}
+                                    onChange={handleFilterInputChange}
+                                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                >
+                                    <option value="">All Sources</option>
+                                    {Array.isArray(filterOptions.sources) && filterOptions.sources.map((source, index) => (
+                                        <option key={index} value={source.value}>
+                                            {source.value} ({source.count})
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                            
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Department</label>
+                                <select
+                                    name="department"
+                                    value={filterFormData.department}
+                                    onChange={handleFilterInputChange}
+                                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                >
+                                    <option value="">All Departments</option>
+                                    {Array.isArray(filterOptions.departments) && filterOptions.departments.map((dept, index) => (
+                                        <option key={index} value={dept.value}>
+                                            {dept.value} ({dept.count})
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                            
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">City</label>
+                                <select
+                                    name="city"
+                                    value={filterFormData.city}
+                                    onChange={handleFilterInputChange}
+                                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                >
+                                    <option value="">All Cities</option>
+                                    {Array.isArray(filterOptions.cities) && filterOptions.cities.map((city, index) => (
+                                        <option key={index} value={city.value}>
+                                            {city.value} ({city.count})
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                            
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">State</label>
+                                <select
+                                    name="state"
+                                    value={filterFormData.state}
+                                    onChange={handleFilterInputChange}
+                                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                >
+                                    <option value="">All States</option>
+                                    {Array.isArray(filterOptions.states) && filterOptions.states.map((state, index) => (
+                                        <option key={index} value={state.value}>
+                                            {state.value} ({state.count})
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                            
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Country</label>
+                                <select
+                                    name="country"
+                                    value={filterFormData.country}
+                                    onChange={handleFilterInputChange}
+                                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                >
+                                    <option value="">All Countries</option>
+                                    {Array.isArray(filterOptions.countries) && filterOptions.countries.map((country, index) => (
+                                        <option key={index} value={country.value}>
+                                            {country.value} ({country.count})
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
                         </div>
                         
-                        <form onSubmit={handleSubmit} className="space-y-6">
-                            {/* Basic Information */}
-                            <div className="bg-gray-50 rounded-xl p-6">
-                                <h3 className="text-lg font-semibold text-gray-900 mb-4">Basic Information</h3>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">First Name *</label>
-                                        <input
-                                            type="text"
-                                            name="firstName"
-                                            value={formData.firstName || ''}
-                                            onChange={handleInputChange}
-                                            required
-                                            className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">Last Name *</label>
-                                        <input
-                                            type="text"
-                                            name="lastName"
-                                            value={formData.lastName || ''}
-                                            onChange={handleInputChange}
-                                            required
-                                            className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            {/* Contact Information */}
-                            <div className="bg-gray-50 rounded-xl p-6">
-                                <h3 className="text-lg font-semibold text-gray-900 mb-4">Contact Information</h3>
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
-                                        <input
-                                            type="email"
-                                            name="email"
-                                            value={formData.email || ''}
-                                            onChange={handleInputChange}
-                                            className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">Phone</label>
-                                        <input
-                                            type="tel"
-                                            name="phone"
-                                            value={formData.phone || ''}
-                                            onChange={handleInputChange}
-                                            className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">Mobile</label>
-                                        <input
-                                            type="tel"
-                                            name="mobile"
-                                            value={formData.mobile || ''}
-                                            onChange={handleInputChange}
-                                            className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            {/* Professional Information */}
-                            <div className="bg-gray-50 rounded-xl p-6">
-                                <h3 className="text-lg font-semibold text-gray-900 mb-4">Professional Information</h3>
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">Job Title</label>
-                                        <input
-                                            type="text"
-                                            name="jobTitle"
-                                            value={formData.jobTitle || ''}
-                                            onChange={handleInputChange}
-                                            className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">Department</label>
-                                        <input
-                                            type="text"
-                                            name="department"
-                                            value={formData.department || ''}
-                                            onChange={handleInputChange}
-                                            className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
-                                        <select
-                                            name="status"
-                                            value={formData.status || 'active'}
-                                            onChange={handleInputChange}
-                                            className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                                        >
-                                            <option value="active">Active</option>
-                                            <option value="inactive">Inactive</option>
-                                            <option value="prospect">Prospect</option>
-                                        </select>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            {/* Address Information */}
-                            <div className="bg-gray-50 rounded-xl p-6">
-                                <h3 className="text-lg font-semibold text-gray-900 mb-4">Address Information</h3>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">Address</label>
-                                        <textarea
-                                            name="address"
-                                            value={formData.address || ''}
-                                            onChange={handleInputChange}
-                                            rows="2"
-                                            className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">City</label>
-                                        <input
-                                            type="text"
-                                            name="city"
-                                            value={formData.city || ''}
-                                            onChange={handleInputChange}
-                                            className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                                        />
-                                    </div>
-                                </div>
-                                
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">State</label>
-                                        <input
-                                            type="text"
-                                            name="state"
-                                            value={formData.state || ''}
-                                            onChange={handleInputChange}
-                                            className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">ZIP Code</label>
-                                        <input
-                                            type="text"
-                                            name="zipCode"
-                                            value={formData.zipCode || ''}
-                                            onChange={handleInputChange}
-                                            className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">Country</label>
-                                        <input
-                                            type="text"
-                                            name="country"
-                                            value={formData.country || ''}
-                                            onChange={handleInputChange}
-                                            className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            {/* Additional Information */}
-                            <div className="bg-gray-50 rounded-xl p-6">
-                                <h3 className="text-lg font-semibold text-gray-900 mb-4">Additional Information</h3>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">Source</label>
-                                        <input
-                                            type="text"
-                                            name="source"
-                                            value={formData.source || ''}
-                                            onChange={handleInputChange}
-                                            placeholder="e.g., Website, Referral, Trade Show"
-                                            className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">Assigned To</label>
-                                        <select
-                                            name="assignedTo"
-                                            value={formData.assignedTo || ''}
-                                            onChange={handleInputChange}
-                                            className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                                        >
-                                            <option value="">Select User</option>
-                                            {Array.isArray(users) && users.map(user => (
-                                                <option key={user.id} value={user.id}>
-                                                    {user.firstName} {user.lastName}
-                                                </option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                </div>
-                                
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">Tags</label>
-                                        <input
-                                            type="text"
-                                            placeholder="Press Enter to add a tag"
-                                            onKeyPress={handleTagInput}
-                                            className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                                        />
-                                        {(formData.tags || []).length > 0 && (
-                                            <div className="mt-3 flex flex-wrap gap-2">
-                                                {(formData.tags || []).map((tag, index) => (
-                                                    <span
-                                                        key={index}
-                                                        className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800 border border-blue-200"
-                                                    >
-                                                        {tag}
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => removeTag(tag)}
-                                                            className="ml-2 inline-flex items-center justify-center w-4 h-4 rounded-full text-blue-400 hover:bg-blue-200 hover:text-blue-500 transition-colors duration-200"
-                                                        >
-                                                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                                            </svg>
-                                                        </button>
-                                                    </span>
-                                                ))}
-                                            </div>
-                                        )}
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">Notes</label>
-                                        <textarea
-                                            name="notes"
-                                            value={formData.notes || ''}
-                                            onChange={handleInputChange}
-                                            rows="3"
-                                            className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div className="flex justify-end space-x-4 pt-6">
-                                <button
-                                    type="button"
-                                    onClick={() => setShowEditModal(false)}
-                                    className="px-6 py-3 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition-colors duration-200"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    type="submit"
-                                    className="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-medium rounded-lg hover:from-blue-700 hover:to-indigo-700 transform hover:scale-105 transition-all duration-200 shadow-lg"
-                                >
-                                    Update Contact
-                                </button>
-                            </div>
-                        </form>
+                        <div className="flex justify-end space-x-3 pt-4">
+                            <button
+                                type="button"
+                                onClick={clearFilters}
+                                className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+                            >
+                                Clear All
+                            </button>
+                            <button
+                                type="button"
+                                onClick={onClose}
+                                className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="button"
+                                onClick={applyFilters}
+                                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                            >
+                                Apply Filters
+                            </button>
+                        </div>
                     </div>
+                    )}
                 </div>
-            )}
+            </div>,
+            document.body
+        );
         </div>
     );
 };
