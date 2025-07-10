@@ -19,6 +19,7 @@ const businessRoutes = require('./routes/businessRoutes');
 const invitationRoutes = require('./routes/invitationRoutes');
 const listRoutes = require('./routes/listRoutes');
 const salesRoutes = require('./routes/salesRoutes');
+const taskRoutes = require('./routes/taskRoutes');
 const path = require('path');
 
 console.log("Application starting...");
@@ -81,6 +82,7 @@ app.use('/api/businesses', businessRoutes);
 app.use('/api/invitations', invitationRoutes);
 app.use('/api/lists', listRoutes);
 app.use('/api/sales', salesRoutes);
+app.use('/api/tasks', taskRoutes);
 app.use('/api/widgets/buildin', express.static(path.join(__dirname, 'widgets', 'buildin')));
 app.use('/api/widgets/custom', express.static(path.join(__dirname, 'widgets', 'custom')));
 // Test Route to check DB connection
@@ -126,6 +128,8 @@ const startServer = async () => {
     const ListMembership = require('./models/ListMembership');
     const ListShare = require('./models/ListShare');
     const Sale = require('./models/Sale');
+    const Task = require('./models/Task');
+    const TaskAssignment = require('./models/TaskAssignment');
     
     // Define associations
     // Company associations
@@ -204,6 +208,38 @@ const startServer = async () => {
     User.hasMany(ListMembership, { foreignKey: 'addedBy', as: 'addedMemberships' });
     User.hasMany(ListShare, { foreignKey: 'sharedWith', as: 'sharedLists' });
     User.hasMany(ListShare, { foreignKey: 'sharedBy', as: 'listsShared' });
+    
+    // Task associations
+    Task.belongsTo(Company, { foreignKey: 'companyId', as: 'company' });
+    Task.belongsTo(User, { foreignKey: 'createdBy', as: 'creator' });
+    Task.belongsTo(Contact, { foreignKey: 'contactId', as: 'contact' });
+    Task.belongsTo(Lead, { foreignKey: 'leadId', as: 'lead' });
+    Task.belongsTo(Opportunity, { foreignKey: 'opportunityId', as: 'opportunity' });
+    Task.belongsTo(Sale, { foreignKey: 'saleId', as: 'sale' });
+    Task.hasMany(TaskAssignment, { foreignKey: 'taskId', as: 'assignments' });
+    
+    // TaskAssignment associations
+    TaskAssignment.belongsTo(Task, { foreignKey: 'taskId', as: 'task' });
+    TaskAssignment.belongsTo(User, { foreignKey: 'userId', as: 'user' });
+    
+    // Company associations for Tasks
+    Company.hasMany(Task, { foreignKey: 'companyId' });
+    
+    // User associations for Tasks
+    User.hasMany(Task, { foreignKey: 'createdBy', as: 'createdTasks' });
+    User.hasMany(TaskAssignment, { foreignKey: 'userId', as: 'taskAssignments' });
+    
+    // Contact associations for Tasks
+    Contact.hasMany(Task, { foreignKey: 'contactId', as: 'tasks' });
+    
+    // Lead associations for Tasks
+    Lead.hasMany(Task, { foreignKey: 'leadId', as: 'tasks' });
+    
+    // Opportunity associations for Tasks
+    Opportunity.hasMany(Task, { foreignKey: 'opportunityId', as: 'tasks' });
+    
+    // Sale associations for Tasks
+    Sale.hasMany(Task, { foreignKey: 'saleId', as: 'tasks' });
     
     // Sync all models
     // Use { force: true } only in development to drop and re-create tables

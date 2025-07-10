@@ -649,7 +649,8 @@ const Dashboard = () => {
                    result.type === 'opportunity' || result.type === 'opportunities' ? 'purple' :
                    result.type === 'company' || result.type === 'business' ? 'orange' :
                    result.type === 'user' || result.type === 'users' ? 'gray' :
-                   result.type === 'sale' || result.type === 'sales' ? 'indigo' : 'blue'
+                   result.type === 'sale' || result.type === 'sales' ? 'indigo' :
+                   result.type === 'task' || result.type === 'tasks' ? 'teal' : 'blue'
         };
         
         // Create a simple layout for the search result
@@ -709,6 +710,17 @@ const Dashboard = () => {
                 h: 8,
                 widgetKey: 'sales-profile-widget',
                 widgetData: { saleId: result.id }
+            }];
+        } else if (result.type === 'task' || result.type === 'tasks') {
+            // For tasks, use the task profile widget
+            resultLayout = [{
+                i: `task-profile-${result.id}`,
+                x: 0,
+                y: 0,
+                w: 12,
+                h: 8,
+                widgetKey: 'task-profile-widget',
+                widgetData: { taskId: result.id }
             }];
         } else {
             resultLayout = [{
@@ -784,6 +796,11 @@ const Dashboard = () => {
                 endpoint: 'sales',
                 nameFields: (data) => data.title,
                 defaultName: 'Sales Profile'
+            },
+            task: {
+                endpoint: 'tasks',
+                nameFields: (data) => data.title,
+                defaultName: 'Task Profile'
             }
         };
         
@@ -816,7 +833,8 @@ const Dashboard = () => {
                    profileType === 'opportunity' ? 'purple' :
                    profileType === 'business' ? 'orange' :
                    profileType === 'user' ? 'gray' :
-                   profileType === 'sales' ? 'indigo' : 'blue'
+                   profileType === 'sales' ? 'indigo' :
+                   profileType === 'task' ? 'teal' : 'blue'
         };
         
         // Create a simple layout for the profile
@@ -870,6 +888,10 @@ const Dashboard = () => {
 
     const handleOpenSalesProfile = async (saleId, saleTitle) => {
         await handleOpenProfile('sales', saleId, saleTitle);
+    };
+
+    const handleOpenTaskProfile = async (taskId, taskTitle) => {
+        await handleOpenProfile('task', taskId, taskTitle);
     };
 
     // Generic function to open any page as a new tab
@@ -1224,6 +1246,7 @@ const Dashboard = () => {
                             onOpenBusinessProfile={handleOpenBusinessProfile}
                             onOpenUserProfile={handleOpenUserProfile}
                             onOpenSalesProfile={handleOpenSalesProfile}
+                            onOpenTaskProfile={handleOpenTaskProfile}
                         />
                     )}
                     

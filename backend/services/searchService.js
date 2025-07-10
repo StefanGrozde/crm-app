@@ -5,6 +5,7 @@ const Contact = require('../models/Contact');
 const Lead = require('../models/Lead');
 const Opportunity = require('../models/Opportunity');
 const Sale = require('../models/Sale');
+const Task = require('../models/Task');
 
 class SearchService {
   /**
@@ -25,7 +26,7 @@ class SearchService {
     const {
       userId,
       companyId,
-      types = ['contacts', 'leads', 'opportunities', 'companies', 'users', 'sales'],
+      types = ['contacts', 'leads', 'opportunities', 'companies', 'users', 'sales', 'tasks'],
       limit = 10,
       offset = 0
     } = options;
@@ -101,6 +102,18 @@ class SearchService {
           .then(sales => { 
             console.log('🔍 SearchService: Sales results:', sales);
             results.sales = sales; 
+          })
+      );
+    }
+
+    // Search tasks
+    if (types.includes('tasks')) {
+      console.log('🔍 SearchService: Searching tasks...');
+      searchPromises.push(
+        this.searchTasks(query, { userId, companyId, limit, offset })
+          .then(tasks => { 
+            console.log('🔍 SearchService: Tasks results:', tasks);
+            results.tasks = tasks; 
           })
       );
     }
@@ -504,6 +517,65 @@ class SearchService {
   }
 
   /**
+   * Search tasks with simple search
+   */
+  static async searchTasks(query, options = {}) {
+    const { userId, companyId, limit = 10, offset = 0 } = options;
+
+    const whereClause = {
+      [Op.or]: [
+        // Title search
+        { title: { [Op.iLike]: `%${query}%` } },
+        // Description search
+        { description: { [Op.iLike]: `%${query}%` } },
+        // Category search
+        { category: { [Op.iLike]: `%${query}%` } },
+        // Tags search
+        { tags: { [Op.iLike]: `%${query}%` } },
+        // Notes search
+        { notes: { [Op.iLike]: `%${query}%` } }
+      ]
+    };
+
+    if (companyId) {
+      whereClause.companyId = companyId;
+    }
+
+    try {
+      const tasks = await Task.findAll({
+        where: whereClause,
+        order: [
+          ['priority', 'DESC'],
+          ['dueDate', 'ASC'],
+          ['createdAt', 'DESC']
+        ],
+        limit,
+        offset,
+        raw: true
+      });
+
+      return tasks.map(task => ({
+        id: task.id,
+        type: 'task',
+        title: task.title,
+        subtitle: task.description ? task.description.substring(0, 50) + '...' : 'No description',
+        status: task.status,
+        priority: task.priority,
+        assignmentType: task.assignmentType,
+        dueDate: task.dueDate,
+        category: task.category,
+        estimatedHours: task.estimatedHours,
+        tags: task.tags,
+        relevance: 0
+      }));
+    } catch (error) {
+      console.error('🔍 SearchService: Error in searchTasks:', error);
+      console.error('🔍 SearchService: Error stack:', error.stack);
+      return [];
+    }
+  }
+
+  /**
    * Get search suggestions based on recent searches and popular terms
    */
   static async getSearchSuggestions(query, options = {}) {
@@ -579,6 +651,21 @@ class SearchService {
 
       suggestions.push(...salesSuggestions.map(s => s.title));
 
+      // Simple task suggestions
+      console.log('🔍 SearchService: Fetching task suggestions...');
+      const taskSuggestions = await Task.findAll({
+        where: {
+          title: { [Op.iLike]: `${query}%` },
+          companyId: companyId
+        },
+        attributes: ['title'],
+        limit: Math.ceil(limit / 5),
+        raw: true
+      });
+      console.log('🔍 SearchService: Task suggestions found:', taskSuggestions.length);
+
+      suggestions.push(...taskSuggestions.map(t => t.title));
+
       const result = suggestions.slice(0, limit);
       console.log('🔍 SearchService: Final suggestions:', result);
       return result;
@@ -600,12 +687,13 @@ class SearchService {
       whereClause.companyId = companyId;
     }
 
-    const [contactCount, leadCount, opportunityCount, companyCount, saleCount] = await Promise.all([
+    const [contactCount, leadCount, opportunityCount, companyCount, saleCount, taskCount] = await Promise.all([
       Contact.count({ where: whereClause }),
       Lead.count({ where: whereClause }),
       Opportunity.count({ where: whereClause }),
       Company.count({ where: companyId ? { id: companyId } : {} }),
-      Sale.count({ where: whereClause })
+      Sale.count({ where: whereClause }),
+      Task.count({ where: whereClause })
     ]);
 
     return {
@@ -614,7 +702,8 @@ class SearchService {
       totalOpportunities: opportunityCount,
       totalCompanies: companyCount,
       totalSales: saleCount,
-      searchableEntities: contactCount + leadCount + opportunityCount + companyCount + saleCount
+      totalTasks: taskCount,
+      searchableEntities: contactCount + leadCount + opportunityCount + companyCount + saleCount + taskCount
     };
   }
 }

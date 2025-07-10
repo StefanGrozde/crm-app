@@ -17,7 +17,8 @@ const DashboardGrid = ({
     onOpenOpportunityProfile,
     onOpenBusinessProfile,
     onOpenUserProfile,
-    onOpenSalesProfile
+    onOpenSalesProfile,
+    onOpenTaskProfile
 }) => {
     // Skip rendering if no layout or widget library
     if (!layout || !widgetLibrary || layout.length === 0) {
@@ -190,6 +191,7 @@ const DashboardGrid = ({
                                             onOpenBusinessProfile={onOpenBusinessProfile}
                                             onOpenUserProfile={onOpenUserProfile}
                                             onOpenSalesProfile={onOpenSalesProfile}
+                                            onOpenTaskProfile={onOpenTaskProfile}
                                         />
                                     </div>
                                 </div>

@@ -24,6 +24,8 @@ import LeadConversionWidget from './LeadConversionWidget';
 import MyViewsWidget from './MyViewsWidget';
 import SalesWidget from './SalesWidget';
 import SalesProfileWidget from './SalesProfileWidget';
+import TasksWidget from './TasksWidget';
+import TaskProfileWidget from './TaskProfileWidget';
 
 // Widget Registry - Central place to register all widgets
 const WidgetRegistry = {
@@ -54,7 +56,9 @@ const WidgetRegistry = {
     'lead-conversion': LeadConversionWidget,
     'my-views-widget': MyViewsWidget,
     'sales-widget': SalesWidget,
-    'sales-profile-widget': SalesProfileWidget
+    'sales-profile-widget': SalesProfileWidget,
+    'tasks-widget': TasksWidget,
+    'task-profile-widget': TaskProfileWidget
 };
 
 // Dynamic widget loader for external widgets
@@ -187,7 +191,7 @@ const ExternalWidgetLoader = memo(({ widgetKey, widgetPath, type, onLoad, onErro
 });
 
 // Main DynamicWidget component
-const DynamicWidget = memo(({ widgetKey, widgetPath, type, resultData, widgetData, onLoad, onError, widgetState, showLoadingSpinner, loadingSpinnerSize, onOpenContactProfile, onOpenLeadProfile, onOpenOpportunityProfile, onOpenBusinessProfile, onOpenUserProfile, onOpenSalesProfile, ...props }) => {
+const DynamicWidget = memo(({ widgetKey, widgetPath, type, resultData, widgetData, onLoad, onError, widgetState, showLoadingSpinner, loadingSpinnerSize, onOpenContactProfile, onOpenLeadProfile, onOpenOpportunityProfile, onOpenBusinessProfile, onOpenUserProfile, onOpenSalesProfile, onOpenTaskProfile, ...props }) => {
     // Memoize the widget key to prevent unnecessary re-renders
     const memoizedWidgetKey = useMemo(() => widgetKey, [widgetKey]);
     // Show loading state only for external widgets
@@ -317,6 +321,10 @@ const DynamicWidget = memo(({ widgetKey, widgetPath, type, resultData, widgetDat
                 if (memoizedWidgetKey === 'sales-widget') {
                     return <RegisteredWidget onOpenSaleProfile={onOpenSalesProfile} />;
                 }
+                // Pass task profile handler to TasksWidget
+                if (memoizedWidgetKey === 'tasks-widget') {
+                    return <RegisteredWidget onOpenTaskProfile={onOpenTaskProfile} />;
+                }
                 // Pass widgetData to ContactProfileWidget
                 if (baseWidgetKey === 'contact-profile-widget' && widgetData) {
                     return <RegisteredWidget contactId={widgetData.contactId} />;
@@ -340,6 +348,10 @@ const DynamicWidget = memo(({ widgetKey, widgetPath, type, resultData, widgetDat
                 // Pass widgetData to SalesProfileWidget
                 if (baseWidgetKey === 'sales-profile-widget' && widgetData) {
                     return <RegisteredWidget saleId={widgetData.saleId} />;
+                }
+                // Pass widgetData to TaskProfileWidget
+                if (baseWidgetKey === 'task-profile-widget' && widgetData) {
+                    return <RegisteredWidget taskId={widgetData.taskId} />;
                 }
                 return <RegisteredWidget {...props} />;
             };

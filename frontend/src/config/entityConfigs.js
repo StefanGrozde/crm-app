@@ -544,5 +544,213 @@ export const entityConfigs = {
                 }
             ]
         }
+    },
+
+    tasks: {
+        title: 'Tasks',
+        apiEndpoint: 'tasks',
+        dataKey: 'tasks',
+        features: {
+            listManagement: true,
+            bulkSelection: true,
+            filtering: true,
+            filterOptions: false,
+            undoDelete: true,
+            tags: true,
+            customActions: false
+        },
+        defaultFilters: {
+            status: '',
+            priority: '',
+            assignedTo: '',
+            assignmentType: '',
+            category: '',
+            overdue: false
+        },
+        fields: {
+            display: [
+                { 
+                    name: 'title', 
+                    label: 'Task',
+                    render: (value, item, onOpenProfile) => (
+                        <div>
+                            <div 
+                                className="text-sm font-medium text-gray-900 cursor-pointer hover:text-blue-600 hover:underline"
+                                onClick={() => onOpenProfile && onOpenProfile(item.id)}
+                            >
+                                {value}
+                            </div>
+                            <div className="flex items-center space-x-2 mt-1">
+                                <span className={`px-2 py-1 text-xs rounded-full ${
+                                    item.priority === 'urgent' ? 'bg-red-100 text-red-800' :
+                                    item.priority === 'high' ? 'bg-orange-100 text-orange-800' :
+                                    item.priority === 'medium' ? 'bg-yellow-100 text-yellow-800' :
+                                    'bg-green-100 text-green-800'
+                                }`}>
+                                    {item.priority}
+                                </span>
+                                {item.dueDate && new Date(item.dueDate) < new Date() && item.status !== 'completed' && (
+                                    <span className="px-2 py-1 text-xs bg-red-100 text-red-800 rounded-full">
+                                        Overdue
+                                    </span>
+                                )}
+                            </div>
+                        </div>
+                    )
+                },
+                { 
+                    name: 'status', 
+                    label: 'Status', 
+                    type: 'status',
+                    statusColors: {
+                        pending: 'bg-yellow-100 text-yellow-800',
+                        in_progress: 'bg-blue-100 text-blue-800',
+                        completed: 'bg-green-100 text-green-800',
+                        cancelled: 'bg-red-100 text-red-800'
+                    }
+                },
+                { 
+                    name: 'assignmentType', 
+                    label: 'Assignment',
+                    render: (value) => (
+                        <span className="text-sm text-gray-700 capitalize">
+                            {value.replace('_', ' ')}
+                        </span>
+                    )
+                },
+                { 
+                    name: 'dueDate', 
+                    label: 'Due Date',
+                    type: 'date',
+                    render: (value, item) => {
+                        if (!value) return '-';
+                        const isOverdue = new Date(value) < new Date() && item.status !== 'completed';
+                        return (
+                            <span className={isOverdue ? 'text-red-600 font-medium' : 'text-gray-700'}>
+                                {new Date(value).toLocaleDateString()}
+                            </span>
+                        );
+                    }
+                },
+                { 
+                    name: 'assignments', 
+                    label: 'Assigned To',
+                    render: (value) => {
+                        if (!value || value.length === 0) return 'Unassigned';
+                        if (value.length === 1) return value[0].user?.username || 'Unknown';
+                        return `${value.length} users`;
+                    }
+                },
+                { 
+                    name: 'category', 
+                    label: 'Category',
+                    render: (value) => value || '-'
+                }
+            ],
+            form: [
+                { name: 'title', type: 'text', label: 'Title', required: true },
+                { name: 'description', type: 'textarea', label: 'Description', rows: 3 },
+                { 
+                    name: 'status', 
+                    type: 'select', 
+                    label: 'Status', 
+                    defaultValue: 'pending',
+                    options: [
+                        { value: 'pending', label: 'Pending' },
+                        { value: 'in_progress', label: 'In Progress' },
+                        { value: 'completed', label: 'Completed' },
+                        { value: 'cancelled', label: 'Cancelled' }
+                    ]
+                },
+                { 
+                    name: 'priority', 
+                    type: 'select', 
+                    label: 'Priority', 
+                    defaultValue: 'medium',
+                    options: [
+                        { value: 'low', label: 'Low' },
+                        { value: 'medium', label: 'Medium' },
+                        { value: 'high', label: 'High' },
+                        { value: 'urgent', label: 'Urgent' }
+                    ]
+                },
+                { name: 'dueDate', type: 'date', label: 'Due Date' },
+                { name: 'estimatedHours', type: 'number', label: 'Estimated Hours', step: '0.5', min: '0' },
+                { 
+                    name: 'assignmentType', 
+                    type: 'select', 
+                    label: 'Assignment Type', 
+                    defaultValue: 'individual',
+                    options: [
+                        { value: 'individual', label: 'Individual' },
+                        { value: 'multiple', label: 'Multiple Users' },
+                        { value: 'all_company', label: 'All Company' }
+                    ]
+                },
+                { name: 'category', type: 'text', label: 'Category' },
+                { 
+                    name: 'contactId', 
+                    type: 'select', 
+                    label: 'Related Contact', 
+                    source: 'contacts',
+                    displayField: 'firstName',
+                    render: (item) => `${item.firstName} ${item.lastName}`
+                },
+                { 
+                    name: 'leadId', 
+                    type: 'select', 
+                    label: 'Related Lead', 
+                    source: 'leads',
+                    displayField: 'title'
+                },
+                { 
+                    name: 'opportunityId', 
+                    type: 'select', 
+                    label: 'Related Opportunity', 
+                    source: 'opportunities',
+                    displayField: 'name'
+                },
+                { 
+                    name: 'saleId', 
+                    type: 'select', 
+                    label: 'Related Sale', 
+                    source: 'sales',
+                    displayField: 'title'
+                },
+                { name: 'tags', type: 'tags', label: 'Tags' },
+                { name: 'notes', type: 'textarea', label: 'Notes', rows: 3 }
+            ]
+        },
+        filters: {
+            status: { 
+                type: 'select', 
+                options: [
+                    { value: 'pending', label: 'Pending' },
+                    { value: 'in_progress', label: 'In Progress' },
+                    { value: 'completed', label: 'Completed' },
+                    { value: 'cancelled', label: 'Cancelled' }
+                ]
+            },
+            priority: { 
+                type: 'select', 
+                options: [
+                    { value: 'low', label: 'Low' },
+                    { value: 'medium', label: 'Medium' },
+                    { value: 'high', label: 'High' },
+                    { value: 'urgent', label: 'Urgent' }
+                ]
+            },
+            assignmentType: { 
+                type: 'select', 
+                options: [
+                    { value: 'individual', label: 'Individual' },
+                    { value: 'multiple', label: 'Multiple Users' },
+                    { value: 'all_company', label: 'All Company' }
+                ]
+            },
+            assignedTo: { type: 'select', source: 'users', displayField: 'username' },
+            category: { type: 'text' },
+            overdue: { type: 'checkbox', label: 'Show overdue only' }
+        }
     }
 };
