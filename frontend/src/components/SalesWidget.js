@@ -681,7 +681,7 @@ const SalesWidget = ({ onOpenSaleProfile }) => {
                                 </td>
                                 <td className="px-3 py-2 text-blue-600 hover:text-blue-800 cursor-pointer"
                                     onClick={() => onOpenSaleProfile && onOpenSaleProfile(sale.id)}>
-                                    {sale.sale_number}
+                                    {sale.saleNumber}
                                 </td>
                                 <td className="px-3 py-2">{sale.title}</td>
                                 <td className="px-3 py-2">${parseFloat(sale.totalAmount).toFixed(2)}</td>
