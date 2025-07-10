@@ -45,7 +45,6 @@ const UserInvitation = sequelize.define('UserInvitation', {
   expiresAt: {
     type: DataTypes.DATE,
     allowNull: false,
-    field: 'expires_at'
   },
   isUsed: {
     type: DataTypes.BOOLEAN,
