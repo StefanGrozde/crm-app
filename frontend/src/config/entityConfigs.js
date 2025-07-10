@@ -48,7 +48,7 @@ export const entityConfigs = {
                 { 
                     name: 'name', 
                     label: 'Contact',
-                    render: (value, item) => (
+                    render: (value, item, onOpenProfile) => (
                         <div className="flex items-center">
                             <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center mr-3">
                                 <span className="text-xs font-medium text-blue-600">
@@ -56,7 +56,10 @@ export const entityConfigs = {
                                 </span>
                             </div>
                             <div>
-                                <div className="text-sm font-medium text-gray-900">
+                                <div 
+                                    className="text-sm font-medium text-gray-900 cursor-pointer hover:text-blue-600 hover:underline"
+                                    onClick={() => onOpenProfile && onOpenProfile(item.id)}
+                                >
                                     {item.firstName} {item.lastName}
                                 </div>
                                 <div className="text-xs text-gray-500">
@@ -157,9 +160,14 @@ export const entityConfigs = {
                 { 
                     name: 'title', 
                     label: 'Title',
-                    render: (value, item) => (
+                    render: (value, item, onOpenProfile) => (
                         <div>
-                            <div className="text-sm font-medium text-gray-900">{value}</div>
+                            <div 
+                                className="text-sm font-medium text-gray-900 cursor-pointer hover:text-blue-600 hover:underline"
+                                onClick={() => onOpenProfile && onOpenProfile(item.id)}
+                            >
+                                {value}
+                            </div>
                             <div className="text-sm text-gray-500">{item.source}</div>
                         </div>
                     )
@@ -280,7 +288,18 @@ export const entityConfigs = {
         },
         fields: {
             display: [
-                { name: 'name', label: 'Name' },
+                { 
+                    name: 'name', 
+                    label: 'Name',
+                    render: (value, item, onOpenProfile) => (
+                        <div 
+                            className="text-sm font-medium text-gray-900 cursor-pointer hover:text-blue-600 hover:underline"
+                            onClick={() => onOpenProfile && onOpenProfile(item.id)}
+                        >
+                            {value}
+                        </div>
+                    )
+                },
                 { 
                     name: 'stage', 
                     label: 'Stage', 
@@ -454,9 +473,12 @@ export const entityConfigs = {
                 { 
                     name: 'username', 
                     label: 'User',
-                    render: (value, item) => (
+                    render: (value, item, onOpenProfile) => (
                         <div>
-                            <div className="text-sm font-medium text-gray-900">
+                            <div 
+                                className="text-sm font-medium text-gray-900 cursor-pointer hover:text-blue-600 hover:underline"
+                                onClick={() => onOpenProfile && onOpenProfile(item.id)}
+                            >
                                 {item.firstName} {item.lastName}
                             </div>
                             <div className="text-xs text-gray-500">{value}</div>

@@ -463,7 +463,7 @@ const EntityWidget = ({
         let value = item[field.name];
         
         if (field.render) {
-            return field.render(value, item);
+            return field.render(value, item, onOpenProfile);
         }
         
         if (field.type === 'currency') {
@@ -736,14 +736,6 @@ const EntityWidget = ({
                                 ))}
                                 <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
                                     <div className="flex space-x-2">
-                                        {onOpenProfile && (
-                                            <button
-                                                onClick={() => onOpenProfile(item.id)}
-                                                className="text-indigo-600 hover:text-indigo-900 text-xs font-medium"
-                                            >
-                                                View
-                                            </button>
-                                        )}
                                         <button
                                             onClick={() => openEditModal(item)}
                                             className="text-blue-600 hover:text-blue-900 text-xs font-medium"
