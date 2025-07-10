@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useContext, useCallback, memo } from 'react';
+import { createPortal } from 'react-dom';
 import axios from 'axios';
 import { AuthContext } from '../context/AuthContext';
 
@@ -517,7 +518,7 @@ const UsersWidget = ({ onOpenUserProfile }) => {
 
             {/* Modals */}
             {/* Filter Modal */}
-            {showFilterModal && (
+            {showFilterModal && createPortal(
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
                     <div className="bg-white rounded-lg p-6 w-full max-w-md">
                         <h3 className="text-lg font-semibold mb-4">Filter Users</h3>
@@ -554,11 +555,12 @@ const UsersWidget = ({ onOpenUserProfile }) => {
                             </button>
                         </div>
                     </div>
-                </div>
+                </div>,
+                document.body
             )}
 
             {/* Add/Edit Modal */}
-            {(showAddModal || showEditModal) && (
+            {(showAddModal || showEditModal) && createPortal(
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
                     <div className="bg-white rounded-lg p-6 w-full max-w-md">
                         <h3 className="text-lg font-semibold mb-4">
@@ -635,11 +637,12 @@ const UsersWidget = ({ onOpenUserProfile }) => {
                             </div>
                         </form>
                     </div>
-                </div>
+                </div>,
+                document.body
             )}
 
             {/* Invitation Modal */}
-            {showInviteModal && (
+            {showInviteModal && createPortal(
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
                     <div className="bg-white rounded-lg p-6 w-full max-w-md">
                         <h3 className="text-lg font-semibold mb-4">Invite New User</h3>
@@ -733,7 +736,8 @@ const UsersWidget = ({ onOpenUserProfile }) => {
                             </div>
                         )}
                     </div>
-                </div>
+                </div>,
+                document.body
             )}
         </div>
     );
