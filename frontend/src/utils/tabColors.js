@@ -6,6 +6,8 @@ export const TAB_COLORS = {
     'contacts': 'blue',
     'leads': 'green', 
     'opportunities': 'purple',
+    'sales': 'teal',
+    'tasks': 'red',
     'business': 'orange',
     'users': 'gray',
     'my-views': 'green',
@@ -14,6 +16,8 @@ export const TAB_COLORS = {
     'contacts-profile': 'blue',
     'leads-profile': 'green',
     'opportunities-profile': 'purple',
+    'sales-profile': 'teal',
+    'tasks-profile': 'red',
     'business-profile': 'orange',
     'users-profile': 'gray',
     
@@ -21,6 +25,8 @@ export const TAB_COLORS = {
     'search-contacts': 'blue',
     'search-leads': 'green',
     'search-opportunities': 'purple',
+    'search-sales': 'teal',
+    'search-tasks': 'red',
     'search-business': 'orange',
     'search-users': 'gray',
     
