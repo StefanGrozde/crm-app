@@ -402,7 +402,7 @@ const TasksWidget = ({ onOpenTaskProfile }) => {
                                 className={`p-3 border rounded-lg hover:bg-gray-50 cursor-pointer ${
                                     isOverdue(task) ? 'border-red-300 bg-red-50' : 'border-gray-200'
                                 }`}
-                                onClick={() => onOpenTaskProfile && onOpenTaskProfile(task)}
+                                onClick={() => onOpenTaskProfile && onOpenTaskProfile(task.id, task.title)}
                             >
                                 <div className="flex justify-between items-start">
                                     <div className="flex-1">

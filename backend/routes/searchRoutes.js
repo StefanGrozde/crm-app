@@ -8,6 +8,7 @@ const Opportunity = require('../models/Opportunity');
 const Company = require('../models/Company');
 const User = require('../models/User');
 const Sale = require('../models/Sale');
+const Task = require('../models/Task');
 
 /**
  * @route   POST /api/search/sample-data
@@ -265,7 +266,7 @@ router.get('/', protect, async (req, res) => {
       });
     }
 
-    const searchTypes = types ? types.split(',') : ['contacts', 'leads', 'opportunities', 'companies', 'users', 'sales'];
+    const searchTypes = types ? types.split(',') : ['contacts', 'leads', 'opportunities', 'companies', 'users', 'sales', 'tasks'];
     console.log('🔍 Backend: Search types:', searchTypes);
     
     const results = await SearchService.searchAll(query.trim(), {
@@ -515,6 +516,51 @@ router.get('/sales', protect, async (req, res) => {
     console.error('Sales search error:', error);
     res.status(500).json({ 
       message: 'Sales search failed. Please try again.',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+});
+
+/**
+ * @route   GET /api/search/tasks
+ * @desc    Search tasks specifically
+ * @access  Private
+ */
+router.get('/tasks', protect, async (req, res) => {
+  try {
+    const { 
+      q: query, 
+      limit = 10, 
+      offset = 0 
+    } = req.query;
+
+    if (!query || query.trim().length < 2) {
+      return res.status(400).json({ 
+        message: 'Search query must be at least 2 characters long' 
+      });
+    }
+
+    const results = await SearchService.searchTasks(query.trim(), {
+      userId: req.user.id,
+      companyId: req.user.companyId,
+      limit: parseInt(limit),
+      offset: parseInt(offset)
+    });
+
+    res.json({
+      query: query.trim(),
+      totalResults: results.length,
+      results,
+      pagination: {
+        limit: parseInt(limit),
+        offset: parseInt(offset),
+        hasMore: results.length === parseInt(limit)
+      }
+    });
+  } catch (error) {
+    console.error('Tasks search error:', error);
+    res.status(500).json({ 
+      message: 'Tasks search failed. Please try again.',
       error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }

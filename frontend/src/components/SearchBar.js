@@ -5,7 +5,7 @@ import { useAuth } from '../context/AuthContext';
 
 const API_URL = process.env.REACT_APP_API_URL;
 
-const SearchBar = ({ className = '', placeholder = "Search contacts, leads, opportunities, sales...", onOpenResult }) => {
+const SearchBar = ({ className = '', placeholder = "Search contacts, leads, opportunities, sales, tasks...", onOpenResult }) => {
   const [query, setQuery] = useState('');
   const [suggestions, setSuggestions] = useState([]);
   const [results, setResults] = useState(null);
