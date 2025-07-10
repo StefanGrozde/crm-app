@@ -680,7 +680,7 @@ const SalesWidget = ({ onOpenSaleProfile }) => {
                                     />
                                 </td>
                                 <td className="px-3 py-2 text-blue-600 hover:text-blue-800 cursor-pointer"
-                                    onClick={() => onOpenSaleProfile && onOpenSaleProfile(sale.id, sale.title)}>
+                                    onClick={() => onOpenSaleProfile && onOpenSaleProfile(sale.id)}>
                                     {sale.saleNumber}
                                 </td>
                                 <td className="px-3 py-2">{sale.title}</td>
