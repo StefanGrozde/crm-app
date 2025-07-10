@@ -2,7 +2,6 @@ import React, { useState, useEffect, useContext, useCallback, memo, useRef } fro
 import { createPortal } from 'react-dom';
 import axios from 'axios';
 import { AuthContext } from '../context/AuthContext';
-import ListManager from './ListManager';
 import WidgetSearchBar from './WidgetSearchBar';
 
 const API_URL = process.env.REACT_APP_API_URL;
@@ -22,6 +21,7 @@ const TasksWidget = ({ onOpenTaskProfile }) => {
     });
     
     // Filter states
+    // eslint-disable-next-line no-unused-vars
     const [filters, setFilters] = useState({
         status: '',
         priority: '',
@@ -32,6 +32,7 @@ const TasksWidget = ({ onOpenTaskProfile }) => {
     });
     
     // List filtering state
+    // eslint-disable-next-line no-unused-vars
     const [selectedListId, setSelectedListId] = useState(null);
     const [selectedTasks, setSelectedTasks] = useState(new Set());
     const [availableLists, setAvailableLists] = useState([]);

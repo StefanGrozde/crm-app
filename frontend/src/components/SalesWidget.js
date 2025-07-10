@@ -42,7 +42,9 @@ const SalesWidget = ({ onOpenSalesProfile }) => {
     const [searchTerm, setSearchTerm] = useState('');
     
     // Refs for uncontrolled inputs
+    // eslint-disable-next-line no-unused-vars
     const searchInputRef = useRef(null);
+    // eslint-disable-next-line no-unused-vars
     const formRefs = useRef({
         title: useRef(null),
         description: useRef(null),
@@ -80,6 +82,7 @@ const SalesWidget = ({ onOpenSalesProfile }) => {
         lead: '',
         opportunity: ''
     });
+    // eslint-disable-next-line no-unused-vars
     const [filterOptionsLoading, setFilterOptionsLoading] = useState(false);
     
     // Form states

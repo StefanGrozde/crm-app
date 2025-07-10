@@ -22,9 +22,13 @@ const TaskProfileWidget = ({ taskId }) => {
     
     // Additional data for dropdowns
     const [users, setUsers] = useState([]);
+    // eslint-disable-next-line no-unused-vars
     const [contacts, setContacts] = useState([]);
+    // eslint-disable-next-line no-unused-vars
     const [leads, setLeads] = useState([]);
+    // eslint-disable-next-line no-unused-vars
     const [opportunities, setOpportunities] = useState([]);
+    // eslint-disable-next-line no-unused-vars
     const [sales, setSales] = useState([]);
     const [selectedUsers, setSelectedUsers] = useState([]);
     
@@ -33,6 +37,7 @@ const TaskProfileWidget = ({ taskId }) => {
     const [tagInput, setTagInput] = useState('');
 
     // Assignment management
+    // eslint-disable-next-line no-unused-vars
     const [assignmentStatuses, setAssignmentStatuses] = useState({});
     const [hoursLogged, setHoursLogged] = useState({});
 

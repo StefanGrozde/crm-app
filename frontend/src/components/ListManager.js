@@ -5,6 +5,7 @@ import { AuthContext } from '../context/AuthContext';
 const API_URL = process.env.REACT_APP_API_URL;
 
 const ListManager = ({ entityType, selectedListId, onListChange, onListsLoaded }) => {
+    // eslint-disable-next-line no-unused-vars
     const { user } = useContext(AuthContext);
     const [lists, setLists] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -48,7 +49,7 @@ const ListManager = ({ entityType, selectedListId, onListChange, onListsLoaded }
         } finally {
             setLoading(false);
         }
-    }, [entityType]);
+    }, [entityType, onListsLoaded]);
 
     useEffect(() => {
         loadLists();

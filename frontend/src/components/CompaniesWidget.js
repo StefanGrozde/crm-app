@@ -8,6 +8,7 @@ const API_URL = process.env.REACT_APP_API_URL;
 
 const CompaniesWidget = () => {
     // Context
+    // eslint-disable-next-line no-unused-vars
     const { user } = useContext(AuthContext);
     
     // Core data states
@@ -57,6 +58,7 @@ const CompaniesWidget = () => {
     });
     
     // Dropdown data
+    // eslint-disable-next-line no-unused-vars
     const [dropdownData, setDropdownData] = useState([]);
 
     // Logic: Load data
