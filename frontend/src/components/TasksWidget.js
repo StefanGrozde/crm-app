@@ -141,6 +141,27 @@ const TasksWidget = ({ onOpenTaskProfile }) => {
 
         initializeComponent();
     }, [loadTasks, loadDropdownData]);
+    
+    // Listen for task updates from other components
+    useEffect(() => {
+        const handleTaskUpdate = (event) => {
+            console.log('Task updated, refreshing tasks list:', event.detail);
+            loadTasks(pagination.currentPage);
+        };
+        
+        const handleTaskDelete = (event) => {
+            console.log('Task deleted, refreshing tasks list:', event.detail);
+            loadTasks(pagination.currentPage);
+        };
+
+        window.addEventListener('taskUpdated', handleTaskUpdate);
+        window.addEventListener('taskDeleted', handleTaskDelete);
+        
+        return () => {
+            window.removeEventListener('taskUpdated', handleTaskUpdate);
+            window.removeEventListener('taskDeleted', handleTaskDelete);
+        };
+    }, [loadTasks, pagination.currentPage]);
 
     // Handle task creation
     const handleCreateTask = useCallback(async (e) => {

@@ -184,6 +184,11 @@ const TaskProfileWidget = ({ taskId }) => {
             
             setShowEditModal(false);
             await loadTask(); // Reload task data
+            
+            // Notify other components that a task was updated
+            window.dispatchEvent(new CustomEvent('taskUpdated', { 
+                detail: { taskId: task.id, status: submitData.status } 
+            }));
         } catch (error) {
             console.error('Error updating task:', error);
             alert(error.response?.data?.message || 'Failed to update task');
@@ -200,6 +205,11 @@ const TaskProfileWidget = ({ taskId }) => {
             await axios.delete(`${API_URL}/api/tasks/${task.id}`, {
                 withCredentials: true
             });
+            
+            // Notify other components that a task was deleted
+            window.dispatchEvent(new CustomEvent('taskDeleted', { 
+                detail: { taskId: task.id } 
+            }));
             
             // Optionally notify parent component about deletion
             window.history.back();
@@ -229,6 +239,11 @@ const TaskProfileWidget = ({ taskId }) => {
 
             // Reload task to get updated data
             await loadTask();
+            
+            // Notify other components that a task assignment was updated
+            window.dispatchEvent(new CustomEvent('taskUpdated', { 
+                detail: { taskId: task.id, assignmentUpdate: true } 
+            }));
         } catch (error) {
             console.error('Error updating assignment:', error);
             alert('Failed to update assignment');
