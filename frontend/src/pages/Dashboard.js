@@ -845,7 +845,7 @@ const Dashboard = () => {
             w: 12,
             h: 8,
             widgetKey: `${profileType}-profile-widget-${profileId}`,
-            widgetData: { [`${profileType}Id`]: profileId }
+            widgetData: { [profileType === 'sales' ? 'saleId' : `${profileType}Id`]: profileId }
         }];
         
         // Update all state synchronously
