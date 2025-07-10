@@ -743,4 +743,4 @@ const UsersWidget = ({ onOpenUserProfile }) => {
     );
 };
 
-export default memo(UsersWidget); 
+export default memo(UsersWidget);

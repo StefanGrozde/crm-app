@@ -462,7 +462,8 @@ export const entityConfigs = {
         features: {
             bulkSelection: true,
             filtering: true,
-            filterOptions: false  // Disabled until backend endpoint exists
+            filterOptions: false,  // Disabled until backend endpoint exists
+            invite: true  // Enable invite functionality
         },
         defaultFilters: {
             role: '',
