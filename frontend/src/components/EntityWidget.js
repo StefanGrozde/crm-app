@@ -109,8 +109,23 @@ const EntityWidget = ({
             
             // Load data for each source
             const dropdownPromises = Array.from(dropdownSources).map(async (source) => {
-                const response = await axios.get(`${API_URL}/api/${source}`, { withCredentials: true });
-                return [source, response.data];
+                try {
+                    const response = await axios.get(`${API_URL}/api/${source}`, { withCredentials: true });
+                    // Ensure we're getting an array, handle different response formats
+                    let data = response.data;
+                    if (data && typeof data === 'object' && !Array.isArray(data)) {
+                        // If it's an object, try to extract the array from common properties
+                        data = data.data || data.items || data.results || data[source] || [];
+                    }
+                    if (!Array.isArray(data)) {
+                        console.warn(`Dropdown source ${source} did not return an array:`, data);
+                        data = [];
+                    }
+                    return [source, data];
+                } catch (error) {
+                    console.error(`Error loading dropdown data for source ${source}:`, error);
+                    return [source, []];
+                }
             });
             
             const dropdownResults = await Promise.all(dropdownPromises);
@@ -380,7 +395,9 @@ const EntityWidget = ({
             case 'select':
                 let selectOptions = options || [];
                 if (source && dropdownData[source]) {
-                    selectOptions = dropdownData[source].map(item => ({
+                    // Ensure dropdownData[source] is an array before calling map
+                    const sourceData = Array.isArray(dropdownData[source]) ? dropdownData[source] : [];
+                    selectOptions = sourceData.map(item => ({
                         value: item.id,
                         label: item[field.displayField || 'name'] || item.name || item.username
                     }));
