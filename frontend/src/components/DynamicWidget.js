@@ -1,15 +1,24 @@
 import React, { useState, useEffect, memo, useMemo } from 'react';
 import SearchResultWidget from './SearchResultWidget';
+// Legacy widgets for backward compatibility
 import ContactsWidget from './ContactsWidget';
-import ContactProfileWidget from './ContactProfileWidget';
-import LeadProfileWidget from './LeadProfileWidget';
 import LeadsWidget from './LeadsWidget';
 import OpportunitiesWidget from './OpportunitiesWidget';
-import OpportunityProfileWidget from './OpportunityProfileWidget';
-import BusinessWidget from './BusinessWidget';
-import BusinessProfileWidget from './BusinessProfileWidget';
+import CompaniesWidget from './CompaniesWidget';
 import UsersWidget from './UsersWidget';
+// Unified widgets (preferred)
+import UnifiedContactsWidget from './UnifiedContactsWidget';
+import UnifiedLeadsWidget from './UnifiedLeadsWidget';
+import UnifiedOpportunitiesWidget from './UnifiedOpportunitiesWidget';
+import UnifiedUsersWidget from './UnifiedUsersWidget';
+// Profile widgets
+import ContactProfileWidget from './ContactProfileWidget';
+import LeadProfileWidget from './LeadProfileWidget';
+import OpportunityProfileWidget from './OpportunityProfileWidget';
+import BusinessProfileWidget from './BusinessProfileWidget';
 import UserProfileWidget from './UserProfileWidget';
+// Other widgets
+import BusinessWidget from './BusinessWidget';
 import InvitationsWidget from './InvitationsWidget';
 import LeadConversionWidget from './LeadConversionWidget';
 import MyViewsWidget from './MyViewsWidget';
@@ -18,18 +27,29 @@ import SalesProfileWidget from './SalesProfileWidget';
 
 // Widget Registry - Central place to register all widgets
 const WidgetRegistry = {
-    // Built-in React widgets
-    'contacts-widget': ContactsWidget,
+    // Unified widgets (preferred) - configuration-driven
+    'contacts-widget': UnifiedContactsWidget,
+    'leads-widget': UnifiedLeadsWidget,
+    'opportunities-widget': UnifiedOpportunitiesWidget,
+    'users-widget': UnifiedUsersWidget,
+    
+    // Legacy widgets (for backward compatibility)
+    'legacy-contacts-widget': ContactsWidget,
+    'legacy-leads-widget': LeadsWidget,
+    'legacy-opportunities-widget': OpportunitiesWidget,
+    'legacy-companies-widget': CompaniesWidget,
+    'legacy-users-widget': UsersWidget,
+    
+    // Profile widgets (unchanged)
     'contact-profile-widget': ContactProfileWidget,
     'lead-profile-widget': LeadProfileWidget,
-    'search-result-widget': SearchResultWidget,
-    'leads-widget': LeadsWidget,
-    'opportunities-widget': OpportunitiesWidget,
     'opportunity-profile-widget': OpportunityProfileWidget,
-    'business-widget': BusinessWidget,
     'business-profile-widget': BusinessProfileWidget,
-    'users-widget': UsersWidget,
     'user-profile-widget': UserProfileWidget,
+    
+    // Other widgets (unchanged)
+    'search-result-widget': SearchResultWidget,
+    'business-widget': BusinessWidget,
     'invitations-widget': InvitationsWidget,
     'lead-conversion': LeadConversionWidget,
     'my-views-widget': MyViewsWidget,
@@ -269,24 +289,28 @@ const DynamicWidget = memo(({ widgetKey, widgetPath, type, resultData, widgetDat
                     }
                 }, []); // eslint-disable-line react-hooks/exhaustive-deps
                 
-                // Pass contact profile handler specifically to ContactsWidget
-                if (memoizedWidgetKey === 'contacts-widget') {
+                // Pass contact profile handler to ContactsWidget (unified or legacy)
+                if (memoizedWidgetKey === 'contacts-widget' || memoizedWidgetKey === 'legacy-contacts-widget') {
                     return <RegisteredWidget onOpenContactProfile={onOpenContactProfile} />;
                 }
-                // Pass lead profile handler specifically to LeadsWidget
-                if (memoizedWidgetKey === 'leads-widget') {
+                // Pass lead profile handler to LeadsWidget (unified or legacy)
+                if (memoizedWidgetKey === 'leads-widget' || memoizedWidgetKey === 'legacy-leads-widget') {
                     return <RegisteredWidget onOpenLeadProfile={onOpenLeadProfile} />;
                 }
-                // Pass opportunity profile handler specifically to OpportunitiesWidget
-                if (memoizedWidgetKey === 'opportunities-widget') {
+                // Pass opportunity profile handler to OpportunitiesWidget (unified or legacy)
+                if (memoizedWidgetKey === 'opportunities-widget' || memoizedWidgetKey === 'legacy-opportunities-widget') {
                     return <RegisteredWidget onOpenOpportunityProfile={onOpenOpportunityProfile} />;
                 }
-                // Pass business profile handler specifically to BusinessWidget
+                // Pass company profile handler to legacy CompaniesWidget
+                if (memoizedWidgetKey === 'legacy-companies-widget') {
+                    return <RegisteredWidget onOpenCompanyProfile={onOpenBusinessProfile} />;
+                }
+                // Pass business profile handler to BusinessWidget
                 if (memoizedWidgetKey === 'business-widget') {
                     return <RegisteredWidget onOpenBusinessProfile={onOpenBusinessProfile} />;
                 }
-                // Pass user profile handler specifically to UsersWidget
-                if (memoizedWidgetKey === 'users-widget') {
+                // Pass user profile handler to UsersWidget (unified or legacy)
+                if (memoizedWidgetKey === 'users-widget' || memoizedWidgetKey === 'legacy-users-widget') {
                     return <RegisteredWidget onOpenUserProfile={onOpenUserProfile} />;
                 }
                 // Pass widgetData to ContactProfileWidget

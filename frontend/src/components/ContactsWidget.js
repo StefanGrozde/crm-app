@@ -44,6 +44,7 @@ const ContactsWidget = ({ onOpenContactProfile }) => {
     const [searchTerm, setSearchTerm] = useState('');
     
     // Refs for uncontrolled inputs
+    // eslint-disable-next-line no-unused-vars
     const searchInputRef = useRef(null);
     const formRefs = useRef({
         firstName: useRef(null),

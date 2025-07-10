@@ -142,7 +142,8 @@ export const entityConfigs = {
         features: {
             listManagement: true,
             bulkSelection: true,
-            filtering: true
+            filtering: true,
+            filterOptions: false  // Disabled until backend endpoint exists
         },
         defaultFilters: {
             status: '',
@@ -370,7 +371,8 @@ export const entityConfigs = {
         dataKey: 'companies',
         features: {
             bulkSelection: true,
-            filtering: true
+            filtering: true,
+            filterOptions: false  // Disabled until backend endpoint exists
         },
         defaultFilters: {
             industry: '',
@@ -440,7 +442,8 @@ export const entityConfigs = {
         dataKey: 'users',
         features: {
             bulkSelection: true,
-            filtering: true
+            filtering: true,
+            filterOptions: false  // Disabled until backend endpoint exists
         },
         defaultFilters: {
             role: '',

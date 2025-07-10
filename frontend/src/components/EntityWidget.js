@@ -12,6 +12,7 @@ const EntityWidget = ({
     onOpenProfile,
     onCustomAction
 }) => {
+    // eslint-disable-next-line no-unused-vars
     const { user } = useContext(AuthContext);
     
     // Core data states
@@ -84,7 +85,7 @@ const EntityWidget = ({
         } finally {
             setLoading(false);
         }
-    }, [config, filters, searchTerm, pagination.itemsPerPage, selectedListId]);
+    }, [config, filters, searchTerm, selectedListId]);
     
     // Load dropdown data for form fields and filters
     const loadDropdownData = useCallback(async () => {
@@ -115,7 +116,8 @@ const EntityWidget = ({
                     });
                     newDropdownData.filterOptions = filterResponse.data;
                 } catch (error) {
-                    console.warn('Filter options not available:', error);
+                    console.warn(`Filter options not available for ${config.apiEndpoint}:`, error);
+                    // Don't throw error, just continue without filter options
                 }
             }
             
@@ -184,7 +186,7 @@ const EntityWidget = ({
             console.error(`Error saving ${config.title.toLowerCase()}:`, error);
             alert(error.response?.data?.message || `Failed to save ${config.title.toLowerCase()}`);
         }
-    }, [config, formData, showEditModal, editingItem, loadData, pagination.currentPage]);
+    }, [config, formData, showEditModal, editingItem, loadData, pagination.currentPage, resetForm]);
     
     // Handle delete
     const handleDelete = useCallback(async (itemId) => {
