@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useContext, useCallback, memo } from 'react';
+import { createPortal } from 'react-dom';
 import axios from 'axios';
 import { AuthContext } from '../context/AuthContext';
 
@@ -171,6 +172,212 @@ const OpportunityProfileWidget = ({ opportunityId }) => {
             alert('Failed to delete opportunity');
         }
     }, [opportunityId]);
+
+    // Edit Modal Component
+    const EditModal = ({ isOpen, onClose }) => {
+        if (!isOpen) return null;
+
+        return createPortal(
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                <div className="bg-white rounded-lg p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+                    <div className="flex justify-between items-center mb-4">
+                        <h2 className="text-xl font-bold">Edit Opportunity</h2>
+                        <button
+                            onClick={onClose}
+                            className="text-gray-500 hover:text-gray-700"
+                        >
+                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
+                    
+                    <form onSubmit={handleSubmit} className="space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700">Name *</label>
+                                <input
+                                    type="text"
+                                    name="name"
+                                    value={formData.name}
+                                    onChange={handleInputChange}
+                                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
+                                    required
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700">Stage</label>
+                                <select
+                                    name="stage"
+                                    value={formData.stage}
+                                    onChange={handleInputChange}
+                                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
+                                >
+                                    <option value="prospecting">Prospecting</option>
+                                    <option value="qualification">Qualification</option>
+                                    <option value="proposal">Proposal</option>
+                                    <option value="negotiation">Negotiation</option>
+                                    <option value="closed_won">Closed Won</option>
+                                    <option value="closed_lost">Closed Lost</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700">Probability (%)</label>
+                                <input
+                                    type="number"
+                                    name="probability"
+                                    value={formData.probability}
+                                    onChange={handleInputChange}
+                                    min="0"
+                                    max="100"
+                                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700">Amount</label>
+                                <input
+                                    type="number"
+                                    name="amount"
+                                    value={formData.amount}
+                                    onChange={handleInputChange}
+                                    step="0.01"
+                                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700">Currency</label>
+                                <select
+                                    name="currency"
+                                    value={formData.currency}
+                                    onChange={handleInputChange}
+                                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
+                                >
+                                    <option value="USD">USD</option>
+                                    <option value="EUR">EUR</option>
+                                    <option value="GBP">GBP</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700">Expected Close Date</label>
+                                <input
+                                    type="date"
+                                    name="expectedCloseDate"
+                                    value={formData.expectedCloseDate}
+                                    onChange={handleInputChange}
+                                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700">Type</label>
+                                <input
+                                    type="text"
+                                    name="type"
+                                    value={formData.type}
+                                    onChange={handleInputChange}
+                                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700">Source</label>
+                                <input
+                                    type="text"
+                                    name="source"
+                                    value={formData.source}
+                                    onChange={handleInputChange}
+                                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700">Assigned To</label>
+                                <select
+                                    name="assignedTo"
+                                    value={formData.assignedTo}
+                                    onChange={handleInputChange}
+                                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
+                                >
+                                    <option value="">Unassigned</option>
+                                    {Array.isArray(dropdownData.users) && dropdownData.users.map(user => (
+                                        <option key={user.id} value={user.id}>
+                                            {user.username}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700">Company</label>
+                                <select
+                                    name="companyId"
+                                    value={formData.companyId}
+                                    onChange={handleInputChange}
+                                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
+                                >
+                                    <option value="">No Company</option>
+                                    {Array.isArray(dropdownData.companies) && dropdownData.companies.map(company => (
+                                        <option key={company.id} value={company.id}>
+                                            {company.name}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700">Contact</label>
+                                <select
+                                    name="contactId"
+                                    value={formData.contactId}
+                                    onChange={handleInputChange}
+                                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
+                                >
+                                    <option value="">No Contact</option>
+                                    {Array.isArray(dropdownData.contacts) && dropdownData.contacts.map(contact => (
+                                        <option key={contact.id} value={contact.id}>
+                                            {contact.firstName} {contact.lastName}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">Description</label>
+                            <textarea
+                                name="description"
+                                value={formData.description}
+                                onChange={handleInputChange}
+                                rows="3"
+                                className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">Notes</label>
+                            <textarea
+                                name="notes"
+                                value={formData.notes}
+                                onChange={handleInputChange}
+                                rows="3"
+                                className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
+                            />
+                        </div>
+                        
+                        <div className="flex justify-end space-x-3 pt-4">
+                            <button
+                                type="button"
+                                onClick={onClose}
+                                className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="submit"
+                                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                            >
+                                Update Opportunity
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>,
+            document.body
+        );
+    };
 
     // Rendering: Loading state
     if (loading) {
@@ -434,207 +641,12 @@ const OpportunityProfileWidget = ({ opportunityId }) => {
             )}
 
             {/* Edit Modal */}
-            {showEditModal && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-lg p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
-                        <div className="flex justify-between items-center mb-4">
-                            <h2 className="text-xl font-bold">Edit Opportunity</h2>
-                            <button
-                                onClick={() => setShowEditModal(false)}
-                                className="text-gray-500 hover:text-gray-700"
-                            >
-                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                </svg>
-                            </button>
-                        </div>
-                        
-                        <form onSubmit={handleSubmit} className="space-y-4">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700">Name *</label>
-                                    <input
-                                        type="text"
-                                        name="name"
-                                        value={formData.name}
-                                        onChange={handleInputChange}
-                                        className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
-                                        required
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700">Stage</label>
-                                    <select
-                                        name="stage"
-                                        value={formData.stage}
-                                        onChange={handleInputChange}
-                                        className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
-                                    >
-                                        <option value="prospecting">Prospecting</option>
-                                        <option value="qualification">Qualification</option>
-                                        <option value="proposal">Proposal</option>
-                                        <option value="negotiation">Negotiation</option>
-                                        <option value="closed_won">Closed Won</option>
-                                        <option value="closed_lost">Closed Lost</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700">Probability (%)</label>
-                                    <input
-                                        type="number"
-                                        name="probability"
-                                        value={formData.probability}
-                                        onChange={handleInputChange}
-                                        min="0"
-                                        max="100"
-                                        className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700">Amount</label>
-                                    <input
-                                        type="number"
-                                        name="amount"
-                                        value={formData.amount}
-                                        onChange={handleInputChange}
-                                        step="0.01"
-                                        className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700">Currency</label>
-                                    <select
-                                        name="currency"
-                                        value={formData.currency}
-                                        onChange={handleInputChange}
-                                        className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
-                                    >
-                                        <option value="USD">USD</option>
-                                        <option value="EUR">EUR</option>
-                                        <option value="GBP">GBP</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700">Expected Close Date</label>
-                                    <input
-                                        type="date"
-                                        name="expectedCloseDate"
-                                        value={formData.expectedCloseDate}
-                                        onChange={handleInputChange}
-                                        className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700">Type</label>
-                                    <input
-                                        type="text"
-                                        name="type"
-                                        value={formData.type}
-                                        onChange={handleInputChange}
-                                        className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700">Source</label>
-                                    <input
-                                        type="text"
-                                        name="source"
-                                        value={formData.source}
-                                        onChange={handleInputChange}
-                                        className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700">Assigned To</label>
-                                    <select
-                                        name="assignedTo"
-                                        value={formData.assignedTo}
-                                        onChange={handleInputChange}
-                                        className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
-                                    >
-                                        <option value="">Unassigned</option>
-                                        {Array.isArray(dropdownData.users) && dropdownData.users.map(user => (
-                                            <option key={user.id} value={user.id}>
-                                                {user.username}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700">Company</label>
-                                    <select
-                                        name="companyId"
-                                        value={formData.companyId}
-                                        onChange={handleInputChange}
-                                        className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
-                                    >
-                                        <option value="">No Company</option>
-                                        {Array.isArray(dropdownData.companies) && dropdownData.companies.map(company => (
-                                            <option key={company.id} value={company.id}>
-                                                {company.name}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700">Contact</label>
-                                    <select
-                                        name="contactId"
-                                        value={formData.contactId}
-                                        onChange={handleInputChange}
-                                        className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
-                                    >
-                                        <option value="">No Contact</option>
-                                        {Array.isArray(dropdownData.contacts) && dropdownData.contacts.map(contact => (
-                                            <option key={contact.id} value={contact.id}>
-                                                {contact.firstName} {contact.lastName}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700">Description</label>
-                                <textarea
-                                    name="description"
-                                    value={formData.description}
-                                    onChange={handleInputChange}
-                                    rows="3"
-                                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700">Notes</label>
-                                <textarea
-                                    name="notes"
-                                    value={formData.notes}
-                                    onChange={handleInputChange}
-                                    rows="3"
-                                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
-                                />
-                            </div>
-                            
-                            <div className="flex justify-end space-x-3 pt-4">
-                                <button
-                                    type="button"
-                                    onClick={() => setShowEditModal(false)}
-                                    className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    type="submit"
-                                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-                                >
-                                    Update Opportunity
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            )}
+            <EditModal
+                isOpen={showEditModal}
+                onClose={() => setShowEditModal(false)}
+            />
         </div>
     );
 };
 
-export default memo(OpportunityProfileWidget); 
+export default memo(OpportunityProfileWidget);
