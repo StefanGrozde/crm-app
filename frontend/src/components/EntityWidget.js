@@ -156,6 +156,17 @@ const EntityWidget = ({
         }));
     }, []);
     
+    // Reset form
+    const resetForm = useCallback(() => {
+        const initialData = {};
+        config.fields?.form?.forEach(field => {
+            if (field.defaultValue !== undefined) {
+                initialData[field.name] = field.defaultValue;
+            }
+        });
+        setFormData(initialData);
+    }, [config]);
+    
     // Handle form submission
     const handleSubmit = useCallback(async (e) => {
         e.preventDefault();
@@ -317,17 +328,6 @@ const EntityWidget = ({
             alert('Failed to remove from list: ' + (error.response?.data?.message || error.message));
         }
     }, [selectedListId, selectedItems, config, loadData, pagination.currentPage]);
-    
-    // Reset form
-    const resetForm = useCallback(() => {
-        const initialData = {};
-        config.fields?.form?.forEach(field => {
-            if (field.defaultValue !== undefined) {
-                initialData[field.name] = field.defaultValue;
-            }
-        });
-        setFormData(initialData);
-    }, [config]);
     
     // Open edit modal
     const openEditModal = useCallback((item) => {

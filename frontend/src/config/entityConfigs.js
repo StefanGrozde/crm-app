@@ -524,5 +524,3 @@ export const entityConfigs = {
         }
     }
 };
-
-export default entityConfigs;
