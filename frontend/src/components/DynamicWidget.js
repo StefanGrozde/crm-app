@@ -187,7 +187,7 @@ const ExternalWidgetLoader = memo(({ widgetKey, widgetPath, type, onLoad, onErro
 });
 
 // Main DynamicWidget component
-const DynamicWidget = memo(({ widgetKey, widgetPath, type, resultData, widgetData, onLoad, onError, widgetState, showLoadingSpinner, loadingSpinnerSize, onOpenContactProfile, onOpenLeadProfile, onOpenOpportunityProfile, onOpenBusinessProfile, onOpenUserProfile, ...props }) => {
+const DynamicWidget = memo(({ widgetKey, widgetPath, type, resultData, widgetData, onLoad, onError, widgetState, showLoadingSpinner, loadingSpinnerSize, onOpenContactProfile, onOpenLeadProfile, onOpenOpportunityProfile, onOpenBusinessProfile, onOpenUserProfile, onOpenSalesProfile, ...props }) => {
     // Memoize the widget key to prevent unnecessary re-renders
     const memoizedWidgetKey = useMemo(() => widgetKey, [widgetKey]);
     // Show loading state only for external widgets
@@ -313,6 +313,10 @@ const DynamicWidget = memo(({ widgetKey, widgetPath, type, resultData, widgetDat
                 if (memoizedWidgetKey === 'users-widget' || memoizedWidgetKey === 'legacy-users-widget') {
                     return <RegisteredWidget onOpenUserProfile={onOpenUserProfile} />;
                 }
+                // Pass sales profile handler to SalesWidget
+                if (memoizedWidgetKey === 'sales-widget') {
+                    return <RegisteredWidget onOpenSaleProfile={onOpenSalesProfile} />;
+                }
                 // Pass widgetData to ContactProfileWidget
                 if (baseWidgetKey === 'contact-profile-widget' && widgetData) {
                     return <RegisteredWidget contactId={widgetData.contactId} />;
@@ -332,6 +336,10 @@ const DynamicWidget = memo(({ widgetKey, widgetPath, type, resultData, widgetDat
                 // Pass widgetData to UserProfileWidget
                 if (baseWidgetKey === 'user-profile-widget' && widgetData) {
                     return <RegisteredWidget userId={widgetData.userId} />;
+                }
+                // Pass widgetData to SalesProfileWidget
+                if (baseWidgetKey === 'sales-profile-widget' && widgetData) {
+                    return <RegisteredWidget saleId={widgetData.saleId} />;
                 }
                 return <RegisteredWidget {...props} />;
             };

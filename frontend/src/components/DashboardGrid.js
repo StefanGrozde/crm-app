@@ -16,7 +16,8 @@ const DashboardGrid = ({
     onOpenLeadProfile,
     onOpenOpportunityProfile,
     onOpenBusinessProfile,
-    onOpenUserProfile
+    onOpenUserProfile,
+    onOpenSalesProfile
 }) => {
     // Skip rendering if no layout or widget library
     if (!layout || !widgetLibrary || layout.length === 0) {
@@ -75,23 +76,17 @@ const DashboardGrid = ({
                        transition: none;
                    }
                    
-                   /* Enhanced widget border styles */
+                   /* Widget container styles */
                    .widget-container {
-                       border: 2px solid #9ca3af;
                        border-radius: 0.5rem;
-                       transition: border-color 0.2s ease;
-                   }
-                   
-                   .widget-container:hover {
-                       border-color: #3b82f6;
                    }
                    
                    .widget-container.error {
-                       border-color: #ef4444;
+                       border: 2px solid #ef4444;
                    }
                    
                    .widget-container.loading {
-                       border-color: #6b7280;
+                       border: 2px solid #6b7280;
                    }
                `}
             </style>
@@ -194,6 +189,7 @@ const DashboardGrid = ({
                                             onOpenOpportunityProfile={onOpenOpportunityProfile}
                                             onOpenBusinessProfile={onOpenBusinessProfile}
                                             onOpenUserProfile={onOpenUserProfile}
+                                            onOpenSalesProfile={onOpenSalesProfile}
                                         />
                                     </div>
                                 </div>

@@ -523,7 +523,8 @@ class SearchService {
       console.log('🔍 SearchService: Fetching contact suggestions...');
       const contactSuggestions = await Contact.findAll({
         where: {
-          firstName: { [Op.iLike]: `${query}%` }
+          firstName: { [Op.iLike]: `${query}%` },
+          companyId: companyId
         },
         attributes: ['firstName', 'lastName'],
         limit: Math.ceil(limit / 2),
@@ -537,7 +538,8 @@ class SearchService {
       console.log('🔍 SearchService: Fetching company suggestions...');
       const companySuggestions = await Company.findAll({
         where: {
-          name: { [Op.iLike]: `${query}%` }
+          name: { [Op.iLike]: `${query}%` },
+          id: companyId
         },
         attributes: ['name'],
         limit: Math.ceil(limit / 3),
@@ -551,7 +553,8 @@ class SearchService {
       console.log('🔍 SearchService: Fetching lead suggestions...');
       const leadSuggestions = await Lead.findAll({
         where: {
-          title: { [Op.iLike]: `${query}%` }
+          title: { [Op.iLike]: `${query}%` },
+          companyId: companyId
         },
         attributes: ['title'],
         limit: Math.ceil(limit / 4),
@@ -565,7 +568,8 @@ class SearchService {
       console.log('🔍 SearchService: Fetching sales suggestions...');
       const salesSuggestions = await Sale.findAll({
         where: {
-          title: { [Op.iLike]: `${query}%` }
+          title: { [Op.iLike]: `${query}%` },
+          companyId: companyId
         },
         attributes: ['title'],
         limit: Math.ceil(limit / 4),
