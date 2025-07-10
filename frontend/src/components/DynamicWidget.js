@@ -191,7 +191,7 @@ const ExternalWidgetLoader = memo(({ widgetKey, widgetPath, type, onLoad, onErro
 });
 
 // Main DynamicWidget component
-const DynamicWidget = memo(({ widgetKey, widgetPath, type, resultData, widgetData, onLoad, onError, widgetState, showLoadingSpinner, loadingSpinnerSize, onOpenContactProfile, onOpenLeadProfile, onOpenOpportunityProfile, onOpenBusinessProfile, onOpenUserProfile, onOpenSalesProfile, onOpenTaskProfile, ...props }) => {
+const DynamicWidget = memo(({ widgetKey, widgetPath, type, resultData, widgetData, onLoad, onError, widgetState, showLoadingSpinner, loadingSpinnerSize, onOpenContactProfile, onOpenLeadProfile, onOpenOpportunityProfile, onOpenBusinessProfile, onOpenUserProfile, onOpenSaleProfile, onOpenTaskProfile, ...props }) => {
     // Memoize the widget key to prevent unnecessary re-renders
     const memoizedWidgetKey = useMemo(() => widgetKey, [widgetKey]);
     // Show loading state only for external widgets
@@ -319,7 +319,7 @@ const DynamicWidget = memo(({ widgetKey, widgetPath, type, resultData, widgetDat
                 }
                 // Pass sales profile handler to SalesWidget
                 if (memoizedWidgetKey === 'sales-widget') {
-                    return <RegisteredWidget onOpenSalesProfile={onOpenSalesProfile} />;
+                    return <RegisteredWidget onOpenSaleProfile={onOpenSaleProfile} />;
                 }
                 // Pass task profile handler to TasksWidget
                 if (memoizedWidgetKey === 'tasks-widget') {
