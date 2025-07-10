@@ -119,7 +119,7 @@ router.get('/', protect, async (req, res) => {
             order: [
                 ['priority', 'DESC'],
                 ['dueDate', 'ASC'],
-                ['createdAt', 'DESC']
+                ['created_at', 'DESC']
             ],
             limit: parseInt(limit),
             offset: offset
@@ -612,7 +612,7 @@ router.get('/my-tasks', protect, async (req, res) => {
             order: [
                 ['priority', 'DESC'],
                 ['dueDate', 'ASC'],
-                ['createdAt', 'DESC']
+                ['created_at', 'DESC']
             ],
             limit: parseInt(limit),
             offset: offset

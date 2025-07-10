@@ -227,7 +227,7 @@ class SearchService {
           // Order by relevance first, then by priority and creation date
           [literal(`ts_rank(to_tsvector('english', COALESCE(title, '') || ' ' || COALESCE(description, '') || ' ' || COALESCE(notes, '')), plainto_tsquery('english', '${query}'))`), 'DESC'],
           ['priority', 'DESC'],
-          ['createdAt', 'DESC']
+          ['created_at', 'DESC']
         ],
         limit,
         offset,
@@ -257,7 +257,7 @@ class SearchService {
           },
           order: [
             ['priority', 'DESC'],
-            ['createdAt', 'DESC']
+            ['created_at', 'DESC']
           ],
           limit,
           offset,
@@ -547,7 +547,7 @@ class SearchService {
         order: [
           ['priority', 'DESC'],
           ['dueDate', 'ASC'],
-          ['createdAt', 'DESC']
+          ['created_at', 'DESC']
         ],
         limit,
         offset,
