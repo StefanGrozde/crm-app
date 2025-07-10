@@ -7,7 +7,7 @@ import WidgetSearchBar from './WidgetSearchBar';
 
 const API_URL = process.env.REACT_APP_API_URL;
 
-const SalesWidget = ({ onOpenSaleProfile }) => {
+const SalesWidget = ({ onOpenSalesProfile }) => {
     // eslint-disable-next-line no-unused-vars
     const { user } = useContext(AuthContext);
     
@@ -677,7 +677,7 @@ const SalesWidget = ({ onOpenSaleProfile }) => {
                                     />
                                 </td>
                                 <td className="px-3 py-2 text-blue-600 hover:text-blue-800 cursor-pointer"
-                                    onClick={() => onOpenSaleProfile && onOpenSaleProfile(sale.id, sale.title)}>
+                                    onClick={() => onOpenSalesProfile && onOpenSalesProfile(sale.id, sale.title)}>
                                     {sale.saleNumber}
                                 </td>
                                 <td className="px-3 py-2">{sale.title}</td>

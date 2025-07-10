@@ -319,7 +319,7 @@ const DynamicWidget = memo(({ widgetKey, widgetPath, type, resultData, widgetDat
                 }
                 // Pass sales profile handler to SalesWidget
                 if (memoizedWidgetKey === 'sales-widget') {
-                    return <RegisteredWidget onOpenSaleProfile={onOpenSalesProfile} />;
+                    return <RegisteredWidget onOpenSalesProfile={onOpenSalesProfile} />;
                 }
                 // Pass task profile handler to TasksWidget
                 if (memoizedWidgetKey === 'tasks-widget') {
