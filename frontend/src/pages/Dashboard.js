@@ -1245,7 +1245,7 @@ const Dashboard = () => {
                             onOpenOpportunityProfile={handleOpenOpportunityProfile}
                             onOpenBusinessProfile={handleOpenBusinessProfile}
                             onOpenUserProfile={handleOpenUserProfile}
-                            onOpenSalesProfile={handleOpenSalesProfile}
+                            onOpenSaleProfile={handleOpenSalesProfile}
                             onOpenTaskProfile={handleOpenTaskProfile}
                         />
                     )}
