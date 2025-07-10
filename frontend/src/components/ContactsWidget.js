@@ -491,14 +491,14 @@ const ContactsWidget = ({ onOpenContactProfile }) => {
                     withCredentials: true
                 });
                 setShowEditModal(false);
-                loadContact();
+            
             } else {
                 // Create contact
                 await axios.post(`${API_URL}/api/contacts`, formDataFromRefs, {
                     withCredentials: true
                 });
                 setShowAddModal(false);
-                loadContact();
+                
             }
             
             resetForm();
