@@ -1097,7 +1097,7 @@ const Dashboard = () => {
 
                `}
             </style>
-            <div className="h-screen bg-gray-100 flex flex-col overflow-hidden">
+            <div className="min-h-screen bg-gray-100">
                 {/* Debug info - Remove in production */}
                 <div className="bg-yellow-100 p-2 text-xs">
                     <div className="flex justify-between items-center">
@@ -1218,7 +1218,7 @@ const Dashboard = () => {
                     onUpdateTabColor={handleUpdateTabColor}
                 />
 
-                <main className="flex-1 p-4 overflow-hidden">
+                <main className="p-4">
                     {/* No active tab message */}
                     {!activeTabId && (
                         <div className="text-center py-12">
@@ -1230,8 +1230,7 @@ const Dashboard = () => {
 
                     {/* Grid layout - only show if there's an active tab and layout is ready */}
                     {activeTabId && layout && !isEditMode && (
-                        <div className="h-full">
-                            <DashboardGrid
+                        <DashboardGrid
                             layout={layout}
                             widgetLibrary={widgetLibrary}
                             isVisible={!isTabSwitching}
@@ -1248,8 +1247,7 @@ const Dashboard = () => {
                             onOpenUserProfile={handleOpenUserProfile}
                             onOpenSaleProfile={handleOpenSalesProfile}
                             onOpenTaskProfile={handleOpenTaskProfile}
-                            />
-                        </div>
+                        />
                     )}
                     
                     {/* Edit Layout Mode */}
