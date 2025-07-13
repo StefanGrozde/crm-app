@@ -81,6 +81,13 @@ const DashboardGrid = ({
                    .widget-container {
                        border-radius: 0.5rem;
                        border: 1px solid #9ca3af;
+                       transition: all 0.2s ease;
+                   }
+                   
+                   /* Hover effect for widget containers */
+                   .widget-container:hover {
+                       border-color: #4b5563;
+                       box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
                    }
                    
                    /* Remove borders from all descendants to prevent double borders */
