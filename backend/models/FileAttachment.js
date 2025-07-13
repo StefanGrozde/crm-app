@@ -1,5 +1,5 @@
 const { DataTypes } = require('sequelize');
-const sequelize = require('../config/db');
+const { sequelize } = require('../config/db');
 
 const FileAttachment = sequelize.define('FileAttachment', {
   id: {
@@ -136,15 +136,6 @@ FileAttachment.prototype.isDocument = function() {
   return documentTypes.includes(this.mimeType);
 };
 
-// Set up associations
-FileAttachment.associate = function(models) {
-  FileAttachment.belongsTo(models.User, { 
-    foreignKey: 'uploadedBy', 
-    as: 'uploader' 
-  });
-  FileAttachment.belongsTo(models.Company, { 
-    foreignKey: 'companyId' 
-  });
-};
+// Note: Associations are handled at the model definition level in this codebase
 
 module.exports = FileAttachment;

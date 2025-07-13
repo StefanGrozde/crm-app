@@ -83,13 +83,6 @@ router.get('/entity/:entityType/:entityId', async (req, res) => {
         entityId: parseInt(entityId),
         companyId
       },
-      include: [
-        {
-          model: require('../models/User'),
-          as: 'uploader',
-          attributes: ['id', 'username', 'firstName', 'lastName']
-        }
-      ],
       order: [['createdAt', 'DESC']]
     });
 
@@ -103,7 +96,7 @@ router.get('/entity/:entityType/:entityId', async (req, res) => {
       tags: file.tags,
       isPublic: file.isPublic,
       createdAt: file.createdAt,
-      uploader: file.uploader,
+      uploadedBy: file.uploadedBy,
       url: file.getFileUrl(),
       isImage: file.isImage(),
       isPdf: file.isPdf(),

@@ -292,7 +292,7 @@ const FileManager = ({
                         <p className="font-medium text-gray-900">{file.originalName}</p>
                         <p className="text-sm text-gray-500">
                           {formatFileSize(file.fileSize)} • {formatDate(file.createdAt)}
-                          {file.uploader && ` • ${file.uploader.firstName} ${file.uploader.lastName}`}
+                          {file.uploadedBy && ` • User ${file.uploadedBy}`}
                         </p>
                       </div>
                     </div>
