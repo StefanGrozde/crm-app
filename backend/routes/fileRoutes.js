@@ -83,7 +83,7 @@ router.get('/entity/:entityType/:entityId', async (req, res) => {
         entityId: parseInt(entityId),
         companyId
       },
-      order: [['createdAt', 'DESC']]
+      order: [['created_at', 'DESC']]
     });
 
     const filesWithUrls = files.map(file => ({
@@ -250,13 +250,13 @@ router.get('/search', async (req, res) => {
           ]
         },
         limit: parseInt(limit),
-        order: [['createdAt', 'DESC']]
+        order: [['created_at', 'DESC']]
       });
     } else {
       files = await FileAttachment.findAll({
         where: whereClause,
         limit: parseInt(limit),
-        order: [['createdAt', 'DESC']]
+        order: [['created_at', 'DESC']]
       });
     }
 
