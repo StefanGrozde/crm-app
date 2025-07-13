@@ -109,7 +109,7 @@ const DashboardGrid = ({
                 layouts={{ lg: layout }}
                 className="layout"
                 cols={{ lg: 12, md: 12, sm: 12, xs: 12, xxs: 12 }}
-                rowHeight={100}
+                rowHeight={120}
                 isDraggable={false}
                 isResizable={false}
                 margin={[10, 10]}
@@ -156,7 +156,7 @@ const DashboardGrid = ({
                                 return (
                                     <div 
                                         key={item.i} 
-                                        className="widget-container error p-4 overflow-hidden relative"
+                                        className="widget-container error p-4 overflow-auto relative"
                                         data-widget-key={item.i}
                                     >
                                         <div className="text-center">
@@ -180,7 +180,7 @@ const DashboardGrid = ({
                             return (
                                 <div 
                                     key={item.i} 
-                                    className="widget-container bg-white p-2 overflow-hidden relative"
+                                    className="widget-container bg-white p-2 overflow-auto relative"
                                     data-widget-key={item.i}
                                     data-grid-x={item.x}
                                     data-grid-y={item.y}
