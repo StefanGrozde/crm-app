@@ -3,11 +3,11 @@ const router = express.Router();
 const path = require('path');
 const fs = require('fs');
 const FileAttachment = require('../models/FileAttachment');
-const authMiddleware = require('../middleware/authMiddleware');
+const { protect } = require('../middleware/authMiddleware');
 const { fileUpload, handleUploadError } = require('../middleware/fileUploadMiddleware');
 
 // Apply auth middleware to all routes
-router.use(authMiddleware);
+router.use(protect);
 
 // Upload files for a specific entity
 router.post('/upload/:entityType/:entityId', 
