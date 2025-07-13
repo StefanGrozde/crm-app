@@ -625,10 +625,12 @@ export const entityConfigs = {
                     type: 'date',
                     render: (value, item) => {
                         if (!value) return '-';
-                        const isOverdue = new Date(value) < new Date() && item.status !== 'completed';
+                        const date = new Date(value);
+                        if (isNaN(date.getTime())) return 'Invalid Date';
+                        const isOverdue = date < new Date() && item.status !== 'completed';
                         return (
                             <span className={isOverdue ? 'text-red-600 font-medium' : 'text-gray-700'}>
-                                {new Date(value).toLocaleDateString()}
+                                {date.toLocaleDateString()}
                             </span>
                         );
                     }
@@ -865,7 +867,11 @@ export const entityConfigs = {
                     name: 'createdAt', 
                     label: 'Created',
                     type: 'date',
-                    render: (value) => new Date(value).toLocaleDateString()
+                    render: (value) => {
+                        if (!value) return '-';
+                        const date = new Date(value);
+                        return isNaN(date.getTime()) ? 'Invalid Date' : date.toLocaleDateString();
+                    }
                 }
             ],
             form: [
