@@ -301,12 +301,12 @@ router.post('/', protect, async (req, res) => {
                 {
                     model: User,
                     as: 'assignedUser',
-                    attributes: ['id', 'firstName', 'lastName', 'email']
+                    attributes: ['id', 'username', 'email']
                 },
                 {
                     model: User,
                     as: 'creator',
-                    attributes: ['id', 'firstName', 'lastName', 'email']
+                    attributes: ['id', 'username', 'email']
                 }
             ]
         });
@@ -386,12 +386,12 @@ router.put('/:id', protect, async (req, res) => {
                 {
                     model: User,
                     as: 'assignedUser',
-                    attributes: ['id', 'firstName', 'lastName', 'email']
+                    attributes: ['id', 'username', 'email']
                 },
                 {
                     model: User,
                     as: 'creator',
-                    attributes: ['id', 'firstName', 'lastName', 'email']
+                    attributes: ['id', 'username', 'email']
                 }
             ]
         });
