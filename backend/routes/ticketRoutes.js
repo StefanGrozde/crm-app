@@ -33,7 +33,10 @@ router.get('/', protect, async (req, res) => {
         } = req.query;
 
         const offset = (page - 1) * limit;
-        const whereClause = { companyId: req.user.companyId };
+        const whereClause = { 
+            companyId: req.user.companyId,
+            archived: false // Only show non-archived tickets by default
+        };
 
         // Search functionality - search across all relevant fields
         if (search) {
@@ -167,7 +170,8 @@ router.get('/:id', protect, async (req, res) => {
         const ticket = await Ticket.findOne({
             where: {
                 id: req.params.id,
-                companyId: req.user.companyId
+                companyId: req.user.companyId,
+                archived: false // Only show non-archived tickets
             },
             include: [
                 {
@@ -320,7 +324,8 @@ router.put('/:id', protect, async (req, res) => {
         const ticket = await Ticket.findOne({
             where: {
                 id: req.params.id,
-                companyId: req.user.companyId
+                companyId: req.user.companyId,
+                archived: false // Only allow updating non-archived tickets
             }
         });
 
@@ -398,13 +403,14 @@ router.put('/:id', protect, async (req, res) => {
     }
 });
 
-// DELETE /api/tickets/:id - Delete a ticket
+// DELETE /api/tickets/:id - Archive a ticket (soft delete)
 router.delete('/:id', protect, async (req, res) => {
     try {
         const ticket = await Ticket.findOne({
             where: {
                 id: req.params.id,
-                companyId: req.user.companyId
+                companyId: req.user.companyId,
+                archived: false // Only allow archiving non-archived tickets
             }
         });
 
@@ -412,11 +418,36 @@ router.delete('/:id', protect, async (req, res) => {
             return res.status(404).json({ error: 'Ticket not found' });
         }
 
-        await ticket.destroy();
-        res.json({ message: 'Ticket deleted successfully' });
+        // Archive the ticket instead of deleting
+        await ticket.update({ archived: true });
+        res.json({ message: 'Ticket archived successfully' });
     } catch (error) {
-        console.error('Error deleting ticket:', error);
-        res.status(500).json({ error: 'Failed to delete ticket' });
+        console.error('Error archiving ticket:', error);
+        res.status(500).json({ error: 'Failed to archive ticket' });
+    }
+});
+
+// POST /api/tickets/:id/unarchive - Unarchive a ticket
+router.post('/:id/unarchive', protect, async (req, res) => {
+    try {
+        const ticket = await Ticket.findOne({
+            where: {
+                id: req.params.id,
+                companyId: req.user.companyId,
+                archived: true // Only allow unarchiving archived tickets
+            }
+        });
+
+        if (!ticket) {
+            return res.status(404).json({ error: 'Archived ticket not found' });
+        }
+
+        // Unarchive the ticket
+        await ticket.update({ archived: false });
+        res.json({ message: 'Ticket unarchived successfully' });
+    } catch (error) {
+        console.error('Error unarchiving ticket:', error);
+        res.status(500).json({ error: 'Failed to unarchive ticket' });
     }
 });
 
@@ -433,7 +464,8 @@ router.post('/:id/comments', protect, async (req, res) => {
         const ticket = await Ticket.findOne({
             where: {
                 id: req.params.id,
-                companyId: req.user.companyId
+                companyId: req.user.companyId,
+                archived: false // Only allow comments on non-archived tickets
             }
         });
 
@@ -473,7 +505,8 @@ router.get('/:id/comments', protect, async (req, res) => {
         const ticket = await Ticket.findOne({
             where: {
                 id: req.params.id,
-                companyId: req.user.companyId
+                companyId: req.user.companyId,
+                archived: false // Only allow comments on non-archived tickets
             }
         });
 

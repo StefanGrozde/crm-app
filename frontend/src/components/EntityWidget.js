@@ -222,9 +222,13 @@ const EntityWidget = ({
         }
     }, [config, formData, showEditModal, editingItem, loadData, pagination.currentPage, resetForm]);
     
-    // Handle delete
+    // Handle delete/archive
     const handleDelete = useCallback(async (itemId) => {
-        if (!window.confirm(`Are you sure you want to delete this ${config.title.toLowerCase().slice(0, -1)}?`)) {
+        const isArchivable = config.apiEndpoint === 'tickets' || config.apiEndpoint === 'tasks';
+        const actionText = isArchivable ? 'archive' : 'delete';
+        const confirmText = `Are you sure you want to ${actionText} this ${config.title.toLowerCase().slice(0, -1)}?`;
+        
+        if (!window.confirm(confirmText)) {
             return;
         }
         
@@ -247,8 +251,9 @@ const EntityWidget = ({
             
             loadData(pagination.currentPage);
         } catch (error) {
-            console.error(`Error deleting ${config.title.toLowerCase()}:`, error);
-            alert(`Failed to delete ${config.title.toLowerCase().slice(0, -1)}`);
+            const actionText = isArchivable ? 'archiving' : 'deleting';
+            console.error(`Error ${actionText} ${config.title.toLowerCase()}:`, error);
+            alert(`Failed to ${actionText.slice(0, -3)} ${config.title.toLowerCase().slice(0, -1)}`);
         }
     }, [config, loadData, pagination.currentPage]);
     
@@ -808,7 +813,7 @@ const EntityWidget = ({
                                             onClick={() => handleDelete(item.id)}
                                             className="text-red-600 hover:text-red-900 text-xs font-medium"
                                         >
-                                            Delete
+                                            {config.apiEndpoint === 'tickets' || config.apiEndpoint === 'tasks' ? 'Archive' : 'Delete'}
                                         </button>
                                     </div>
                                 </td>

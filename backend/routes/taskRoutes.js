@@ -33,7 +33,8 @@ router.get('/', protect, async (req, res) => {
         
         // Build where clause
         const whereClause = {
-            companyId: req.user.companyId
+            companyId: req.user.companyId,
+            archived: false // Only show non-archived tasks by default
         };
 
         // Add search filter
@@ -171,7 +172,8 @@ router.get('/:id', protect, async (req, res) => {
         const task = await Task.findOne({
             where: {
                 id: req.params.id,
-                companyId: req.user.companyId
+                companyId: req.user.companyId,
+                archived: false // Only show non-archived tasks
             },
             include: [
                 {
@@ -470,7 +472,7 @@ router.put('/:id', protect, async (req, res) => {
 
 /**
  * @route   DELETE /api/tasks/:id
- * @desc    Delete task
+ * @desc    Archive task (soft delete)
  * @access  Private
  */
 router.delete('/:id', protect, async (req, res) => {
@@ -478,7 +480,8 @@ router.delete('/:id', protect, async (req, res) => {
         const task = await Task.findOne({
             where: {
                 id: req.params.id,
-                companyId: req.user.companyId
+                companyId: req.user.companyId,
+                archived: false // Only allow archiving non-archived tasks
             }
         });
 
@@ -486,19 +489,58 @@ router.delete('/:id', protect, async (req, res) => {
             return res.status(404).json({ message: 'Task not found' });
         }
 
-        // Check if user can delete (creator or admin)
+        // Check if user can archive (creator or admin)
         if (task.createdBy !== req.user.id && req.user.role !== 'Administrator') {
-            return res.status(403).json({ message: 'Not authorized to delete this task' });
+            return res.status(403).json({ message: 'Not authorized to archive this task' });
         }
 
-        await task.destroy();
+        // Archive the task instead of deleting
+        await task.update({ archived: true });
 
-        res.json({ message: 'Task deleted successfully' });
+        res.json({ message: 'Task archived successfully' });
 
     } catch (error) {
-        console.error('Error deleting task:', error);
+        console.error('Error archiving task:', error);
         res.status(500).json({ 
-            message: 'Failed to delete task',
+            message: 'Failed to archive task',
+            error: process.env.NODE_ENV === 'development' ? error.message : undefined
+        });
+    }
+});
+
+/**
+ * @route   POST /api/tasks/:id/unarchive
+ * @desc    Unarchive task
+ * @access  Private
+ */
+router.post('/:id/unarchive', protect, async (req, res) => {
+    try {
+        const task = await Task.findOne({
+            where: {
+                id: req.params.id,
+                companyId: req.user.companyId,
+                archived: true // Only allow unarchiving archived tasks
+            }
+        });
+
+        if (!task) {
+            return res.status(404).json({ message: 'Archived task not found' });
+        }
+
+        // Check if user can unarchive (creator or admin)
+        if (task.createdBy !== req.user.id && req.user.role !== 'Administrator') {
+            return res.status(403).json({ message: 'Not authorized to unarchive this task' });
+        }
+
+        // Unarchive the task
+        await task.update({ archived: false });
+
+        res.json({ message: 'Task unarchived successfully' });
+
+    } catch (error) {
+        console.error('Error unarchiving task:', error);
+        res.status(500).json({ 
+            message: 'Failed to unarchive task',
             error: process.env.NODE_ENV === 'development' ? error.message : undefined
         });
     }
@@ -577,7 +619,8 @@ router.get('/my-tasks', protect, async (req, res) => {
         const offset = (parseInt(page) - 1) * parseInt(limit);
 
         const whereClause = {
-            companyId: req.user.companyId
+            companyId: req.user.companyId,
+            archived: false // Only show non-archived tasks
         };
 
         if (status) {

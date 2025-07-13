@@ -130,6 +130,17 @@ const Task = sequelize.define('Task', {
       key: 'id',
     },
   },
+  // Archive fields
+  archived: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false,
+    allowNull: false,
+  },
+  archivedAt: {
+    type: DataTypes.DATE,
+    field: 'archived_at',
+    allowNull: true,
+  },
 }, {
   tableName: 'tasks',
   timestamps: true,
