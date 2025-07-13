@@ -429,10 +429,9 @@ const SalesProfileWidget = ({ saleId }) => {
                             </div>
                         </div>
                     )}
-
-                {/* File Attachments - Outside grid for better visibility */}
                 </div>
                 
+                {/* File Attachments - Outside grid for better visibility */}
                 <div className="bg-white rounded-lg shadow p-6">
                     <FileManager 
                         entityType="sale" 
@@ -440,7 +439,6 @@ const SalesProfileWidget = ({ saleId }) => {
                         title="Sale Documents"
                         className="max-h-96 overflow-y-auto"
                     />
-                </div>
                 </div>
             </div>
 
