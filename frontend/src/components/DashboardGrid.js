@@ -80,6 +80,7 @@ const DashboardGrid = ({
                    /* Widget container styles */
                    .widget-container {
                        border-radius: 0.5rem;
+                       border: 1px solid #e5e7eb;
                    }
                    
                    .widget-container.error {
