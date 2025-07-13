@@ -21,6 +21,7 @@ const listRoutes = require('./routes/listRoutes');
 const salesRoutes = require('./routes/salesRoutes');
 const taskRoutes = require('./routes/taskRoutes');
 const fileRoutes = require('./routes/fileRoutes');
+const ticketRoutes = require('./routes/ticketRoutes');
 const path = require('path');
 
 console.log("Application starting...");
@@ -85,6 +86,7 @@ app.use('/api/lists', listRoutes);
 app.use('/api/sales', salesRoutes);
 app.use('/api/tasks', taskRoutes);
 app.use('/api/files', fileRoutes);
+app.use('/api/tickets', ticketRoutes);
 app.use('/api/widgets/buildin', express.static(path.join(__dirname, 'widgets', 'buildin')));
 app.use('/api/widgets/custom', express.static(path.join(__dirname, 'widgets', 'custom')));
 // Test Route to check DB connection
@@ -132,6 +134,8 @@ const startServer = async () => {
     const Sale = require('./models/Sale');
     const Task = require('./models/Task');
     const TaskAssignment = require('./models/TaskAssignment');
+    const Ticket = require('./models/Ticket');
+    const TicketComment = require('./models/TicketComment');
     
     // Define associations
     // Company associations
@@ -242,6 +246,44 @@ const startServer = async () => {
     
     // Sale associations for Tasks
     Sale.hasMany(Task, { foreignKey: 'saleId', as: 'tasks' });
+    
+    // Ticket associations
+    Ticket.belongsTo(Company, { foreignKey: 'companyId', as: 'company' });
+    Ticket.belongsTo(Contact, { foreignKey: 'contactId', as: 'contact' });
+    Ticket.belongsTo(User, { foreignKey: 'assignedTo', as: 'assignedUser' });
+    Ticket.belongsTo(User, { foreignKey: 'createdBy', as: 'creator' });
+    Ticket.belongsTo(Lead, { foreignKey: 'relatedLeadId', as: 'relatedLead' });
+    Ticket.belongsTo(Opportunity, { foreignKey: 'relatedOpportunityId', as: 'relatedOpportunity' });
+    Ticket.belongsTo(Sale, { foreignKey: 'relatedSaleId', as: 'relatedSale' });
+    Ticket.belongsTo(Task, { foreignKey: 'relatedTaskId', as: 'relatedTask' });
+    Ticket.hasMany(TicketComment, { foreignKey: 'ticketId', as: 'comments' });
+    
+    // TicketComment associations
+    TicketComment.belongsTo(Ticket, { foreignKey: 'ticketId', as: 'ticket' });
+    TicketComment.belongsTo(User, { foreignKey: 'userId', as: 'user' });
+    
+    // Company associations for Tickets
+    Company.hasMany(Ticket, { foreignKey: 'companyId' });
+    
+    // User associations for Tickets
+    User.hasMany(Ticket, { foreignKey: 'assignedTo', as: 'assignedTickets' });
+    User.hasMany(Ticket, { foreignKey: 'createdBy', as: 'createdTickets' });
+    User.hasMany(TicketComment, { foreignKey: 'userId', as: 'ticketComments' });
+    
+    // Contact associations for Tickets
+    Contact.hasMany(Ticket, { foreignKey: 'contactId', as: 'tickets' });
+    
+    // Lead associations for Tickets
+    Lead.hasMany(Ticket, { foreignKey: 'relatedLeadId', as: 'relatedTickets' });
+    
+    // Opportunity associations for Tickets
+    Opportunity.hasMany(Ticket, { foreignKey: 'relatedOpportunityId', as: 'relatedTickets' });
+    
+    // Sale associations for Tickets
+    Sale.hasMany(Ticket, { foreignKey: 'relatedSaleId', as: 'relatedTickets' });
+    
+    // Task associations for Tickets
+    Task.hasMany(Ticket, { foreignKey: 'relatedTaskId', as: 'relatedTickets' });
     
     // Sync all models
     // Use { force: true } only in development to drop and re-create tables
