@@ -753,5 +753,255 @@ export const entityConfigs = {
             category: { type: 'text' },
             overdue: { type: 'checkbox', label: 'Show overdue only' }
         }
+    },
+
+    tickets: {
+        title: 'Tickets',
+        apiEndpoint: 'tickets',
+        dataKey: 'tickets',
+        features: {
+            listManagement: true,
+            bulkSelection: true,
+            filtering: true,
+            filterOptions: true,
+            undoDelete: true,
+            tags: true,
+            customActions: true
+        },
+        defaultFilters: {
+            status: '',
+            priority: '',
+            type: '',
+            assignedTo: '',
+            contactId: ''
+        },
+        customActions: [
+            {
+                key: 'addComment',
+                label: 'Comment',
+                className: 'px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors',
+                title: 'Add Comment'
+            },
+            {
+                key: 'resolve',
+                label: 'Resolve',
+                className: 'px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700 transition-colors',
+                title: 'Mark as Resolved'
+            }
+        ],
+        fields: {
+            display: [
+                { 
+                    name: 'ticketNumber', 
+                    label: 'Ticket #',
+                    render: (value, item, onOpenProfile) => (
+                        <div>
+                            <div 
+                                className="text-sm font-medium text-blue-600 cursor-pointer hover:text-blue-800 hover:underline"
+                                onClick={() => onOpenProfile && onOpenProfile(item.id)}
+                            >
+                                {value}
+                            </div>
+                        </div>
+                    )
+                },
+                { 
+                    name: 'title', 
+                    label: 'Title',
+                    render: (value, item, onOpenProfile) => (
+                        <div>
+                            <div 
+                                className="text-sm font-medium text-gray-900 cursor-pointer hover:text-blue-600 hover:underline"
+                                onClick={() => onOpenProfile && onOpenProfile(item.id)}
+                            >
+                                {value}
+                            </div>
+                            <div className="flex items-center space-x-2 mt-1">
+                                <span className={`px-2 py-1 text-xs rounded-full ${
+                                    item.type === 'bug' ? 'bg-red-100 text-red-800' :
+                                    item.type === 'feature_request' ? 'bg-blue-100 text-blue-800' :
+                                    item.type === 'support' ? 'bg-green-100 text-green-800' :
+                                    item.type === 'incident' ? 'bg-purple-100 text-purple-800' :
+                                    item.type === 'task' ? 'bg-yellow-100 text-yellow-800' :
+                                    'bg-gray-100 text-gray-800'
+                                }`}>
+                                    {item.type?.replace('_', ' ')}
+                                </span>
+                                <span className={`px-2 py-1 text-xs rounded-full ${
+                                    item.priority === 'urgent' ? 'bg-red-100 text-red-800' :
+                                    item.priority === 'high' ? 'bg-orange-100 text-orange-800' :
+                                    item.priority === 'medium' ? 'bg-yellow-100 text-yellow-800' :
+                                    'bg-green-100 text-green-800'
+                                }`}>
+                                    {item.priority}
+                                </span>
+                            </div>
+                        </div>
+                    )
+                },
+                { 
+                    name: 'status', 
+                    label: 'Status', 
+                    type: 'status',
+                    statusColors: {
+                        open: 'bg-blue-100 text-blue-800',
+                        in_progress: 'bg-yellow-100 text-yellow-800',
+                        resolved: 'bg-green-100 text-green-800',
+                        closed: 'bg-gray-100 text-gray-800',
+                        on_hold: 'bg-orange-100 text-orange-800'
+                    }
+                },
+                { 
+                    name: 'contact', 
+                    label: 'Contact',
+                    render: (value) => value ? `${value.firstName} ${value.lastName}` : '-'
+                },
+                { 
+                    name: 'assignedUser', 
+                    label: 'Assigned To',
+                    render: (value) => value ? `${value.firstName} ${value.lastName}` : 'Unassigned'
+                },
+                { 
+                    name: 'createdAt', 
+                    label: 'Created',
+                    type: 'date',
+                    render: (value) => new Date(value).toLocaleDateString()
+                }
+            ],
+            form: [
+                { name: 'title', type: 'text', label: 'Title', required: true },
+                { name: 'description', type: 'textarea', label: 'Description', rows: 4 },
+                { 
+                    name: 'status', 
+                    type: 'select', 
+                    label: 'Status', 
+                    defaultValue: 'open',
+                    options: [
+                        { value: 'open', label: 'Open' },
+                        { value: 'in_progress', label: 'In Progress' },
+                        { value: 'resolved', label: 'Resolved' },
+                        { value: 'closed', label: 'Closed' },
+                        { value: 'on_hold', label: 'On Hold' }
+                    ]
+                },
+                { 
+                    name: 'priority', 
+                    type: 'select', 
+                    label: 'Priority', 
+                    defaultValue: 'medium',
+                    options: [
+                        { value: 'low', label: 'Low' },
+                        { value: 'medium', label: 'Medium' },
+                        { value: 'high', label: 'High' },
+                        { value: 'urgent', label: 'Urgent' }
+                    ]
+                },
+                { 
+                    name: 'type', 
+                    type: 'select', 
+                    label: 'Type', 
+                    defaultValue: 'support',
+                    options: [
+                        { value: 'bug', label: 'Bug' },
+                        { value: 'feature_request', label: 'Feature Request' },
+                        { value: 'support', label: 'Support' },
+                        { value: 'question', label: 'Question' },
+                        { value: 'task', label: 'Task' },
+                        { value: 'incident', label: 'Incident' }
+                    ]
+                },
+                { 
+                    name: 'contactId', 
+                    type: 'select', 
+                    label: 'Contact', 
+                    source: 'contacts',
+                    displayField: 'firstName',
+                    render: (item) => `${item.firstName} ${item.lastName}`
+                },
+                { 
+                    name: 'assignedTo', 
+                    type: 'select', 
+                    label: 'Assign To', 
+                    source: 'users',
+                    displayField: 'firstName',
+                    render: (item) => `${item.firstName} ${item.lastName}`
+                },
+                { 
+                    name: 'relatedLeadId', 
+                    type: 'select', 
+                    label: 'Related Lead', 
+                    source: 'leads',
+                    displayField: 'title'
+                },
+                { 
+                    name: 'relatedOpportunityId', 
+                    type: 'select', 
+                    label: 'Related Opportunity', 
+                    source: 'opportunities',
+                    displayField: 'name'
+                },
+                { 
+                    name: 'relatedSaleId', 
+                    type: 'select', 
+                    label: 'Related Sale', 
+                    source: 'sales',
+                    displayField: 'title'
+                },
+                { 
+                    name: 'relatedTaskId', 
+                    type: 'select', 
+                    label: 'Related Task', 
+                    source: 'tasks',
+                    displayField: 'title'
+                },
+                { name: 'estimatedHours', type: 'number', label: 'Estimated Hours', step: '0.5', min: '0' },
+                { name: 'tags', type: 'tags', label: 'Tags' },
+                { name: 'resolutionNotes', type: 'textarea', label: 'Resolution Notes', rows: 3 }
+            ]
+        },
+        filters: {
+            status: { 
+                type: 'select', 
+                options: [
+                    { value: 'open', label: 'Open' },
+                    { value: 'in_progress', label: 'In Progress' },
+                    { value: 'resolved', label: 'Resolved' },
+                    { value: 'closed', label: 'Closed' },
+                    { value: 'on_hold', label: 'On Hold' }
+                ]
+            },
+            priority: { 
+                type: 'select', 
+                options: [
+                    { value: 'low', label: 'Low' },
+                    { value: 'medium', label: 'Medium' },
+                    { value: 'high', label: 'High' },
+                    { value: 'urgent', label: 'Urgent' }
+                ]
+            },
+            type: { 
+                type: 'select', 
+                options: [
+                    { value: 'bug', label: 'Bug' },
+                    { value: 'feature_request', label: 'Feature Request' },
+                    { value: 'support', label: 'Support' },
+                    { value: 'question', label: 'Question' },
+                    { value: 'task', label: 'Task' },
+                    { value: 'incident', label: 'Incident' }
+                ]
+            },
+            assignedTo: { 
+                type: 'select', 
+                source: 'users', 
+                displayField: 'firstName',
+                render: (item) => `${item.firstName} ${item.lastName}`
+            },
+            contactId: { 
+                type: 'select', 
+                source: 'contacts', 
+                displayField: 'firstName',
+                render: (item) => `${item.firstName} ${item.lastName}`
+            }
+        }
     }
 };
