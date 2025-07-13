@@ -327,13 +327,13 @@ const TicketProfileWidget = ({ ticketId }) => {
                                 <div>
                                     <dt className="text-sm font-medium text-gray-500">Assigned To</dt>
                                     <dd className="text-sm text-gray-900">
-                                        {ticket.assignedUser ? `${ticket.assignedUser.firstName} ${ticket.assignedUser.lastName}` : 'Unassigned'}
+                                        {ticket.assignedUser ? ticket.assignedUser.username : 'Unassigned'}
                                     </dd>
                                 </div>
                                 <div>
                                     <dt className="text-sm font-medium text-gray-500">Created By</dt>
                                     <dd className="text-sm text-gray-900">
-                                        {ticket.creator ? `${ticket.creator.firstName} ${ticket.creator.lastName}` : 'Unknown'}
+                                        {ticket.creator ? ticket.creator.username : 'Unknown'}
                                     </dd>
                                 </div>
                                 <div>
@@ -423,7 +423,7 @@ const TicketProfileWidget = ({ ticketId }) => {
                                         <div className="flex items-center justify-between mb-2">
                                             <div className="flex items-center space-x-2">
                                                 <span className="text-sm font-medium text-gray-900">
-                                                    {comment.user ? `${comment.user.firstName} ${comment.user.lastName}` : 'Unknown User'}
+                                                    {comment.user ? comment.user.username : 'Unknown User'}
                                                 </span>
                                                 {comment.isInternal && (
                                                     <span className="px-2 py-1 text-xs bg-yellow-100 text-yellow-800 rounded">
@@ -637,7 +637,7 @@ const TicketProfileWidget = ({ ticketId }) => {
                                             <option value="">Unassigned</option>
                                             {users.map(user => (
                                                 <option key={user.id} value={user.id}>
-                                                    {user.firstName} {user.lastName}
+                                                    {user.username}
                                                 </option>
                                             ))}
                                         </select>

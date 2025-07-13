@@ -859,7 +859,7 @@ export const entityConfigs = {
                 { 
                     name: 'assignedUser', 
                     label: 'Assigned To',
-                    render: (value) => value ? `${value.firstName} ${value.lastName}` : 'Unassigned'
+                    render: (value) => value ? value.username : 'Unassigned'
                 },
                 { 
                     name: 'createdAt', 
@@ -923,8 +923,7 @@ export const entityConfigs = {
                     type: 'select', 
                     label: 'Assign To', 
                     source: 'users',
-                    displayField: 'firstName',
-                    render: (item) => `${item.firstName} ${item.lastName}`
+                    displayField: 'username'
                 },
                 { 
                     name: 'relatedLeadId', 
@@ -993,8 +992,7 @@ export const entityConfigs = {
             assignedTo: { 
                 type: 'select', 
                 source: 'users', 
-                displayField: 'firstName',
-                render: (item) => `${item.firstName} ${item.lastName}`
+                displayField: 'username'
             },
             contactId: { 
                 type: 'select', 

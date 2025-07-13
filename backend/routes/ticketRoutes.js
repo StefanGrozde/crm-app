@@ -106,12 +106,12 @@ router.get('/', protect, async (req, res) => {
                 {
                     model: User,
                     as: 'assignedUser',
-                    attributes: ['id', 'firstName', 'lastName', 'email']
+                    attributes: ['id', 'username', 'email']
                 },
                 {
                     model: User,
                     as: 'creator',
-                    attributes: ['id', 'firstName', 'lastName', 'email']
+                    attributes: ['id', 'username', 'email']
                 },
                 {
                     model: Lead,
@@ -183,12 +183,12 @@ router.get('/:id', protect, async (req, res) => {
                 {
                     model: User,
                     as: 'assignedUser',
-                    attributes: ['id', 'firstName', 'lastName', 'email']
+                    attributes: ['id', 'username', 'email']
                 },
                 {
                     model: User,
                     as: 'creator',
-                    attributes: ['id', 'firstName', 'lastName', 'email']
+                    attributes: ['id', 'username', 'email']
                 },
                 {
                     model: Lead,
@@ -221,7 +221,7 @@ router.get('/:id', protect, async (req, res) => {
                         {
                             model: User,
                             as: 'user',
-                            attributes: ['id', 'firstName', 'lastName', 'email']
+                            attributes: ['id', 'username', 'email']
                         }
                     ],
                     order: [['createdAt', 'ASC']]
@@ -454,7 +454,7 @@ router.post('/:id/comments', protect, async (req, res) => {
                 {
                     model: User,
                     as: 'user',
-                    attributes: ['id', 'firstName', 'lastName', 'email']
+                    attributes: ['id', 'username', 'email']
                 }
             ]
         });
@@ -487,7 +487,7 @@ router.get('/:id/comments', protect, async (req, res) => {
                 {
                     model: User,
                     as: 'user',
-                    attributes: ['id', 'firstName', 'lastName', 'email']
+                    attributes: ['id', 'username', 'email']
                 }
             ],
             order: [['createdAt', 'ASC']]
@@ -513,7 +513,7 @@ router.get('/filter-options', protect, async (req, res) => {
         // Get assigned users
         const assignedUsers = await User.findAll({
             where: { companyId: req.user.companyId },
-            attributes: ['id', 'firstName', 'lastName', 'email']
+            attributes: ['id', 'username', 'email']
         });
 
         // Get contacts
