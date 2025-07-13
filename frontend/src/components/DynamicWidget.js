@@ -26,6 +26,8 @@ import SalesWidget from './SalesWidget';
 import SalesProfileWidget from './SalesProfileWidget';
 import TasksWidget from './TasksWidget';
 import TaskProfileWidget from './TaskProfileWidget';
+import UnifiedTicketsWidget from './UnifiedTicketsWidget';
+import TicketProfileWidget from './TicketProfileWidget';
 
 // Widget Registry - Central place to register all widgets
 const WidgetRegistry = {
@@ -58,7 +60,9 @@ const WidgetRegistry = {
     'sales-widget': SalesWidget,
     'sales-profile-widget': SalesProfileWidget,
     'tasks-widget': TasksWidget,
-    'task-profile-widget': TaskProfileWidget
+    'task-profile-widget': TaskProfileWidget,
+    'tickets-widget': UnifiedTicketsWidget,
+    'ticket-profile-widget': TicketProfileWidget
 };
 
 // Dynamic widget loader for external widgets
@@ -191,7 +195,7 @@ const ExternalWidgetLoader = memo(({ widgetKey, widgetPath, type, onLoad, onErro
 });
 
 // Main DynamicWidget component
-const DynamicWidget = memo(({ widgetKey, widgetPath, type, resultData, widgetData, onLoad, onError, widgetState, showLoadingSpinner, loadingSpinnerSize, onOpenContactProfile, onOpenLeadProfile, onOpenOpportunityProfile, onOpenBusinessProfile, onOpenUserProfile, onOpenSaleProfile, onOpenTaskProfile, ...props }) => {
+const DynamicWidget = memo(({ widgetKey, widgetPath, type, resultData, widgetData, onLoad, onError, widgetState, showLoadingSpinner, loadingSpinnerSize, onOpenContactProfile, onOpenLeadProfile, onOpenOpportunityProfile, onOpenBusinessProfile, onOpenUserProfile, onOpenSaleProfile, onOpenTaskProfile, onOpenTicketProfile, ...props }) => {
     // Memoize the widget key to prevent unnecessary re-renders
     const memoizedWidgetKey = useMemo(() => widgetKey, [widgetKey]);
     // Show loading state only for external widgets
@@ -325,6 +329,10 @@ const DynamicWidget = memo(({ widgetKey, widgetPath, type, resultData, widgetDat
                 if (memoizedWidgetKey === 'tasks-widget') {
                     return <RegisteredWidget onOpenTaskProfile={onOpenTaskProfile} />;
                 }
+                // Pass ticket profile handler to TicketsWidget
+                if (memoizedWidgetKey === 'tickets-widget') {
+                    return <RegisteredWidget onOpenTicketProfile={onOpenTicketProfile} />;
+                }
                 // Pass widgetData to ContactProfileWidget
                 if (baseWidgetKey === 'contact-profile-widget' && widgetData) {
                     return <RegisteredWidget contactId={widgetData.contactId} />;
@@ -352,6 +360,10 @@ const DynamicWidget = memo(({ widgetKey, widgetPath, type, resultData, widgetDat
                 // Pass widgetData to TaskProfileWidget
                 if (baseWidgetKey === 'task-profile-widget' && widgetData) {
                     return <RegisteredWidget taskId={widgetData.taskId} />;
+                }
+                // Pass widgetData to TicketProfileWidget
+                if (baseWidgetKey === 'ticket-profile-widget' && widgetData) {
+                    return <RegisteredWidget ticketId={widgetData.ticketId} />;
                 }
                 return <RegisteredWidget {...props} />;
             };
