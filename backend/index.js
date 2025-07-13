@@ -20,6 +20,7 @@ const invitationRoutes = require('./routes/invitationRoutes');
 const listRoutes = require('./routes/listRoutes');
 const salesRoutes = require('./routes/salesRoutes');
 const taskRoutes = require('./routes/taskRoutes');
+const fileRoutes = require('./routes/fileRoutes');
 const path = require('path');
 
 console.log("Application starting...");
@@ -83,6 +84,7 @@ app.use('/api/invitations', invitationRoutes);
 app.use('/api/lists', listRoutes);
 app.use('/api/sales', salesRoutes);
 app.use('/api/tasks', taskRoutes);
+app.use('/api/files', fileRoutes);
 app.use('/api/widgets/buildin', express.static(path.join(__dirname, 'widgets', 'buildin')));
 app.use('/api/widgets/custom', express.static(path.join(__dirname, 'widgets', 'custom')));
 // Test Route to check DB connection

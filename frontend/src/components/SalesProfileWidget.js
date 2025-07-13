@@ -2,6 +2,7 @@ import React, { useState, useEffect, useContext, useCallback, memo } from 'react
 import { createPortal } from 'react-dom';
 import axios from 'axios';
 import { AuthContext } from '../context/AuthContext';
+import FileManager from './FileManager';
 
 const API_URL = process.env.REACT_APP_API_URL;
 
@@ -428,6 +429,15 @@ const SalesProfileWidget = ({ saleId }) => {
                             </div>
                         </div>
                     )}
+
+                    {/* File Attachments */}
+                    <div className="bg-white rounded-lg shadow p-6 lg:col-span-2">
+                        <FileManager 
+                            entityType="sale" 
+                            entityId={saleId}
+                            title="Sale Documents"
+                        />
+                    </div>
                 </div>
             </div>
 
