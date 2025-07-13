@@ -232,7 +232,7 @@ const SalesProfileWidget = ({ saleId }) => {
     }
 
     return (
-        <div className="h-full overflow-y-auto">
+        <div className="h-full overflow-y-auto p-4">
             {/* Header */}
             <div className="flex justify-between items-center mb-6">
                 <div>
@@ -262,7 +262,7 @@ const SalesProfileWidget = ({ saleId }) => {
             </div>
 
             {/* Content */}
-            <div className="flex-1 overflow-y-auto">
+            <div className="space-y-6">
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     {/* Sale Information */}
                     <div className="bg-white rounded-lg shadow p-6">
@@ -430,14 +430,17 @@ const SalesProfileWidget = ({ saleId }) => {
                         </div>
                     )}
 
-                    {/* File Attachments */}
-                    <div className="bg-white rounded-lg shadow p-6 lg:col-span-2">
-                        <FileManager 
-                            entityType="sale" 
-                            entityId={saleId}
-                            title="Sale Documents"
-                        />
-                    </div>
+                {/* File Attachments - Outside grid for better visibility */}
+                </div>
+                
+                <div className="bg-white rounded-lg shadow p-6">
+                    <FileManager 
+                        entityType="sale" 
+                        entityId={saleId}
+                        title="Sale Documents"
+                        className="max-h-96 overflow-y-auto"
+                    />
+                </div>
                 </div>
             </div>
 
