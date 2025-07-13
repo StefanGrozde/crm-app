@@ -83,9 +83,9 @@ const DashboardGrid = ({
                        border: 1px solid #9ca3af;
                    }
                    
-                   /* Remove borders from immediate children to prevent double borders */
-                   .widget-container > div {
-                       border: none;
+                   /* Remove borders from all descendants to prevent double borders */
+                   .widget-container * {
+                       border: none !important;
                    }
                    
                    .widget-container.error {
