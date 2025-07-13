@@ -164,6 +164,43 @@ router.get('/', protect, async (req, res) => {
     }
 });
 
+// GET /api/tickets/filter-options - Get filter options for tickets
+router.get('/filter-options', protect, async (req, res) => {
+    try {
+        // Get unique statuses, priorities, and types from the user's company tickets
+        const tickets = await Ticket.findAll({
+            where: { companyId: req.user.companyId },
+            attributes: ['status', 'priority', 'type'],
+            group: ['status', 'priority', 'type']
+        });
+
+        // Get assigned users
+        const assignedUsers = await User.findAll({
+            where: { companyId: req.user.companyId },
+            attributes: ['id', 'username', 'email']
+        });
+
+        // Get contacts
+        const contacts = await Contact.findAll({
+            where: { companyId: req.user.companyId },
+            attributes: ['id', 'firstName', 'lastName', 'email']
+        });
+
+        const filterOptions = {
+            statuses: ['open', 'in_progress', 'resolved', 'closed', 'on_hold'],
+            priorities: ['low', 'medium', 'high', 'urgent'],
+            types: ['bug', 'feature_request', 'support', 'question', 'task', 'incident'],
+            assignedUsers,
+            contacts
+        };
+
+        res.json(filterOptions);
+    } catch (error) {
+        console.error('Error fetching filter options:', error);
+        res.status(500).json({ error: 'Failed to fetch filter options' });
+    }
+});
+
 // GET /api/tickets/:id - Get a specific ticket with comments
 router.get('/:id', protect, async (req, res) => {
     try {
@@ -530,43 +567,6 @@ router.get('/:id/comments', protect, async (req, res) => {
     } catch (error) {
         console.error('Error fetching ticket comments:', error);
         res.status(500).json({ error: 'Failed to fetch comments' });
-    }
-});
-
-// GET /api/tickets/filter-options - Get filter options for tickets
-router.get('/filter-options', protect, async (req, res) => {
-    try {
-        // Get unique statuses, priorities, and types from the user's company tickets
-        const tickets = await Ticket.findAll({
-            where: { companyId: req.user.companyId },
-            attributes: ['status', 'priority', 'type'],
-            group: ['status', 'priority', 'type']
-        });
-
-        // Get assigned users
-        const assignedUsers = await User.findAll({
-            where: { companyId: req.user.companyId },
-            attributes: ['id', 'username', 'email']
-        });
-
-        // Get contacts
-        const contacts = await Contact.findAll({
-            where: { companyId: req.user.companyId },
-            attributes: ['id', 'firstName', 'lastName', 'email']
-        });
-
-        const filterOptions = {
-            statuses: ['open', 'in_progress', 'resolved', 'closed', 'on_hold'],
-            priorities: ['low', 'medium', 'high', 'urgent'],
-            types: ['bug', 'feature_request', 'support', 'question', 'task', 'incident'],
-            assignedUsers,
-            contacts
-        };
-
-        res.json(filterOptions);
-    } catch (error) {
-        console.error('Error fetching filter options:', error);
-        res.status(500).json({ error: 'Failed to fetch filter options' });
     }
 });
 
