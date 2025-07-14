@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const AuditService = require('../services/AuditService');
-const { protect } = require('../middleware/protect');
+const { protect } = require('../middleware/authMiddleware');
 
 // Middleware to require admin role for sensitive routes
 const requireAdmin = (req, res, next) => {
