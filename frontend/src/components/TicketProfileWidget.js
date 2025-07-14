@@ -7,6 +7,7 @@ const API_URL = process.env.REACT_APP_API_URL;
 
 const TicketProfileWidget = ({ ticketId }) => {
     // Context
+    // eslint-disable-next-line no-unused-vars
     const { user } = useContext(AuthContext);
     
     // Core data states
@@ -26,10 +27,15 @@ const TicketProfileWidget = ({ ticketId }) => {
     
     // Additional data for dropdowns
     const [users, setUsers] = useState([]);
+    // eslint-disable-next-line no-unused-vars
     const [contacts, setContacts] = useState([]);
+    // eslint-disable-next-line no-unused-vars
     const [leads, setLeads] = useState([]);
+    // eslint-disable-next-line no-unused-vars
     const [opportunities, setOpportunities] = useState([]);
+    // eslint-disable-next-line no-unused-vars
     const [sales, setSales] = useState([]);
+    // eslint-disable-next-line no-unused-vars
     const [tasks, setTasks] = useState([]);
     
     // Tags handling
@@ -110,6 +116,7 @@ const TicketProfileWidget = ({ ticketId }) => {
         
         try {
             setAddingComment(true);
+            // eslint-disable-next-line no-unused-vars
             const response = await axios.post(`${API_URL}/api/tickets/${ticketId}/comments`, {
                 comment: newComment.trim(),
                 isInternal: isInternalComment

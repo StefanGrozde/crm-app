@@ -93,7 +93,7 @@ const EntityWidget = ({
         } finally {
             setLoading(false);
         }
-    }, [config, filters, searchTerm, selectedListId, pagination.itemsPerPage]);
+    }, [config, filters, searchTerm, selectedListId, pagination]);
     
     // Load dropdown data for form fields and filters
     const loadDropdownData = useCallback(async () => {

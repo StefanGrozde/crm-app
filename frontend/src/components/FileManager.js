@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import FileUpload from './FileUpload';
 
 const FileManager = ({ 
@@ -17,9 +17,9 @@ const FileManager = ({
 
   useEffect(() => {
     fetchFiles();
-  }, [entityType, entityId]);
+  }, [entityType, entityId, fetchFiles]);
 
-  const fetchFiles = async () => {
+  const fetchFiles = useCallback(async () => {
     try {
       setLoading(true);
       const response = await fetch(
@@ -42,7 +42,7 @@ const FileManager = ({
     } finally {
       setLoading(false);
     }
-  };
+  }, [entityType, entityId]);
 
   const handleUploadComplete = (result) => {
     console.log('Upload completed:', result);

@@ -11,24 +11,6 @@ const WidgetSearchBar = ({
     const searchInputRef = useRef(null);
     const searchTimeoutRef = useRef(null);
 
-    // Handle search input changes with debouncing
-    const handleSearchInputChange = useCallback((e) => {
-        const value = e.target.value;
-        setLocalSearchTerm(value);
-        
-        // Clear existing timeout
-        if (searchTimeoutRef.current) {
-            clearTimeout(searchTimeoutRef.current);
-        }
-        
-        // Set new timeout for search
-        searchTimeoutRef.current = setTimeout(() => {
-            if (onSearch) {
-                onSearch(value);
-            }
-        }, debounceDelay);
-    }, [onSearch, debounceDelay]);
-
     // Handle direct search input change (for non-debounced updates)
     const handleDirectChange = useCallback((e) => {
         const value = e.target.value;

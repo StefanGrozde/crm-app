@@ -9,7 +9,7 @@ const TicketQueueConfigModal = ({
     // Stabilize the initialConfig to prevent unnecessary re-renders
     const stableInitialConfig = useMemo(() => {
         return initialConfig || { queueType: 'my', title: '' };
-    }, [initialConfig?.queueType, initialConfig?.title]);
+    }, [initialConfig?.queueType, initialConfig?.title, initialConfig]);
 
     const [config, setConfig] = useState(() => ({
         queueType: stableInitialConfig.queueType || 'my',

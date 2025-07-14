@@ -10,6 +10,7 @@ const TicketQueueWidget = ({
     showBulkActions = false,
     customFilters = {}
 }) => {
+    // eslint-disable-next-line no-unused-vars
     const { user } = useAuth();
     const [tickets, setTickets] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -25,8 +26,9 @@ const TicketQueueWidget = ({
         assignedTo: '',
         ...customFilters
     });
-    const [sortBy, setSortBy] = useState('created_at');
-    const [sortOrder, setSortOrder] = useState('DESC');
+    const [sortBy] = useState('created_at');
+    // eslint-disable-next-line no-unused-vars
+    const [sortOrder] = useState('DESC');
     const [filterOptions, setFilterOptions] = useState({});
     const [selectedTickets, setSelectedTickets] = useState([]);
     const [queueStats, setQueueStats] = useState({});
@@ -224,6 +226,7 @@ const TicketQueueWidget = ({
     }, []);
 
     // Select all tickets
+    // eslint-disable-next-line no-unused-vars
     const selectAllTickets = useCallback(() => {
         setSelectedTickets(tickets.map(ticket => ticket.id));
     }, [tickets]);

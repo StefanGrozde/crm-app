@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import TicketQueueWidget from './TicketQueueWidget';
 
 const TicketQueueDashboard = ({ onOpenTicketProfile }) => {
+    // eslint-disable-next-line no-unused-vars
     const { user } = useAuth();
     const [activeTab, setActiveTab] = useState('my');
     const [queueStats, setQueueStats] = useState({});

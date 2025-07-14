@@ -34,9 +34,6 @@ const TasksWidget = ({ onOpenTaskProfile }) => {
     // List filtering state
     // eslint-disable-next-line no-unused-vars
     const [selectedListId, setSelectedListId] = useState(null);
-    const [selectedTasks, setSelectedTasks] = useState(new Set());
-    const [availableLists, setAvailableLists] = useState([]);
-    
     // Separate search state to prevent re-renders
     const [searchTerm, setSearchTerm] = useState('');
     
@@ -69,7 +66,6 @@ const TasksWidget = ({ onOpenTaskProfile }) => {
     // Modal states
     const [showAddModal, setShowAddModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
-    const [showFilterModal, setShowFilterModal] = useState(false);
     const [editingTask, setEditingTask] = useState(null);
     
     // Tags handling
@@ -198,7 +194,7 @@ const TasksWidget = ({ onOpenTaskProfile }) => {
             console.error('Error creating task:', error);
             alert(error.response?.data?.message || 'Failed to create task');
         }
-    }, [selectedUsers, tags, loadTasks]);
+    }, [selectedUsers, tags, loadTasks, resetForm]);
 
     // Handle task update
     const handleUpdateTask = useCallback(async (e) => {
@@ -235,7 +231,7 @@ const TasksWidget = ({ onOpenTaskProfile }) => {
             console.error('Error updating task:', error);
             alert(error.response?.data?.message || 'Failed to update task');
         }
-    }, [editingTask, selectedUsers, tags, loadTasks]);
+    }, [editingTask, selectedUsers, tags, loadTasks, resetForm]);
 
     // Handle task deletion
     const handleDeleteTask = useCallback(async (task) => {

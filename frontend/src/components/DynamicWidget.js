@@ -1,6 +1,6 @@
 import React, { useState, useEffect, memo, useMemo, useCallback } from 'react';
 import SearchResultWidget from './SearchResultWidget';
-import { WIDGET_PROFILE_MAPPING, getProfileProps } from '../utils/profileConfig';
+import { getProfileProps } from '../utils/profileConfig';
 // Legacy widgets for backward compatibility
 import ContactsWidget from './ContactsWidget';
 import LeadsWidget from './LeadsWidget';
