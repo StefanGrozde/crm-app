@@ -3,6 +3,7 @@ import EntityWidget from './EntityWidget';
 import { entityConfigs } from '../config/entityConfigs';
 
 const UnifiedContactsWidget = ({ onOpenContactProfile }) => {
+    console.log('UnifiedContactsWidget render');
     // Memoize the render function to prevent unnecessary re-renders
     const contactNameRenderer = useCallback((value, item, onOpenProfile) => (
         <div className="flex items-center">
@@ -23,7 +24,7 @@ const UnifiedContactsWidget = ({ onOpenContactProfile }) => {
                 </div>
             </div>
         </div>
-    ), []);
+    ), [onOpenContactProfile]);
 
     // Memoize the config to prevent unnecessary re-renders
     const memoizedConfig = useMemo(() => ({
@@ -38,7 +39,7 @@ const UnifiedContactsWidget = ({ onOpenContactProfile }) => {
         }
     }), [contactNameRenderer]);
 
-    const handleCustomAction = (actionKey, contactId) => {
+    const handleCustomAction = useCallback((actionKey, contactId) => {
         switch (actionKey) {
             case 'startLead':
                 console.log('Start Lead for contact:', contactId);
@@ -55,7 +56,7 @@ const UnifiedContactsWidget = ({ onOpenContactProfile }) => {
             default:
                 console.log('Unknown action:', actionKey, contactId);
         }
-    };
+    }, []);
 
     return (
         <EntityWidget
@@ -66,4 +67,4 @@ const UnifiedContactsWidget = ({ onOpenContactProfile }) => {
     );
 };
 
-export default UnifiedContactsWidget;
+export default React.memo(UnifiedContactsWidget);

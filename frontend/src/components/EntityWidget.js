@@ -12,6 +12,7 @@ const EntityWidget = ({
     onOpenProfile,
     onCustomAction
 }) => {
+    console.log('EntityWidget render for:', config?.title);
     // eslint-disable-next-line no-unused-vars
     const { user } = useContext(AuthContext);
     
@@ -63,6 +64,7 @@ const EntityWidget = ({
     
     // Load entity data
     const loadData = useCallback(async (page = 1) => {
+        console.log('loadData called for:', config?.title, 'page:', page);
         try {
             setLoading(true);
             const params = new URLSearchParams({
@@ -93,7 +95,7 @@ const EntityWidget = ({
         } finally {
             setLoading(false);
         }
-    }, [config, filters, searchTerm, selectedListId, pagination]);
+    }, [config, filters, searchTerm, selectedListId, pagination.itemsPerPage]);
     
     // Load dropdown data for form fields and filters
     const loadDropdownData = useCallback(async () => {
@@ -152,6 +154,7 @@ const EntityWidget = ({
     
     // Initialize component
     useEffect(() => {
+        console.log('EntityWidget useEffect triggered for:', config?.title);
         const initialize = async () => {
             await Promise.all([loadData(), loadDropdownData()]);
         };

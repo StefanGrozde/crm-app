@@ -548,8 +548,8 @@ const Dashboard = () => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [openTabs]);
 
-    // Switch to a specific tab
-    const switchToTab = async (tabId) => {
+    // Switch to a specific tab (memoized to prevent re-renders)
+    const switchToTab = useCallback(async (tabId) => {
         console.log('Switching to tab:', tabId, 'Type:', typeof tabId);
         console.log('Available tab layouts:', Object.keys(tabLayouts));
         
@@ -570,7 +570,7 @@ const Dashboard = () => {
             // Small delay to ensure state updates are processed
             setTimeout(() => setIsTabSwitching(false), 50);
         }
-    };
+    }, [tabLayouts, setActiveTabId, setCurrentViewId, setLayout, setIsTabSwitching]);
 
     // Close a tab
     const closeTab = async (tabId) => {
@@ -849,7 +849,7 @@ const Dashboard = () => {
         
         // Small delay to ensure state updates are processed
         setTimeout(() => setIsTabSwitching(false), 50);
-    }, [openTabs, setOpenTabs, setTabLayouts, setActiveTabId, setCurrentViewId, setLayout, setIsTabSwitching, switchToTab]);
+    }, [openTabs, setOpenTabs, setTabLayouts, setActiveTabId, setCurrentViewId, setLayout, setIsTabSwitching, API_URL]);
 
     // Individual profile handlers - now using the unified system (memoized to prevent re-renders)
     const handleOpenContactProfile = useMemo(() => createProfileHandler('contact', handleOpenProfile), [handleOpenProfile]);
