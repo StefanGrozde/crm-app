@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Responsive, WidthProvider } from 'react-grid-layout';
 import { WidgetRenderer } from './WidgetRenderer';
+import { getProfileProps } from '../utils/profileConfig';
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
 
@@ -21,6 +22,18 @@ const DashboardGrid = ({
     onOpenTaskProfile,
     onOpenTicketProfile
 }) => {
+    // Unified profile handlers object
+    const profileHandlers = useMemo(() => ({
+        contact: onOpenContactProfile,
+        lead: onOpenLeadProfile,
+        opportunity: onOpenOpportunityProfile,
+        business: onOpenBusinessProfile,
+        user: onOpenUserProfile,
+        sales: onOpenSaleProfile,
+        task: onOpenTaskProfile,
+        ticket: onOpenTicketProfile
+    }), [onOpenContactProfile, onOpenLeadProfile, onOpenOpportunityProfile, onOpenBusinessProfile, onOpenUserProfile, onOpenSaleProfile, onOpenTaskProfile, onOpenTicketProfile]);
+
     // Skip rendering if no layout or widget library
     if (!layout || !widgetLibrary || layout.length === 0) {
         return (
@@ -200,14 +213,7 @@ const DashboardGrid = ({
                                             isVisible={isVisible}
                                             onWidgetReady={onWidgetReady}
                                             onWidgetError={onWidgetError}
-                                            onOpenContactProfile={onOpenContactProfile}
-                                            onOpenLeadProfile={onOpenLeadProfile}
-                                            onOpenOpportunityProfile={onOpenOpportunityProfile}
-                                            onOpenBusinessProfile={onOpenBusinessProfile}
-                                            onOpenUserProfile={onOpenUserProfile}
-                                            onOpenSaleProfile={onOpenSaleProfile}
-                                            onOpenTaskProfile={onOpenTaskProfile}
-                                            onOpenTicketProfile={onOpenTicketProfile}
+                                            {...getProfileProps(lookupKey, profileHandlers)}
                                         />
                                     </div>
                                 </div>

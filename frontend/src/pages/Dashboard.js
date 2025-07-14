@@ -1196,6 +1196,7 @@ const Dashboard = () => {
                     )}
 
                     {/* Grid layout - only show if there's an active tab and layout is ready */}
+                    {/* Note: DashboardGrid now uses the unified profile system internally */}
                     {activeTabId && layout && !isEditMode && (
                         <DashboardGrid
                             layout={layout}

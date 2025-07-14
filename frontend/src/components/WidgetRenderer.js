@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo, memo } from 'react';
 import DynamicWidget from './DynamicWidget';
 import { getWidgetConfig } from '../config/widgetConfig';
+import { getProfileProps } from '../utils/profileConfig';
 
 // Widget lifecycle states
 const WIDGET_STATES = {
@@ -26,6 +27,7 @@ const WidgetRenderer = memo(({
     onOpenBusinessProfile,
     onOpenUserProfile,
     onOpenSaleProfile,
+    onOpenTaskProfile,
     onOpenTicketProfile,
     ...props 
 }) => {
@@ -35,6 +37,28 @@ const WidgetRenderer = memo(({
         console.log(`Widget ${widgetKey} config:`, config);
         return config;
     }, [widgetKey]);
+    
+    // Unified profile handlers object
+    const profileHandlers = useMemo(() => ({
+        contact: onOpenContactProfile,
+        lead: onOpenLeadProfile,
+        opportunity: onOpenOpportunityProfile,
+        business: onOpenBusinessProfile,
+        user: onOpenUserProfile,
+        sales: onOpenSaleProfile,
+        task: onOpenTaskProfile,
+        ticket: onOpenTicketProfile
+    }), [onOpenContactProfile, onOpenLeadProfile, onOpenOpportunityProfile, onOpenBusinessProfile, onOpenUserProfile, onOpenSaleProfile, onOpenTaskProfile, onOpenTicketProfile]);
+
+    // Get profile props for this widget
+    const profileProps = useMemo(() => {
+        // Handle dynamic widget keys (e.g., lead-profile-widget-34 -> lead-profile-widget)
+        let lookupKey = widgetKey;
+        if (widgetKey.includes('-widget-')) {
+            lookupKey = widgetKey.split('-widget-')[0] + '-widget';
+        }
+        return getProfileProps(lookupKey, profileHandlers);
+    }, [widgetKey, profileHandlers]);
     
     const [widgetState, setWidgetState] = useState(WIDGET_STATES.LOADING);
     const [error, setError] = useState(null);
@@ -50,20 +74,12 @@ const WidgetRenderer = memo(({
             type,
             resultData,
             widgetData,
-            onOpenContactProfile,
-            onOpenLeadProfile,
-            onOpenOpportunityProfile,
-            onOpenBusinessProfile,
-            onOpenUserProfile,
-            onOpenSaleProfile,
-            onOpenTicketProfile,
+            ...profileProps,
             ...props
         };
         
-
-        
         return memoizedProps;
-    }, [widgetKey, widgetPath, type, resultData, widgetData, onOpenContactProfile, onOpenLeadProfile, onOpenOpportunityProfile, onOpenBusinessProfile, onOpenUserProfile, onOpenSaleProfile, onOpenTicketProfile, props]);
+    }, [widgetKey, widgetPath, type, resultData, widgetData, profileProps, props]);
     
 
     
