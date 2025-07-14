@@ -5,6 +5,7 @@ import { AuthContext } from '../context/AuthContext';
 import SaveViewModal from './SaveViewModal';
 import AddWidgetModal from './AddWidgetModal';
 import EditViewModal from './EditViewModal';
+import TicketQueueConfigModal from './TicketQueueConfigModal';
 import { WidgetRenderer } from './WidgetRenderer';
 import { getColorClass } from '../utils/tabColors';
 import 'react-grid-layout/css/styles.css';
@@ -32,6 +33,8 @@ const EmbeddedEditLayout = ({ viewId, onExitEditMode, onSaveSuccess }) => {
     const [showSaveModal, setShowSaveModal] = useState(false);
     const [showAddModal, setShowAddModal] = useState(false);
     const [showEditViewModal, setShowEditViewModal] = useState(false);
+    const [showConfigModal, setShowConfigModal] = useState(false);
+    const [configuringWidgetKey, setConfiguringWidgetKey] = useState(null);
 
     // Logic: Load widget library
     const loadWidgetLibrary = useCallback(async () => {
@@ -136,8 +139,8 @@ const EmbeddedEditLayout = ({ viewId, onExitEditMode, onSaveSuccess }) => {
     }, [layout]);
 
     // Logic: Handle add widget
-    const handleAddWidget = useCallback((widgetKey) => {
-        console.log('Adding widget:', widgetKey);
+    const handleAddWidget = useCallback((widgetKey, widgetData = {}) => {
+        console.log('Adding widget:', widgetKey, 'with data:', widgetData);
         const widgetToAdd = widgetLibrary.find(w => w.key === widgetKey);
         if (!widgetToAdd) {
             console.log('Widget not found in library');
@@ -151,7 +154,7 @@ const EmbeddedEditLayout = ({ viewId, onExitEditMode, onSaveSuccess }) => {
             w: 6,
             h: 2,
             widgetKey: widgetKey,
-            widgetData: {},
+            widgetData: widgetData,
             minW: 2,
             minH: 1,
             maxW: 12,
@@ -164,6 +167,24 @@ const EmbeddedEditLayout = ({ viewId, onExitEditMode, onSaveSuccess }) => {
         
         setShowAddModal(false);
     }, [layout, widgetLibrary]);
+
+    // Logic: Handle configure widget
+    const handleConfigureWidget = useCallback((widgetKey) => {
+        console.log('Configuring widget:', widgetKey);
+        setConfiguringWidgetKey(widgetKey);
+        setShowAddModal(false);
+        setShowConfigModal(true);
+    }, []);
+
+    // Logic: Handle save widget configuration
+    const handleSaveWidgetConfig = useCallback((config) => {
+        console.log('Saving widget config:', config);
+        if (configuringWidgetKey) {
+            handleAddWidget(configuringWidgetKey, config);
+        }
+        setShowConfigModal(false);
+        setConfiguringWidgetKey(null);
+    }, [configuringWidgetKey, handleAddWidget]);
 
     // Logic: Handle save view
     const handleSaveView = useCallback(async () => {
@@ -636,6 +657,7 @@ const EmbeddedEditLayout = ({ viewId, onExitEditMode, onSaveSuccess }) => {
                 <AddWidgetModal 
                     availableWidgets={availableWidgets} 
                     onAddWidget={handleAddWidget} 
+                    onConfigureWidget={handleConfigureWidget}
                     onClose={() => setShowAddModal(false)} 
                 />
             )}
@@ -645,6 +667,16 @@ const EmbeddedEditLayout = ({ viewId, onExitEditMode, onSaveSuccess }) => {
                     currentView={currentView}
                     onSave={handleEditView}
                     onClose={() => setShowEditViewModal(false)}
+                />
+            )}
+            {showConfigModal && (
+                <TicketQueueConfigModal
+                    isOpen={showConfigModal}
+                    onSave={handleSaveWidgetConfig}
+                    onClose={() => {
+                        setShowConfigModal(false);
+                        setConfiguringWidgetKey(null);
+                    }}
                 />
             )}
         </div>

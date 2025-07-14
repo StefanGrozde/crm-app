@@ -34,6 +34,7 @@ import UnassignedTicketQueueWidget from './UnassignedTicketQueueWidget';
 import TeamTicketQueueWidget from './TeamTicketQueueWidget';
 import AllTicketQueueWidget from './AllTicketQueueWidget';
 import TicketQueueDashboard from './TicketQueueDashboard';
+import ConfigurableTicketQueueWidget from './ConfigurableTicketQueueWidget';
 
 // Widget Registry - Central place to register all widgets
 const WidgetRegistry = {
@@ -75,7 +76,8 @@ const WidgetRegistry = {
     'unassigned-ticket-queue-widget': UnassignedTicketQueueWidget,
     'team-ticket-queue-widget': TeamTicketQueueWidget,
     'all-ticket-queue-widget': AllTicketQueueWidget,
-    'ticket-queue-dashboard-widget': TicketQueueDashboard
+    'ticket-queue-dashboard-widget': TicketQueueDashboard,
+    'configurable-ticket-queue-widget': ConfigurableTicketQueueWidget
 };
 
 // Dynamic widget loader for external widgets
@@ -348,8 +350,9 @@ const DynamicWidget = memo(({ widgetKey, widgetPath, type, resultData, widgetDat
                     memoizedWidgetKey === 'unassigned-ticket-queue-widget' ||
                     memoizedWidgetKey === 'team-ticket-queue-widget' ||
                     memoizedWidgetKey === 'all-ticket-queue-widget' ||
-                    memoizedWidgetKey === 'ticket-queue-dashboard-widget') {
-                    return <RegisteredWidget onOpenTicketProfile={onOpenTicketProfile} />;
+                    memoizedWidgetKey === 'ticket-queue-dashboard-widget' ||
+                    memoizedWidgetKey === 'configurable-ticket-queue-widget') {
+                    return <RegisteredWidget onOpenTicketProfile={onOpenTicketProfile} widgetData={widgetData} />;
                 }
                 // Pass widgetData to ContactProfileWidget
                 if (baseWidgetKey === 'contact-profile-widget' && widgetData) {

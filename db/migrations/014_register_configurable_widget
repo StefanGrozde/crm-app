@@ -1,0 +1,18 @@
+-- Migration: Register ticket queue widgets
+-- Version: 013
+-- Description: Register the new ticket queue widgets in the database
+
+-- Insert the ticket queue widgets
+INSERT INTO widgets (widget_key, name, description, type, version, author, sort_order, is_active, config) VALUES
+
+(
+    'configurable-ticket-queue-widget',
+    'Ticket Queue (Configurable)',
+    'Configurable ticket queue widget - choose your queue type during setup',
+    'builtin-react',
+    '1.0.0',
+    'System',
+    25,
+    true,
+    '{"configurable": true, "queueTypes": ["my", "unassigned", "team", "all"]}'
+)

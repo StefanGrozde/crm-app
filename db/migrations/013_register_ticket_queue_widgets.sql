@@ -60,6 +60,17 @@ INSERT INTO widgets (widget_key, name, description, type, version, author, sort_
     '{"dashboardMode": true, "features": {"stats": true, "multiQueue": true, "priorityBreakdown": true}}'
 ),
 (
+    'configurable-ticket-queue-widget',
+    'Ticket Queue (Configurable)',
+    'Configurable ticket queue widget - choose your queue type during setup',
+    'builtin-react',
+    '1.0.0',
+    'System',
+    25,
+    true,
+    '{"configurable": true, "queueTypes": ["my", "unassigned", "team", "all"]}'
+),
+(
     'tickets-widget',
     'Tickets Widget',
     'Manage and view all tickets with advanced filtering, comments, and status tracking',

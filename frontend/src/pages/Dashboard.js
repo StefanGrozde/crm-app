@@ -331,6 +331,13 @@ const Dashboard = () => {
                         description: 'Multi-queue ticket dashboard',
                         type: 'builtin-react',
                         path: null
+                    },
+                    {
+                        key: 'configurable-ticket-queue-widget',
+                        name: 'Ticket Queue (Configurable)',
+                        description: 'Configurable ticket queue widget - choose your queue type',
+                        type: 'builtin-react',
+                        path: null
                     }
                 ];
                 

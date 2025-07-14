@@ -231,6 +231,18 @@ export const WIDGET_TYPE_CONFIG = {
         skeletonLoading: true, // Use skeleton loading for better UX
     },
     
+    'configurable-ticket-queue-widget': {
+        ...DEFAULT_WIDGET_CONFIG,
+        renderMode: 'lazy',
+        autoReload: true, // Auto-reload for queue updates
+        reloadInterval: 30000, // Reload every 30 seconds
+        showLoadingSpinner: true,
+        debounceDelay: 300, // Search debouncing
+        cacheTimeout: 30000, // Short cache for real-time updates
+        skeletonLoading: true, // Use skeleton loading for better UX
+        configurable: true, // Mark as configurable widget
+    },
+    
     // Built-in widgets
     'sample-chart': {
         ...DEFAULT_WIDGET_CONFIG,
@@ -273,7 +285,8 @@ export const WIDGET_REGISTRY_CONFIG = {
         'unassigned-ticket-queue-widget',
         'team-ticket-queue-widget',
         'all-ticket-queue-widget',
-        'ticket-queue-dashboard-widget'
+        'ticket-queue-dashboard-widget',
+        'configurable-ticket-queue-widget'
     ],
     
     // Built-in external widgets (loaded from backend)
