@@ -1,26 +1,30 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 
 const TicketQueueConfigModal = ({ 
     isOpen, 
     onClose, 
     onSave, 
-    initialConfig = {} 
+    initialConfig
 }) => {
-    const [config, setConfig] = useState({
-        queueType: 'my',
-        title: '',
-        ...initialConfig
-    });
+    // Stabilize the initialConfig to prevent unnecessary re-renders
+    const stableInitialConfig = useMemo(() => {
+        return initialConfig || { queueType: 'my', title: '' };
+    }, [initialConfig?.queueType, initialConfig?.title]);
+
+    const [config, setConfig] = useState(() => ({
+        queueType: stableInitialConfig.queueType || 'my',
+        title: stableInitialConfig.title || ''
+    }));
 
     useEffect(() => {
         if (isOpen) {
+            // Reset to initial config when modal opens
             setConfig({
-                queueType: 'my',
-                title: '',
-                ...initialConfig
+                queueType: stableInitialConfig.queueType || 'my',
+                title: stableInitialConfig.title || ''
             });
         }
-    }, [isOpen, initialConfig]);
+    }, [isOpen, stableInitialConfig]);
 
     const queueOptions = [
         { value: 'my', label: 'My Tickets', description: 'Tickets assigned to me' },
