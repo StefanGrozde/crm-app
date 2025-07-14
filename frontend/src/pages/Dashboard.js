@@ -1,5 +1,5 @@
 // frontend/src/pages/Dashboard.js
-import React, { useState, useEffect, useContext, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useContext, useRef, useCallback, useMemo } from 'react';
 import axios from 'axios';
 import { arrayMove } from '@dnd-kit/sortable';
 import { useLocation } from 'react-router-dom';
@@ -782,8 +782,8 @@ const Dashboard = () => {
     // Unified Profile Opening System
     // This replaces all the individual onOpen functions with a single, configurable system
 
-    // Unified function to open any profile type
-    const handleOpenProfile = async (profileType, profileId, profileName = null) => {
+    // Unified function to open any profile type (memoized to prevent re-renders)
+    const handleOpenProfile = useCallback(async (profileType, profileId, profileName = null) => {
         console.log(`Opening ${profileType} profile as tab:`, profileId, profileName);
         
         const config = PROFILE_CONFIGS[profileType];
@@ -849,17 +849,17 @@ const Dashboard = () => {
         
         // Small delay to ensure state updates are processed
         setTimeout(() => setIsTabSwitching(false), 50);
-    };
+    }, [openTabs, setOpenTabs, setTabLayouts, setActiveTabId, setCurrentViewId, setLayout, setIsTabSwitching, API_URL, refreshCurrentView, refreshViewsList, user]);
 
-    // Individual profile handlers - now using the unified system
-    const handleOpenContactProfile = createProfileHandler('contact', handleOpenProfile);
-    const handleOpenLeadProfile = createProfileHandler('lead', handleOpenProfile);
-    const handleOpenOpportunityProfile = createProfileHandler('opportunity', handleOpenProfile);
-    const handleOpenBusinessProfile = createProfileHandler('business', handleOpenProfile);
-    const handleOpenUserProfile = createProfileHandler('user', handleOpenProfile);
-    const handleOpenSalesProfile = createProfileHandler('sales', handleOpenProfile);
-    const handleOpenTaskProfile = createProfileHandler('task', handleOpenProfile);
-    const handleOpenTicketProfile = createProfileHandler('ticket', handleOpenProfile);
+    // Individual profile handlers - now using the unified system (memoized to prevent re-renders)
+    const handleOpenContactProfile = useMemo(() => createProfileHandler('contact', handleOpenProfile), [handleOpenProfile]);
+    const handleOpenLeadProfile = useMemo(() => createProfileHandler('lead', handleOpenProfile), [handleOpenProfile]);
+    const handleOpenOpportunityProfile = useMemo(() => createProfileHandler('opportunity', handleOpenProfile), [handleOpenProfile]);
+    const handleOpenBusinessProfile = useMemo(() => createProfileHandler('business', handleOpenProfile), [handleOpenProfile]);
+    const handleOpenUserProfile = useMemo(() => createProfileHandler('user', handleOpenProfile), [handleOpenProfile]);
+    const handleOpenSalesProfile = useMemo(() => createProfileHandler('sales', handleOpenProfile), [handleOpenProfile]);
+    const handleOpenTaskProfile = useMemo(() => createProfileHandler('task', handleOpenProfile), [handleOpenProfile]);
+    const handleOpenTicketProfile = useMemo(() => createProfileHandler('ticket', handleOpenProfile), [handleOpenProfile]);
 
     // Generic function to open any page as a new tab
     const handleOpenPageTab = (pageType, pageName, widgetKey) => {
