@@ -258,15 +258,7 @@ AuditLog.getEntityHistory = async function(entityType, entityId, options = {}) {
         where: whereClause,
         order: [['createdAt', 'DESC']],
         limit,
-        offset,
-        include: [
-            {
-                model: sequelize.models.User,
-                as: 'user',
-                attributes: ['id', 'username', 'email', 'role'],
-                required: false
-            }
-        ]
+        offset
     });
 };
 
@@ -306,15 +298,7 @@ AuditLog.getRecentActivity = async function(companyId, options = {}) {
     return await this.findAll({
         where: whereClause,
         order: [['createdAt', 'DESC']],
-        limit,
-        include: [
-            {
-                model: sequelize.models.User,
-                as: 'user',
-                attributes: ['id', 'username', 'email'],
-                required: false
-            }
-        ]
+        limit
     });
 };
 

@@ -173,6 +173,8 @@ router.get('/entity/:type/:id', protect, async (req, res) => {
         const { type, id } = req.params;
         const { limit = 50, offset = 0 } = req.query;
         
+        console.log('Audit API called for:', { type, id, user: req.user.username, role: req.user.role });
+        
         const result = await AuditService.getEntityHistory(
             type, 
             parseInt(id), 
@@ -183,6 +185,8 @@ router.get('/entity/:type/:id', protect, async (req, res) => {
                 offset: parseInt(offset)
             }
         );
+        
+        console.log('Audit result:', { count: result.count, rows: result.rows?.length });
         
         res.json({
             success: true,

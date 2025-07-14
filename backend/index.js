@@ -141,6 +141,8 @@ const startServer = async () => {
     const Ticket = require('./models/Ticket');
     const TicketComment = require('./models/TicketComment');
     const Notification = require('./models/Notification');
+    const AuditLog = require('./models/AuditLog');
+    const UserSession = require('./models/UserSession');
     
     // Define associations
     // Company associations
@@ -299,6 +301,18 @@ const startServer = async () => {
     
     // User associations for Notifications
     User.hasMany(Notification, { foreignKey: 'userId', as: 'notifications' });
+    
+    // AuditLog associations
+    AuditLog.belongsTo(User, { foreignKey: 'userId', as: 'user' });
+    User.hasMany(AuditLog, { foreignKey: 'userId', as: 'auditLogs' });
+    AuditLog.belongsTo(Company, { foreignKey: 'companyId', as: 'company' });
+    Company.hasMany(AuditLog, { foreignKey: 'companyId', as: 'auditLogs' });
+    
+    // UserSession associations
+    UserSession.belongsTo(User, { foreignKey: 'userId', as: 'user' });
+    User.hasMany(UserSession, { foreignKey: 'userId', as: 'sessions' });
+    UserSession.belongsTo(Company, { foreignKey: 'companyId', as: 'company' });
+    Company.hasMany(UserSession, { foreignKey: 'companyId', as: 'sessions' });
     
     // Sync all models
     // Use { force: true } only in development to drop and re-create tables
