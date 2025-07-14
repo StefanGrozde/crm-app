@@ -66,6 +66,7 @@ const TasksWidget = ({ onOpenTaskProfile }) => {
     // Modal states
     const [showAddModal, setShowAddModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
+    const [showFilterModal, setShowFilterModal] = useState(false);
     const [editingTask, setEditingTask] = useState(null);
     
     // Tags handling
