@@ -1,4 +1,4 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useMemo } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { useAuditHistory } from '../hooks/useAuditHistory';
 
@@ -6,7 +6,7 @@ import { useAuditHistory } from '../hooks/useAuditHistory';
  * TimelineWithComments Component - Based on the analyzed UI design
  * Specialized timeline component for Tasks and Tickets with two-panel layout
  */
-const TimelineWithComments = ({ 
+const TimelineWithComments = React.memo(({ 
   entityType, // 'task' or 'ticket'
   entityId,
   entityData, // The actual task/ticket data for the left panel
@@ -20,6 +20,12 @@ const TimelineWithComments = ({
   const [newComment, setNewComment] = useState('');
   const [isAddingComment, setIsAddingComment] = useState(false);
 
+  // Memoize hook options to prevent unnecessary re-renders
+  const hookOptions = useMemo(() => ({
+    limit: 100,
+    autoFetch: true
+  }), []);
+
   // Use the audit history hook
   const {
     auditLogs,
@@ -27,10 +33,7 @@ const TimelineWithComments = ({
     error,
     hasAccess,
     refresh
-  } = useAuditHistory(entityType, entityId, {
-    limit: 100,
-    autoFetch: true
-  });
+  } = useAuditHistory(entityType, entityId, hookOptions);
 
   // Generate user avatar with colored background
   const generateUserAvatar = (username) => {
@@ -386,6 +389,6 @@ const TimelineWithComments = ({
       </div>
     </div>
   );
-};
+});
 
 export default TimelineWithComments;
