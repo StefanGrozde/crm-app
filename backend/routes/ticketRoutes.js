@@ -11,6 +11,7 @@ const Opportunity = require('../models/Opportunity');
 const Sale = require('../models/Sale');
 const Task = require('../models/Task');
 const { Op } = require('sequelize');
+const NotificationService = require('../services/NotificationService');
 
 // GET /api/tickets - Get all tickets with pagination and filtering
 router.get('/', protect, async (req, res) => {
@@ -552,7 +553,21 @@ router.put('/:id/assign', protect, async (req, res) => {
             }
         }
 
+        const oldAssignedTo = ticket.assignedTo;
         await ticket.update({ assignedTo });
+
+        // Create assignment notification if assigned to someone new
+        if (assignedTo && oldAssignedTo !== assignedTo) {
+            try {
+                await NotificationService.createTicketAssignmentNotification(
+                    ticket,
+                    assignedTo,
+                    req.user
+                );
+            } catch (notificationError) {
+                console.error('Error creating ticket assignment notification:', notificationError);
+            }
+        }
 
         // Fetch updated ticket with associations
         const updatedTicket = await Ticket.findByPk(ticket.id, {
@@ -856,6 +871,10 @@ router.put('/:id', protect, async (req, res) => {
             tags
         } = req.body;
 
+        // Track status and assignment changes for notifications
+        const oldStatus = ticket.status;
+        const oldAssignedTo = ticket.assignedTo;
+
         // Update fields
         if (title !== undefined) ticket.title = title.trim();
         if (description !== undefined) ticket.description = description?.trim();
@@ -874,6 +893,29 @@ router.put('/:id', protect, async (req, res) => {
         if (tags !== undefined) ticket.tags = tags;
 
         await ticket.save();
+
+        // Create notifications for status and assignment changes
+        try {
+            // Status change notification
+            if (status !== undefined && oldStatus !== status && ticket.assignedTo) {
+                await NotificationService.createTicketStatusChangeNotification(
+                    ticket,
+                    status,
+                    req.user
+                );
+            }
+
+            // Assignment change notification
+            if (assignedTo !== undefined && oldAssignedTo !== assignedTo && assignedTo) {
+                await NotificationService.createTicketAssignmentNotification(
+                    ticket,
+                    assignedTo,
+                    req.user
+                );
+            }
+        } catch (notificationError) {
+            console.error('Error creating ticket notifications:', notificationError);
+        }
 
         // Fetch updated ticket with associations
         const updatedTicket = await Ticket.findByPk(ticket.id, {
@@ -984,6 +1026,17 @@ router.post('/:id/comments', protect, async (req, res) => {
             comment: comment.trim(),
             isInternal
         });
+
+        // Create comment notification
+        try {
+            await NotificationService.createTicketCommentNotification(
+                ticket,
+                { content: comment.trim() },
+                req.user
+            );
+        } catch (notificationError) {
+            console.error('Error creating ticket comment notification:', notificationError);
+        }
 
         // Fetch the created comment with user information
         const createdComment = await TicketComment.findByPk(ticketComment.id, {

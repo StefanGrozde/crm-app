@@ -9,6 +9,7 @@ const Lead = require('../models/Lead');
 const Opportunity = require('../models/Opportunity');
 const Sale = require('../models/Sale');
 const { Op } = require('sequelize');
+const NotificationService = require('../services/NotificationService');
 
 /**
  * @route   GET /api/tasks
@@ -310,6 +311,19 @@ router.post('/', protect, async (req, res) => {
 
             await TaskAssignment.bulkCreate(assignments);
 
+            // Create assignment notifications for all company users
+            for (const user of allUsers) {
+                try {
+                    await NotificationService.createTaskAssignmentNotification(
+                        task, 
+                        user.id, 
+                        req.user
+                    );
+                } catch (notificationError) {
+                    console.error('Error creating assignment notification:', notificationError);
+                }
+            }
+
         } else if (assignmentType === 'individual' || assignmentType === 'multiple') {
             // Assign to specific users
             if (assignedUsers && assignedUsers.length > 0) {
@@ -319,6 +333,19 @@ router.post('/', protect, async (req, res) => {
                 }));
 
                 await TaskAssignment.bulkCreate(assignments);
+
+                // Create assignment notifications for specific users
+                for (const userId of assignedUsers) {
+                    try {
+                        await NotificationService.createTaskAssignmentNotification(
+                            task, 
+                            parseInt(userId), 
+                            req.user
+                        );
+                    } catch (notificationError) {
+                        console.error('Error creating assignment notification:', notificationError);
+                    }
+                }
             }
         }
 
@@ -403,6 +430,11 @@ router.put('/:id', protect, async (req, res) => {
             return isNaN(parsed.getTime()) ? null : parsed;
         };
 
+        // Track status change for notifications
+        const oldStatus = task.status;
+        const newStatus = status || task.status;
+        const statusChanged = oldStatus !== newStatus;
+
         // Update task fields
         await task.update({
             title: title || task.title,
@@ -476,6 +508,25 @@ router.put('/:id', protect, async (req, res) => {
                 }
             ]
         });
+
+        // Create status change notifications if status changed
+        if (statusChanged) {
+            try {
+                // Get assigned user IDs
+                const assignedUserIds = updatedTask.assignments.map(assignment => assignment.userId);
+                
+                if (assignedUserIds.length > 0) {
+                    await NotificationService.createTaskStatusChangeNotification(
+                        updatedTask,
+                        newStatus,
+                        req.user,
+                        assignedUserIds
+                    );
+                }
+            } catch (notificationError) {
+                console.error('Error creating status change notification:', notificationError);
+            }
+        }
 
         res.json(updatedTask);
 

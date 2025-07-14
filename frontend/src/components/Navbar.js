@@ -4,6 +4,9 @@ import axios from 'axios';
 import { AuthContext } from '../context/AuthContext';
 import SearchBar from './SearchBar';
 import EditUserPopup from './EditUserPopup';
+import NotificationBell from './NotificationBell';
+import NotificationDropdown from './NotificationDropdown';
+import useNotifications from '../hooks/useNotifications';
 import { getColorClass } from '../utils/tabColors';
 
 const API_URL = process.env.REACT_APP_API_URL;
@@ -33,7 +36,18 @@ const Navbar = ({
     const [pagesMenuOpen, setPagesMenuOpen] = useState(false);
     const [viewsMenuOpen, setViewsMenuOpen] = useState(false);
     const [isEditPopupOpen, setEditPopupOpen] = useState(false);
+    const [notificationDropdownOpen, setNotificationDropdownOpen] = useState(false);
     const menuRef = useRef(null);
+
+    // Notifications
+    const {
+        notifications,
+        unreadCount,
+        loading: notificationsLoading,
+        markAsRead,
+        markAllAsRead,
+        deleteNotification,
+    } = useNotifications();
 
     // Fetch company details
     useEffect(() => {
@@ -112,6 +126,36 @@ const Navbar = ({
     const handleOpenTicketQueuesTab = () => onOpenPageTab('ticket-queues', 'Ticket Queues', 'ticket-queue-dashboard-widget');
     const handleOpenBusinessTab = () => onOpenPageTab('business', 'Business', 'business-widget');
     const handleOpenUsersTab = () => onOpenPageTab('users', 'Users', 'users-widget');
+
+    // Notification handlers
+    const handleNotificationClick = () => {
+        setNotificationDropdownOpen(!notificationDropdownOpen);
+    };
+
+    const handleNotificationItemClick = (notification) => {
+        // Open the relevant profile based on notification entity
+        if (notification.entityType === 'task') {
+            // Open task profile
+            if (onOpenPageTab) {
+                onOpenPageTab('tasks', 'Tasks', 'tasks-widget');
+            }
+        } else if (notification.entityType === 'ticket') {
+            // Open ticket profile
+            if (onOpenPageTab) {
+                onOpenPageTab('tickets', 'Tickets', 'tickets-widget');
+            }
+        }
+        
+        setNotificationDropdownOpen(false);
+    };
+
+    const handleMarkAllAsRead = () => {
+        markAllAsRead();
+    };
+
+    const handleDeleteNotification = (notificationId) => {
+        deleteNotification(notificationId);
+    };
 
     return (
         <>
@@ -352,6 +396,24 @@ const Navbar = ({
                             >
                                 {isEditMode ? 'In Edit Mode' : 'Edit Layout'}
                             </button>
+
+                            {/* Notifications */}
+                            <div className="relative">
+                                <NotificationBell
+                                    onClick={handleNotificationClick}
+                                    unreadCount={unreadCount}
+                                />
+                                <NotificationDropdown
+                                    notifications={notifications}
+                                    isOpen={notificationDropdownOpen}
+                                    onClose={() => setNotificationDropdownOpen(false)}
+                                    onMarkAsRead={markAsRead}
+                                    onMarkAllAsRead={handleMarkAllAsRead}
+                                    onDeleteNotification={handleDeleteNotification}
+                                    onNotificationClick={handleNotificationItemClick}
+                                    loading={notificationsLoading}
+                                />
+                            </div>
 
                             {/* User menu */}
                             <div className="relative" ref={menuRef}>
