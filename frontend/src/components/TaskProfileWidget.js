@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext, useCallback, memo } from 'react';
+import React, { useState, useEffect, useContext, useCallback, memo, useMemo } from 'react';
 import axios from 'axios';
 import { AuthContext } from '../context/AuthContext';
 import { createPortal } from 'react-dom';
@@ -322,6 +322,20 @@ const TaskProfileWidget = ({ taskId }) => {
         return Math.round((completedAssignments / task.assignments.length) * 100);
     };
 
+    // Memoized task data for timeline to prevent unnecessary re-renders
+    const memoizedTaskData = useMemo(() => {
+        if (!task) return null;
+        return {
+            id: task.id,
+            title: task.title,
+            status: task.status,
+            priority: task.priority,
+            dueDate: task.dueDate,
+            created_at: task.created_at,
+            updated_at: task.updated_at
+        };
+    }, [task?.id, task?.title, task?.status, task?.priority, task?.dueDate, task?.created_at, task?.updated_at]);
+
     // Rendering: Loading state
     if (loading) {
         return (
@@ -617,12 +631,12 @@ const TaskProfileWidget = ({ taskId }) => {
             </div>
 
             {/* Timeline with Comments - Enhanced Task View */}
-            {task && (
+            {memoizedTaskData && (
                 <div className="mt-6">
                     <TimelineWithComments
                         entityType="task"
-                        entityId={task.id}
-                        entityData={task}
+                        entityId={memoizedTaskData.id}
+                        entityData={memoizedTaskData}
                         userRole={user?.role}
                         showAddComment={true}
                         showFilters={false}

@@ -103,14 +103,14 @@ export const useAuditHistory = (entityType, entityId, options = {}) => {
     } finally {
       setLoading(false);
     }
-  }, [entityType, entityId, user, hasAccess, limit, filters]);
+  }, [entityType, entityId, user, hasAccess, limit]);
 
   /**
    * Refresh audit logs
    */
   const refresh = useCallback(() => {
-    fetchAuditLogs(pagination.currentPage);
-  }, [fetchAuditLogs, pagination.currentPage]);
+    fetchAuditLogs(1); // Always refresh from page 1
+  }, [fetchAuditLogs]);
 
   /**
    * Load next page
@@ -153,15 +153,19 @@ export const useAuditHistory = (entityType, entityId, options = {}) => {
     fetchAuditLogs(1, {});
   }, [fetchAuditLogs]);
 
-  // Auto-fetch on mount and when dependencies change
+  // Auto-fetch on mount and when key dependencies change
   useEffect(() => {
-    if (autoFetch && hasAccess) {
+    if (autoFetch && hasAccess && entityType && entityId && user) {
       fetchAuditLogs();
     }
-  }, [fetchAuditLogs, autoFetch, hasAccess]);
+  }, [entityType, entityId, autoFetch, hasAccess, user?.id]);
 
-  // Real-time updates via polling (basic implementation)
+  // Real-time updates via polling (disabled to prevent excessive requests)
   useEffect(() => {
+    // Temporarily disabled to prevent excessive API calls
+    // TODO: Re-implement with proper debouncing and optimization
+    return;
+    
     if (!realTimeUpdates || !hasAccess) return;
 
     const interval = setInterval(() => {
@@ -169,7 +173,7 @@ export const useAuditHistory = (entityType, entityId, options = {}) => {
     }, 30000); // Poll every 30 seconds
 
     return () => clearInterval(interval);
-  }, [realTimeUpdates, hasAccess, fetchAuditLogs, pagination.currentPage]);
+  }, [realTimeUpdates, hasAccess]);
 
   return {
     // Data
