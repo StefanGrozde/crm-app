@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const AuditService = require('../services/AuditService');
-const authMiddleware = require('../middleware/authMiddleware');
+const { protect } = require('../middleware/protect');
 
 // Middleware to require admin role for sensitive routes
 const requireAdmin = (req, res, next) => {
@@ -20,7 +20,7 @@ const requireAdmin = (req, res, next) => {
  * GET /api/audit-logs
  * List audit logs (filtered by user role)
  */
-router.get('/', authMiddleware, async (req, res) => {
+router.get('/', protect, async (req, res) => {
     try {
         const { 
             limit = 50, 
@@ -103,7 +103,7 @@ router.get('/', authMiddleware, async (req, res) => {
  * GET /api/audit-logs/:id
  * Get specific audit log (if user has access)
  */
-router.get('/:id', authMiddleware, async (req, res) => {
+router.get('/:id', protect, async (req, res) => {
     try {
         const { id } = req.params;
         const userRole = req.user.role;
@@ -168,7 +168,7 @@ router.get('/:id', authMiddleware, async (req, res) => {
  * GET /api/audit-logs/entity/:type/:id
  * Get entity change history (filtered by role)
  */
-router.get('/entity/:type/:id', authMiddleware, async (req, res) => {
+router.get('/entity/:type/:id', protect, async (req, res) => {
     try {
         const { type, id } = req.params;
         const { limit = 50, offset = 0 } = req.query;
@@ -209,7 +209,7 @@ router.get('/entity/:type/:id', authMiddleware, async (req, res) => {
  * GET /api/audit-logs/recent
  * Get recent activity for dashboard
  */
-router.get('/recent', authMiddleware, async (req, res) => {
+router.get('/recent', protect, async (req, res) => {
     try {
         const { limit = 20 } = req.query;
         
@@ -238,7 +238,7 @@ router.get('/recent', authMiddleware, async (req, res) => {
  * GET /api/audit-logs/stats
  * Get audit statistics
  */
-router.get('/stats', authMiddleware, async (req, res) => {
+router.get('/stats', protect, async (req, res) => {
     try {
         const stats = await AuditService.getAuditStats(req.user.companyId, req.user.role);
         
@@ -263,7 +263,7 @@ router.get('/stats', authMiddleware, async (req, res) => {
  * GET /api/audit-logs/sessions/my
  * Get my active sessions
  */
-router.get('/sessions/my', authMiddleware, async (req, res) => {
+router.get('/sessions/my', protect, async (req, res) => {
     try {
         const sessions = await AuditService.getActiveSessions(req.user.id, req.user);
         
@@ -286,7 +286,7 @@ router.get('/sessions/my', authMiddleware, async (req, res) => {
  * GET /api/audit-logs/sessions/history
  * Get my session history
  */
-router.get('/sessions/history', authMiddleware, async (req, res) => {
+router.get('/sessions/history', protect, async (req, res) => {
     try {
         const { limit = 50, offset = 0 } = req.query;
         
@@ -326,7 +326,7 @@ router.get('/sessions/history', authMiddleware, async (req, res) => {
  * POST /api/audit-logs/sessions/:token/terminate
  * Terminate specific session
  */
-router.post('/sessions/:token/terminate', authMiddleware, async (req, res) => {
+router.post('/sessions/:token/terminate', protect, async (req, res) => {
     try {
         const { token } = req.params;
         
@@ -352,7 +352,7 @@ router.post('/sessions/:token/terminate', authMiddleware, async (req, res) => {
  * GET /api/audit-logs/admin/users/:id/activity
  * Get user activity report (ADMIN ONLY)
  */
-router.get('/admin/users/:id/activity', authMiddleware, requireAdmin, async (req, res) => {
+router.get('/admin/users/:id/activity', protect, requireAdmin, async (req, res) => {
     try {
         const { id } = req.params;
         const { limit = 50, offset = 0 } = req.query;
@@ -392,7 +392,7 @@ router.get('/admin/users/:id/activity', authMiddleware, requireAdmin, async (req
  * GET /api/audit-logs/admin/company/trail
  * Get company audit trail (ADMIN ONLY)
  */
-router.get('/admin/company/trail', authMiddleware, requireAdmin, async (req, res) => {
+router.get('/admin/company/trail', protect, requireAdmin, async (req, res) => {
     try {
         const { limit = 50, offset = 0 } = req.query;
         
@@ -431,7 +431,7 @@ router.get('/admin/company/trail', authMiddleware, requireAdmin, async (req, res
  * GET /api/audit-logs/admin/sessions/user/:id
  * Get user's sessions (ADMIN ONLY)
  */
-router.get('/admin/sessions/user/:id', authMiddleware, requireAdmin, async (req, res) => {
+router.get('/admin/sessions/user/:id', protect, requireAdmin, async (req, res) => {
     try {
         const { id } = req.params;
         const { limit = 50, offset = 0 } = req.query;
@@ -470,7 +470,7 @@ router.get('/admin/sessions/user/:id', authMiddleware, requireAdmin, async (req,
  * GET /api/audit-logs/admin/sessions/active
  * Get all active sessions (ADMIN ONLY)
  */
-router.get('/admin/sessions/active', authMiddleware, requireAdmin, async (req, res) => {
+router.get('/admin/sessions/active', protect, requireAdmin, async (req, res) => {
     try {
         const UserSession = require('../models/UserSession');
         
@@ -495,7 +495,7 @@ router.get('/admin/sessions/active', authMiddleware, requireAdmin, async (req, r
  * POST /api/audit-logs/admin/sessions/:token/force-logout
  * Force logout user (ADMIN ONLY)
  */
-router.post('/admin/sessions/:token/force-logout', authMiddleware, requireAdmin, async (req, res) => {
+router.post('/admin/sessions/:token/force-logout', protect, requireAdmin, async (req, res) => {
     try {
         const { token } = req.params;
         const UserSession = require('../models/UserSession');
@@ -520,7 +520,7 @@ router.post('/admin/sessions/:token/force-logout', authMiddleware, requireAdmin,
  * POST /api/audit-logs/admin/cleanup-sessions
  * Cleanup expired sessions (ADMIN ONLY)
  */
-router.post('/admin/cleanup-sessions', authMiddleware, requireAdmin, async (req, res) => {
+router.post('/admin/cleanup-sessions', protect, requireAdmin, async (req, res) => {
     try {
         const { maxInactiveMinutes = 60 } = req.body;
         
@@ -546,7 +546,7 @@ router.post('/admin/cleanup-sessions', authMiddleware, requireAdmin, async (req,
  * GET /api/audit-logs/admin/integrity/:id
  * Verify audit log integrity (ADMIN ONLY)
  */
-router.get('/admin/integrity/:id', authMiddleware, requireAdmin, async (req, res) => {
+router.get('/admin/integrity/:id', protect, requireAdmin, async (req, res) => {
     try {
         const { id } = req.params;
         
