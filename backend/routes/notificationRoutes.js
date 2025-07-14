@@ -167,6 +167,54 @@ router.delete('/:id', protect, async (req, res) => {
 });
 
 /**
+ * @route   GET /api/notifications/test
+ * @desc    Test endpoint to check notifications functionality
+ * @access  Private
+ */
+router.get('/test', protect, async (req, res) => {
+    try {
+        const Notification = require('../models/Notification');
+        
+        // Get total count of notifications for this user
+        const totalCount = await Notification.count({
+            where: {
+                userId: req.user.id,
+                companyId: req.user.companyId
+            }
+        });
+
+        // Get recent notifications
+        const recentNotifications = await Notification.findAll({
+            where: {
+                userId: req.user.id,
+                companyId: req.user.companyId
+            },
+            order: [['createdAt', 'DESC']],
+            limit: 5
+        });
+
+        res.json({
+            success: true,
+            data: {
+                totalCount,
+                recentNotifications,
+                user: {
+                    id: req.user.id,
+                    companyId: req.user.companyId
+                }
+            }
+        });
+    } catch (error) {
+        console.error('Error in notifications test:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error testing notifications',
+            error: error.message
+        });
+    }
+});
+
+/**
  * @route   POST /api/notifications/cleanup
  * @desc    Clean up old read notifications (admin only)
  * @access  Private (Admin)
