@@ -342,8 +342,13 @@ const DynamicWidget = memo(({ widgetKey, widgetPath, type, resultData, widgetDat
                 if (memoizedWidgetKey === 'tasks-widget') {
                     return <RegisteredWidget onOpenTaskProfile={onOpenTaskProfile} />;
                 }
-                // Pass ticket profile handler to TicketsWidget
-                if (memoizedWidgetKey === 'tickets-widget') {
+                // Pass ticket profile handler to TicketsWidget and all ticket queue widgets
+                if (memoizedWidgetKey === 'tickets-widget' || 
+                    memoizedWidgetKey === 'my-ticket-queue-widget' ||
+                    memoizedWidgetKey === 'unassigned-ticket-queue-widget' ||
+                    memoizedWidgetKey === 'team-ticket-queue-widget' ||
+                    memoizedWidgetKey === 'all-ticket-queue-widget' ||
+                    memoizedWidgetKey === 'ticket-queue-dashboard-widget') {
                     return <RegisteredWidget onOpenTicketProfile={onOpenTicketProfile} />;
                 }
                 // Pass widgetData to ContactProfileWidget
