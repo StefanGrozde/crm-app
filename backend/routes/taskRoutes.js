@@ -389,6 +389,13 @@ router.post('/', protect, async (req, res) => {
  */
 router.put('/:id', protect, async (req, res) => {
     try {
+        console.log('Task update request:', {
+            taskId: req.params.id,
+            user: req.user.username,
+            companyId: req.user.companyId,
+            body: req.body
+        });
+
         const task = await Task.findOne({
             where: {
                 id: req.params.id,
@@ -397,6 +404,7 @@ router.put('/:id', protect, async (req, res) => {
         });
 
         if (!task) {
+            console.log('Task not found:', req.params.id);
             return res.status(404).json({ message: 'Task not found' });
         }
 
@@ -457,7 +465,9 @@ router.put('/:id', protect, async (req, res) => {
         });
 
         // Handle assignment updates if provided
-        if (assignmentType && assignedUsers) {
+        if (assignmentType && assignedUsers !== undefined) {
+            console.log('Updating assignments:', { assignmentType, assignedUsers });
+            
             // Remove existing assignments
             await TaskAssignment.destroy({
                 where: { taskId: task.id }
@@ -475,9 +485,11 @@ router.put('/:id', protect, async (req, res) => {
                     userId: user.id
                 }));
 
-                await TaskAssignment.bulkCreate(assignments);
+                if (assignments.length > 0) {
+                    await TaskAssignment.bulkCreate(assignments);
+                }
 
-            } else if (assignedUsers.length > 0) {
+            } else if (assignedUsers && assignedUsers.length > 0) {
                 const assignments = assignedUsers.map(userId => ({
                     taskId: task.id,
                     userId: parseInt(userId)
@@ -487,29 +499,14 @@ router.put('/:id', protect, async (req, res) => {
             }
         }
 
-        // Fetch updated task with associations
-        const updatedTask = await Task.findByPk(task.id, {
-            include: [
-                {
-                    model: User,
-                    as: 'creator',
-                    attributes: ['id', 'username', 'email']
-                },
-                {
-                    model: TaskAssignment,
-                    as: 'assignments',
-                    include: [
-                        {
-                            model: User,
-                            as: 'user',
-                            attributes: ['id', 'username', 'email']
-                        }
-                    ]
-                }
-            ]
-        });
+        // Fetch updated task (simplified without associations for now)
+        const updatedTask = await Task.findByPk(task.id);
+        
+        console.log('Task updated successfully:', updatedTask.toJSON());
 
         // Create status change notifications if status changed
+        // Temporarily disabled for debugging
+        /*
         if (statusChanged) {
             try {
                 // Get assigned user IDs
@@ -527,11 +524,19 @@ router.put('/:id', protect, async (req, res) => {
                 console.error('Error creating status change notification:', notificationError);
             }
         }
+        */
 
         res.json(updatedTask);
 
     } catch (error) {
         console.error('Error updating task:', error);
+        console.error('Error stack:', error.stack);
+        console.error('Error details:', {
+            name: error.name,
+            message: error.message,
+            sql: error.sql
+        });
+        
         if (error.name === 'SequelizeValidationError') {
             return res.status(400).json({ 
                 message: 'Validation error', 
