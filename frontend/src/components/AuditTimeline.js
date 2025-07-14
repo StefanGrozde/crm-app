@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 
 const AuditTimeline = ({ 
   entityType, 
@@ -20,19 +20,7 @@ const AuditTimeline = ({
 
   const HIGH_SECURITY_ENTITIES = ['user', 'company', 'system', 'security'];
 
-  useEffect(() => {
-    // Check if user has access to view audit logs for this entity type
-    if (HIGH_SECURITY_ENTITIES.includes(entityType) && userRole !== 'Administrator') {
-      setHasAccess(false);
-      setLoading(false);
-      return;
-    }
-    
-    setHasAccess(true);
-    fetchAuditLogs();
-  }, [entityType, entityId, userRole, filters]);
-
-  const fetchAuditLogs = async () => {
+  const fetchAuditLogs = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -72,7 +60,20 @@ const AuditTimeline = ({
     } finally {
       setLoading(false);
     }
-  };
+  }, [entityType, entityId, filters]);
+
+  useEffect(() => {
+    // Check if user has access to view audit logs for this entity type
+    if (HIGH_SECURITY_ENTITIES.includes(entityType) && userRole !== 'Administrator') {
+      setHasAccess(false);
+      setLoading(false);
+      return;
+    }
+    
+    setHasAccess(true);
+    fetchAuditLogs();
+  }, [entityType, entityId, userRole, filters, fetchAuditLogs, HIGH_SECURITY_ENTITIES]);
+
 
   // Get icon based on operation type
   const getOperationIcon = (operation) => {
@@ -142,8 +143,6 @@ const AuditTimeline = ({
 
   // Format change description based on the analyzed design
   const formatChangeDescription = (log) => {
-    const userName = log.user?.username || 'System';
-    
     if (log.operation === 'CREATE') {
       return `created ${log.entityType}`;
     } else if (log.operation === 'DELETE') {
@@ -157,7 +156,6 @@ const AuditTimeline = ({
       return 'accessed application';
     } else if (log.operation === 'UPDATE' && log.fieldName) {
       const field = log.fieldName;
-      const oldVal = log.oldValue !== null ? String(log.oldValue) : 'empty';
       const newVal = log.newValue !== null ? String(log.newValue) : 'empty';
       
       // Special formatting for different field types based on the design

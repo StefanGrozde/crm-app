@@ -43,7 +43,7 @@ export const useAuditHistory = (entityType, entityId, options = {}) => {
     } else {
       setHasAccess(true);
     }
-  }, [entityType, user]);
+  }, [entityType, user, HIGH_SECURITY_ENTITIES]);
 
   /**
    * Fetch audit logs from API

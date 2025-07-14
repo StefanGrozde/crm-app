@@ -23,7 +23,7 @@ const UnifiedContactsWidget = ({ onOpenContactProfile }) => {
                 </div>
             </div>
         </div>
-    ), [onOpenContactProfile]);
+    ), []);
 
     // Memoize the config to prevent unnecessary re-renders
     const memoizedConfig = useMemo(() => ({

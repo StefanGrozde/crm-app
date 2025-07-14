@@ -849,7 +849,7 @@ const Dashboard = () => {
         
         // Small delay to ensure state updates are processed
         setTimeout(() => setIsTabSwitching(false), 50);
-    }, [openTabs, setOpenTabs, setTabLayouts, setActiveTabId, setCurrentViewId, setLayout, setIsTabSwitching, API_URL, refreshCurrentView, refreshViewsList, user]);
+    }, [openTabs, setOpenTabs, setTabLayouts, setActiveTabId, setCurrentViewId, setLayout, setIsTabSwitching, API_URL, refreshCurrentView, refreshViewsList, user, switchToTab]);
 
     // Individual profile handlers - now using the unified system (memoized to prevent re-renders)
     const handleOpenContactProfile = useMemo(() => createProfileHandler('contact', handleOpenProfile), [handleOpenProfile]);

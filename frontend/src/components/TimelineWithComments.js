@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { useAuditHistory } from '../hooks/useAuditHistory';
 
@@ -112,6 +112,8 @@ const TimelineWithComments = ({
   const renderEntityInfoPanel = () => {
     if (!entityData) return null;
 
+    // Helper functions for future status/priority badge styling
+    // eslint-disable-next-line no-unused-vars
     const getStatusColor = (status) => {
       const colors = {
         'open': 'bg-green-100 text-green-800',
@@ -124,6 +126,7 @@ const TimelineWithComments = ({
       return colors[status] || 'bg-gray-100 text-gray-800';
     };
 
+    // eslint-disable-next-line no-unused-vars
     const getPriorityColor = (priority) => {
       const colors = {
         'low': 'bg-gray-100 text-gray-800',
