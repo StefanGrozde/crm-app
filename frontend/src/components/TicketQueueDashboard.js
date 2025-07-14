@@ -1,9 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import MyTicketQueueWidget from './MyTicketQueueWidget';
-import UnassignedTicketQueueWidget from './UnassignedTicketQueueWidget';
-import TeamTicketQueueWidget from './TeamTicketQueueWidget';
-import AllTicketQueueWidget from './AllTicketQueueWidget';
+import TicketQueueWidget from './TicketQueueWidget';
 
 const TicketQueueDashboard = ({ onOpenTicketProfile }) => {
     const { user } = useAuth();
@@ -39,29 +36,29 @@ const TicketQueueDashboard = ({ onOpenTicketProfile }) => {
             id: 'my',
             label: 'My Queue',
             count: queueStats.queues?.my || 0,
-            component: MyTicketQueueWidget
+            queueType: 'my'
         },
         {
             id: 'unassigned',
             label: 'Unassigned',
             count: queueStats.queues?.unassigned || 0,
-            component: UnassignedTicketQueueWidget
+            queueType: 'unassigned'
         },
         {
             id: 'team',
             label: 'Team',
             count: queueStats.queues?.team || 0,
-            component: TeamTicketQueueWidget
+            queueType: 'team'
         },
         {
             id: 'all',
             label: 'All Tickets',
             count: queueStats.queues?.total || 0,
-            component: AllTicketQueueWidget
+            queueType: 'all'
         }
     ];
 
-    const ActiveComponent = tabs.find(tab => tab.id === activeTab)?.component || MyTicketQueueWidget;
+    const activeTabData = tabs.find(tab => tab.id === activeTab);
 
     return (
         <div className="space-y-6">
@@ -162,7 +159,16 @@ const TicketQueueDashboard = ({ onOpenTicketProfile }) => {
 
                 {/* Active Queue Component */}
                 <div className="p-0">
-                    <ActiveComponent onOpenTicketProfile={onOpenTicketProfile} />
+                    {activeTabData && (
+                        <TicketQueueWidget 
+                            queueType={activeTabData.queueType}
+                            title={activeTabData.label}
+                            onOpenTicketProfile={onOpenTicketProfile}
+                            showStats={activeTabData.queueType === 'my'}
+                            showAssignmentActions={activeTabData.queueType === 'unassigned'}
+                            showBulkActions={true}
+                        />
+                    )}
                 </div>
             </div>
         </div>
