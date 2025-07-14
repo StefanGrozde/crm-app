@@ -2,6 +2,7 @@ import React, { useState, useEffect, useContext, useCallback, memo } from 'react
 import { createPortal } from 'react-dom';
 import axios from 'axios';
 import { AuthContext } from '../context/AuthContext';
+import FileManager from './FileManager';
 
 const API_URL = process.env.REACT_APP_API_URL;
 
@@ -761,6 +762,16 @@ const ContactProfileWidget = ({ contactId }) => {
                     <p className="text-gray-900 whitespace-pre-wrap leading-relaxed">{contact.notes}</p>
                 </div>
             )}
+
+            {/* File Attachments Card */}
+            <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8 hover:shadow-xl transition-shadow duration-300">
+                <FileManager 
+                    entityType="contact" 
+                    entityId={contactId}
+                    title="Contact Documents"
+                    className="max-h-96 overflow-y-auto"
+                />
+            </div>
 
             {/* Sales Card */}
             <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8 hover:shadow-xl transition-shadow duration-300">
