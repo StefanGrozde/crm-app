@@ -1,6 +1,6 @@
 // Entity configurations for the unified widget system
 
-export const entityConfigs = {
+const entityConfigs = {
     contacts: {
         title: 'Contacts',
         apiEndpoint: 'contacts',
