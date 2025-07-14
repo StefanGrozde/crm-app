@@ -130,11 +130,11 @@ const entityConfigs = {
                 ]
             },
             assignedTo: { type: 'select', source: 'users', displayField: 'username' },
-            source: { type: 'select', source: 'filterOptions.sources', displayField: 'value' },
-            department: { type: 'select', source: 'filterOptions.departments', displayField: 'value' },
-            city: { type: 'select', source: 'filterOptions.cities', displayField: 'value' },
-            state: { type: 'select', source: 'filterOptions.states', displayField: 'value' },
-            country: { type: 'select', source: 'filterOptions.countries', displayField: 'value' }
+            source: { type: 'select', displayField: 'value' },
+            department: { type: 'select', displayField: 'value' },
+            city: { type: 'select', displayField: 'value' },
+            state: { type: 'select', displayField: 'value' },
+            country: { type: 'select', displayField: 'value' }
         }
     },
 
