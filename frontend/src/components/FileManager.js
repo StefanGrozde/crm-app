@@ -15,10 +15,6 @@ const FileManager = ({
   const [editingFile, setEditingFile] = useState(null);
   const [editForm, setEditForm] = useState({ description: '', tags: [], isPublic: false });
 
-  useEffect(() => {
-    fetchFiles();
-  }, [entityType, entityId, fetchFiles]);
-
   const fetchFiles = useCallback(async () => {
     try {
       setLoading(true);
@@ -43,6 +39,10 @@ const FileManager = ({
       setLoading(false);
     }
   }, [entityType, entityId]);
+
+  useEffect(() => {
+    fetchFiles();
+  }, [fetchFiles]);
 
   const handleUploadComplete = (result) => {
     console.log('Upload completed:', result);

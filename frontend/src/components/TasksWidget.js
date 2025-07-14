@@ -66,7 +66,6 @@ const TasksWidget = ({ onOpenTaskProfile }) => {
     // Modal states
     const [showAddModal, setShowAddModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
-    const [showFilterModal, setShowFilterModal] = useState(false);
     const [editingTask, setEditingTask] = useState(null);
     
     // Tags handling
@@ -160,6 +159,18 @@ const TasksWidget = ({ onOpenTaskProfile }) => {
             window.removeEventListener('taskDeleted', handleTaskDelete);
         };
     }, [loadTasks, pagination.currentPage]);
+
+    // Reset form
+    const resetForm = useCallback(() => {
+        Object.values(formRefs.current).forEach(ref => {
+            if (ref.current) {
+                ref.current.value = '';
+            }
+        });
+        setSelectedUsers([]);
+        setTags([]);
+        setTagInput('');
+    }, []);
 
     // Handle task creation
     const handleCreateTask = useCallback(async (e) => {
@@ -260,18 +271,6 @@ const TasksWidget = ({ onOpenTaskProfile }) => {
             alert('Failed to delete task');
         }
     }, [loadTasks]);
-
-    // Reset form
-    const resetForm = useCallback(() => {
-        Object.values(formRefs.current).forEach(ref => {
-            if (ref.current) {
-                ref.current.value = '';
-            }
-        });
-        setSelectedUsers([]);
-        setTags([]);
-        setTagInput('');
-    }, []);
 
     // Handle tag input
     const handleTagInput = useCallback((e) => {
@@ -382,12 +381,6 @@ const TasksWidget = ({ onOpenTaskProfile }) => {
             <div className="flex justify-between items-center mb-4">
                 <h2 className="text-lg font-semibold text-gray-900">Tasks</h2>
                 <div className="flex space-x-2">
-                    <button
-                        onClick={() => setShowFilterModal(true)}
-                        className="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded hover:bg-gray-200"
-                    >
-                        Filter
-                    </button>
                     <button
                         onClick={() => setShowAddModal(true)}
                         className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
