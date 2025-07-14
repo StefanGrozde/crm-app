@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 
 const AuditTimeline = ({ 
   entityType, 
@@ -18,7 +18,7 @@ const AuditTimeline = ({
     user: 'all'
   });
 
-  const HIGH_SECURITY_ENTITIES = ['user', 'company', 'system', 'security'];
+  const HIGH_SECURITY_ENTITIES = useMemo(() => ['user', 'company', 'system', 'security'], []);
 
   const fetchAuditLogs = useCallback(async () => {
     try {

@@ -1,6 +1,5 @@
 const AuditLog = require('../models/AuditLog');
 const UserSession = require('../models/UserSession');
-const User = require('../models/User');
 const { Op } = require('sequelize');
 const crypto = require('crypto');
 

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useContext } from 'react';
+import { useState, useEffect, useCallback, useContext, useMemo } from 'react';
 import { AuthContext } from '../context/AuthContext';
 
 /**
@@ -28,7 +28,7 @@ export const useAuditHistory = (entityType, entityId, options = {}) => {
     realTimeUpdates = false
   } = options;
 
-  const HIGH_SECURITY_ENTITIES = ['user', 'company', 'system', 'security'];
+  const HIGH_SECURITY_ENTITIES = useMemo(() => ['user', 'company', 'system', 'security'], []);
 
   // Check access permissions
   useEffect(() => {
