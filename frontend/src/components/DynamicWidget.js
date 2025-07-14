@@ -1,5 +1,6 @@
-import React, { useState, useEffect, memo, useMemo } from 'react';
+import React, { useState, useEffect, memo, useMemo, useCallback } from 'react';
 import SearchResultWidget from './SearchResultWidget';
+import { WIDGET_PROFILE_MAPPING, getProfileProps } from '../utils/profileConfig';
 // Legacy widgets for backward compatibility
 import ContactsWidget from './ContactsWidget';
 import LeadsWidget from './LeadsWidget';
@@ -205,6 +206,24 @@ const ExternalWidgetLoader = memo(({ widgetKey, widgetPath, type, onLoad, onErro
 const DynamicWidget = memo(({ widgetKey, widgetPath, type, resultData, widgetData, onLoad, onError, widgetState, showLoadingSpinner, loadingSpinnerSize, onOpenContactProfile, onOpenLeadProfile, onOpenOpportunityProfile, onOpenBusinessProfile, onOpenUserProfile, onOpenSaleProfile, onOpenTaskProfile, onOpenTicketProfile, ...props }) => {
     // Memoize the widget key to prevent unnecessary re-renders
     const memoizedWidgetKey = useMemo(() => widgetKey, [widgetKey]);
+    
+    // Unified profile handler system
+    const profileHandlers = useMemo(() => ({
+        contact: onOpenContactProfile,
+        lead: onOpenLeadProfile,
+        opportunity: onOpenOpportunityProfile,
+        business: onOpenBusinessProfile,
+        user: onOpenUserProfile,
+        sales: onOpenSaleProfile,
+        task: onOpenTaskProfile,
+        ticket: onOpenTicketProfile
+    }), [onOpenContactProfile, onOpenLeadProfile, onOpenOpportunityProfile, onOpenBusinessProfile, onOpenUserProfile, onOpenSaleProfile, onOpenTaskProfile, onOpenTicketProfile]);
+
+    // Helper function to get profile props for a widget
+    const getProfilePropsForWidget = useCallback((widgetKey) => {
+        return getProfileProps(widgetKey, profileHandlers);
+    }, [profileHandlers]);
+
     // Show loading state only for external widgets
     if (
         (type === 'uploaded' || type === 'builtin') &&
@@ -250,17 +269,19 @@ const DynamicWidget = memo(({ widgetKey, widgetPath, type, resultData, widgetDat
         if (RegisteredWidget) {
             // Create a wrapper component that calls onLoad after render
             const WidgetWrapper = () => {
-                            useEffect(() => {
-                if (onLoad) {
-                    // Small delay to ensure the widget has rendered
-                    const timer = setTimeout(() => {
-                        onLoad();
-                    }, 10);
-                    return () => clearTimeout(timer);
-                }
-            }, []); // eslint-disable-line react-hooks/exhaustive-deps
+                useEffect(() => {
+                    if (onLoad) {
+                        // Small delay to ensure the widget has rendered
+                        const timer = setTimeout(() => {
+                            onLoad();
+                        }, 10);
+                        return () => clearTimeout(timer);
+                    }
+                }, []); // eslint-disable-line react-hooks/exhaustive-deps
                 
-                return <RegisteredWidget {...props} />;
+                // Get profile props for this widget
+                const profileProps = getProfilePropsForWidget(memoizedWidgetKey);
+                return <RegisteredWidget {...props} {...profileProps} />;
             };
             
             return <WidgetWrapper />;
@@ -304,77 +325,21 @@ const DynamicWidget = memo(({ widgetKey, widgetPath, type, resultData, widgetDat
                     }
                 }, []); // eslint-disable-line react-hooks/exhaustive-deps
                 
-                // Pass contact profile handler to ContactsWidget (unified or legacy)
-                if (memoizedWidgetKey === 'contacts-widget' || memoizedWidgetKey === 'legacy-contacts-widget') {
-                    return <RegisteredWidget onOpenContactProfile={onOpenContactProfile} />;
+                // Get profile props for this widget
+                const profileProps = getProfilePropsForWidget(memoizedWidgetKey);
+                
+                // Handle profile widgets with widgetData
+                if (baseWidgetKey.endsWith('-profile-widget') && widgetData) {
+                    const profileType = baseWidgetKey.replace('-profile-widget', '');
+                    const idField = profileType === 'sales' ? 'saleId' : `${profileType}Id`;
+                    const idValue = widgetData[idField];
+                    if (idValue) {
+                        return <RegisteredWidget {...{ [idField]: idValue }} />;
+                    }
                 }
-                // Pass lead profile handler to LeadsWidget (unified or legacy)
-                if (memoizedWidgetKey === 'leads-widget' || memoizedWidgetKey === 'legacy-leads-widget') {
-                    return <RegisteredWidget onOpenLeadProfile={onOpenLeadProfile} />;
-                }
-                // Pass opportunity profile handler to OpportunitiesWidget (unified or legacy)
-                if (memoizedWidgetKey === 'opportunities-widget' || memoizedWidgetKey === 'legacy-opportunities-widget') {
-                    return <RegisteredWidget onOpenOpportunityProfile={onOpenOpportunityProfile} />;
-                }
-                // Pass company profile handler to legacy CompaniesWidget
-                if (memoizedWidgetKey === 'legacy-companies-widget') {
-                    return <RegisteredWidget onOpenCompanyProfile={onOpenBusinessProfile} />;
-                }
-                // Pass business profile handler to BusinessWidget
-                if (memoizedWidgetKey === 'business-widget') {
-                    return <RegisteredWidget onOpenBusinessProfile={onOpenBusinessProfile} />;
-                }
-                // Pass user profile handler to UsersWidget (unified or legacy)
-                if (memoizedWidgetKey === 'users-widget' || memoizedWidgetKey === 'legacy-users-widget') {
-                    return <RegisteredWidget onOpenUserProfile={onOpenUserProfile} />;
-                }
-                // Pass sales profile handler to SalesWidget
-                if (memoizedWidgetKey === 'sales-widget') {
-                    return <RegisteredWidget onOpenSaleProfile={onOpenSaleProfile} />;
-                }
-                // Pass task profile handler to TasksWidget
-                if (memoizedWidgetKey === 'tasks-widget') {
-                    return <RegisteredWidget onOpenTaskProfile={onOpenTaskProfile} />;
-                }
-                // Pass ticket profile handler to TicketsWidget and ticket queue widgets
-                if (memoizedWidgetKey === 'tickets-widget' || 
-                    memoizedWidgetKey === 'ticket-queue-dashboard-widget' ||
-                    memoizedWidgetKey === 'configurable-ticket-queue-widget') {
-                    return <RegisteredWidget onOpenTicketProfile={onOpenTicketProfile} widgetData={widgetData} />;
-                }
-                // Pass widgetData to ContactProfileWidget
-                if (baseWidgetKey === 'contact-profile-widget' && widgetData) {
-                    return <RegisteredWidget contactId={widgetData.contactId} />;
-                }
-                // Pass widgetData to LeadProfileWidget
-                if (baseWidgetKey === 'lead-profile-widget' && widgetData) {
-                    return <RegisteredWidget leadId={widgetData.leadId} />;
-                }
-                // Pass widgetData to OpportunityProfileWidget
-                if (baseWidgetKey === 'opportunity-profile-widget' && widgetData) {
-                    return <RegisteredWidget opportunityId={widgetData.opportunityId} />;
-                }
-                // Pass widgetData to BusinessProfileWidget
-                if (baseWidgetKey === 'business-profile-widget' && widgetData) {
-                    return <RegisteredWidget businessId={widgetData.businessId} />;
-                }
-                // Pass widgetData to UserProfileWidget
-                if (baseWidgetKey === 'user-profile-widget' && widgetData) {
-                    return <RegisteredWidget userId={widgetData.userId} />;
-                }
-                // Pass widgetData to SalesProfileWidget
-                if (baseWidgetKey === 'sales-profile-widget' && widgetData) {
-                    return <RegisteredWidget saleId={widgetData.saleId} />;
-                }
-                // Pass widgetData to TaskProfileWidget
-                if (baseWidgetKey === 'task-profile-widget' && widgetData) {
-                    return <RegisteredWidget taskId={widgetData.taskId} />;
-                }
-                // Pass widgetData to TicketProfileWidget
-                if (baseWidgetKey === 'ticket-profile-widget' && widgetData) {
-                    return <RegisteredWidget ticketId={widgetData.ticketId} />;
-                }
-                return <RegisteredWidget {...props} />;
+                
+                // Return widget with profile props and widgetData
+                return <RegisteredWidget {...props} {...profileProps} widgetData={widgetData} />;
             };
             
             return <BuiltinReactWrapper />;

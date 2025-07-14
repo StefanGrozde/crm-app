@@ -11,6 +11,7 @@ import TabBar from '../components/TabBar';
 import DashboardGrid from '../components/DashboardGrid';
 import EmbeddedEditLayout from '../components/EmbeddedEditLayout';
 import { useTabSession } from '../hooks/useTabSession';
+import { PROFILE_CONFIGS, createProfileHandler } from '../utils/profileConfig';
 
 const API_URL = process.env.REACT_APP_API_URL;
 
@@ -778,9 +779,18 @@ const Dashboard = () => {
         setTimeout(() => setIsTabSwitching(false), 50);
     };
 
-    // Consolidated main function to handle opening any profile type as a tab
+    // Unified Profile Opening System
+    // This replaces all the individual onOpen functions with a single, configurable system
+
+    // Unified function to open any profile type
     const handleOpenProfile = async (profileType, profileId, profileName = null) => {
         console.log(`Opening ${profileType} profile as tab:`, profileId, profileName);
+        
+        const config = PROFILE_CONFIGS[profileType];
+        if (!config) {
+            console.error(`Unknown profile type: ${profileType}`);
+            return;
+        }
         
         // Create a unique ID for the profile tab
         const tabId = `${profileType}-profile-${profileId}`;
@@ -790,56 +800,6 @@ const Dashboard = () => {
         if (isTabOpen) {
             // If already open, just switch to it
             switchToTab(tabId);
-            return;
-        }
-        
-        // Profile type configurations
-        const profileConfigs = {
-            contact: {
-                endpoint: 'contacts',
-                nameFields: (data) => `${data.firstName} ${data.lastName}`,
-                defaultName: 'Contact Profile'
-            },
-            opportunity: {
-                endpoint: 'opportunities',
-                nameFields: (data) => data.name,
-                defaultName: 'Opportunity Profile'
-            },
-            lead: {
-                endpoint: 'leads',
-                nameFields: (data) => data.title,
-                defaultName: 'Lead Profile'
-            },
-            user: {
-                endpoint: 'users',
-                nameFields: (data) => data.username || data.email,
-                defaultName: 'User Profile'
-            },
-            business: {
-                endpoint: 'businesses',
-                nameFields: (data) => data.name,
-                defaultName: 'Business Profile'
-            },
-            sales: {
-                endpoint: 'sales',
-                nameFields: (data) => data.title,
-                defaultName: 'Sales Profile'
-            },
-            task: {
-                endpoint: 'tasks',
-                nameFields: (data) => data.title,
-                defaultName: 'Task Profile'
-            },
-            ticket: {
-                endpoint: 'tickets',
-                nameFields: (data) => data.subject || data.title,
-                defaultName: 'Ticket Profile'
-            }
-        };
-        
-        const config = profileConfigs[profileType];
-        if (!config) {
-            console.error(`Unknown profile type: ${profileType}`);
             return;
         }
         
@@ -861,14 +821,7 @@ const Dashboard = () => {
             id: tabId,
             name: displayName,
             isDefault: false,
-            color: profileType === 'contact' ? 'blue' :
-                   profileType === 'lead' ? 'green' :
-                   profileType === 'opportunity' ? 'purple' :
-                   profileType === 'business' ? 'orange' :
-                   profileType === 'user' ? 'gray' :
-                   profileType === 'sales' ? 'indigo' :
-                   profileType === 'task' ? 'teal' :
-                   profileType === 'ticket' ? 'red' : 'blue'
+            color: config.color
         };
         
         // Create a simple layout for the profile
@@ -878,8 +831,8 @@ const Dashboard = () => {
             y: 0,
             w: 12,
             h: 8,
-            widgetKey: `${profileType}-profile-widget-${profileId}`,
-            widgetData: { [(profileType === 'sales' || profileType === 'sale') ? 'saleId' : `${profileType}Id`]: profileId }
+            widgetKey: `${config.widgetKey}-${profileId}`,
+            widgetData: { [config.idField]: profileId }
         }];
         
         // Update all state synchronously
@@ -898,39 +851,15 @@ const Dashboard = () => {
         setTimeout(() => setIsTabSwitching(false), 50);
     };
 
-    // Simplified individual functions that call the main function
-    const handleOpenContactProfile = async (contactId) => {
-        console.log('Dashboard handleOpenContactProfile called with contactId:', contactId);
-        await handleOpenProfile('contact', contactId);
-    };
-
-    const handleOpenOpportunityProfile = async (opportunityId, opportunityTitle) => {
-        await handleOpenProfile('opportunity', opportunityId, opportunityTitle);
-    };
-
-    const handleOpenLeadProfile = async (leadId, leadTitle) => {
-        await handleOpenProfile('lead', leadId, leadTitle);
-    };
-
-    const handleOpenUserProfile = async (userId, userName) => {
-        await handleOpenProfile('user', userId, userName);
-    };
-
-    const handleOpenBusinessProfile = async (businessId, businessName) => {
-        await handleOpenProfile('business', businessId, businessName);
-    };
-
-    const handleOpenSalesProfile = async (saleId, saleTitle) => {
-        await handleOpenProfile('sales', saleId, saleTitle);
-    };
-
-    const handleOpenTaskProfile = async (taskId, taskTitle) => {
-        await handleOpenProfile('task', taskId, taskTitle);
-    };
-
-    const handleOpenTicketProfile = async (ticketId, ticketTitle) => {
-        await handleOpenProfile('ticket', ticketId, ticketTitle);
-    };
+    // Individual profile handlers - now using the unified system
+    const handleOpenContactProfile = createProfileHandler('contact', handleOpenProfile);
+    const handleOpenLeadProfile = createProfileHandler('lead', handleOpenProfile);
+    const handleOpenOpportunityProfile = createProfileHandler('opportunity', handleOpenProfile);
+    const handleOpenBusinessProfile = createProfileHandler('business', handleOpenProfile);
+    const handleOpenUserProfile = createProfileHandler('user', handleOpenProfile);
+    const handleOpenSalesProfile = createProfileHandler('sales', handleOpenProfile);
+    const handleOpenTaskProfile = createProfileHandler('task', handleOpenProfile);
+    const handleOpenTicketProfile = createProfileHandler('ticket', handleOpenProfile);
 
     // Generic function to open any page as a new tab
     const handleOpenPageTab = (pageType, pageName, widgetKey) => {
