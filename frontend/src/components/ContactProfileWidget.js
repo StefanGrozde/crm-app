@@ -764,7 +764,7 @@ const ContactProfileWidget = ({ contactId }) => {
             )}
 
             {/* File Attachments Card */}
-            <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8 hover:shadow-xl transition-shadow duration-300">
+            <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8 hover:shadow-xl transition-shadow duration-300 mb-8">
                 <FileManager 
                     entityType="contact" 
                     entityId={contactId}
