@@ -140,6 +140,97 @@ export const WIDGET_TYPE_CONFIG = {
         cacheTimeout: 60000, // Cache for 1 minute
     },
     
+    'tickets-widget': {
+        ...DEFAULT_WIDGET_CONFIG,
+        renderMode: 'lazy',
+        autoReload: false,
+        showLoadingSpinner: true,
+        debounceDelay: 300, // Search debouncing
+        cacheTimeout: 60000, // Cache for 1 minute
+    },
+    
+    'ticket-profile-widget': {
+        ...DEFAULT_WIDGET_CONFIG,
+        renderMode: 'eager', // Ticket profile should load immediately
+        debounceDelay: 0, // No debouncing for profile
+        autoReload: false,
+        showLoadingSpinner: true,
+        cacheTimeout: 60000, // Cache for 1 minute
+    },
+    
+    'tasks-widget': {
+        ...DEFAULT_WIDGET_CONFIG,
+        renderMode: 'lazy',
+        autoReload: false,
+        showLoadingSpinner: true,
+        debounceDelay: 300, // Search debouncing
+        cacheTimeout: 60000, // Cache for 1 minute
+    },
+    
+    'task-profile-widget': {
+        ...DEFAULT_WIDGET_CONFIG,
+        renderMode: 'eager', // Task profile should load immediately
+        debounceDelay: 0, // No debouncing for profile
+        autoReload: false,
+        showLoadingSpinner: true,
+        cacheTimeout: 60000, // Cache for 1 minute
+    },
+    
+    // Ticket Queue Widgets
+    'my-ticket-queue-widget': {
+        ...DEFAULT_WIDGET_CONFIG,
+        renderMode: 'lazy',
+        autoReload: true, // Auto-reload for queue updates
+        reloadInterval: 30000, // Reload every 30 seconds
+        showLoadingSpinner: true,
+        debounceDelay: 300, // Search debouncing
+        cacheTimeout: 30000, // Short cache for real-time updates
+        skeletonLoading: true, // Use skeleton loading for better UX
+    },
+    
+    'unassigned-ticket-queue-widget': {
+        ...DEFAULT_WIDGET_CONFIG,
+        renderMode: 'lazy',
+        autoReload: true, // Auto-reload for queue updates
+        reloadInterval: 15000, // Reload every 15 seconds (more frequent for unassigned)
+        showLoadingSpinner: true,
+        debounceDelay: 300, // Search debouncing
+        cacheTimeout: 15000, // Short cache for real-time updates
+        skeletonLoading: true, // Use skeleton loading for better UX
+    },
+    
+    'team-ticket-queue-widget': {
+        ...DEFAULT_WIDGET_CONFIG,
+        renderMode: 'lazy',
+        autoReload: true, // Auto-reload for queue updates
+        reloadInterval: 30000, // Reload every 30 seconds
+        showLoadingSpinner: true,
+        debounceDelay: 300, // Search debouncing
+        cacheTimeout: 30000, // Short cache for real-time updates
+        skeletonLoading: true, // Use skeleton loading for better UX
+    },
+    
+    'all-ticket-queue-widget': {
+        ...DEFAULT_WIDGET_CONFIG,
+        renderMode: 'lazy',
+        autoReload: false, // No auto-reload for all tickets (performance)
+        showLoadingSpinner: true,
+        debounceDelay: 300, // Search debouncing
+        cacheTimeout: 60000, // Cache for 1 minute
+        skeletonLoading: true, // Use skeleton loading for better UX
+    },
+    
+    'ticket-queue-dashboard-widget': {
+        ...DEFAULT_WIDGET_CONFIG,
+        renderMode: 'eager', // Dashboard should load immediately
+        autoReload: true, // Auto-reload for stats updates
+        reloadInterval: 45000, // Reload every 45 seconds
+        showLoadingSpinner: true,
+        debounceDelay: 300, // Search debouncing
+        cacheTimeout: 30000, // Short cache for real-time stats
+        skeletonLoading: true, // Use skeleton loading for better UX
+    },
+    
     // Built-in widgets
     'sample-chart': {
         ...DEFAULT_WIDGET_CONFIG,
@@ -173,7 +264,16 @@ export const WIDGET_REGISTRY_CONFIG = {
         'invitations-widget',
         'search-result-widget',
         'sales-widget',
-        'sales-profile-widget'
+        'sales-profile-widget',
+        'tickets-widget',
+        'ticket-profile-widget',
+        'tasks-widget',
+        'task-profile-widget',
+        'my-ticket-queue-widget',
+        'unassigned-ticket-queue-widget',
+        'team-ticket-queue-widget',
+        'all-ticket-queue-widget',
+        'ticket-queue-dashboard-widget'
     ],
     
     // Built-in external widgets (loaded from backend)
@@ -296,7 +396,7 @@ export const getWidgetConfig = (widgetKey) => {
     }
     
     // Check if it's a built-in React widget
-    if (widgetKey.endsWith('-widget') && ['contacts', 'leads', 'opportunities', 'companies', 'users', 'sales'].some(type => widgetKey.startsWith(type))) {
+    if (widgetKey.endsWith('-widget') && ['contacts', 'leads', 'opportunities', 'companies', 'users', 'sales', 'tickets', 'tasks', 'queue'].some(type => widgetKey.includes(type))) {
         return WIDGET_TYPE_CONFIG['builtin-react'];
     }
     

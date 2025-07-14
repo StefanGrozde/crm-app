@@ -28,6 +28,12 @@ import TasksWidget from './TasksWidget';
 import TaskProfileWidget from './TaskProfileWidget';
 import UnifiedTicketsWidget from './UnifiedTicketsWidget';
 import TicketProfileWidget from './TicketProfileWidget';
+// Ticket Queue Widgets
+import MyTicketQueueWidget from './MyTicketQueueWidget';
+import UnassignedTicketQueueWidget from './UnassignedTicketQueueWidget';
+import TeamTicketQueueWidget from './TeamTicketQueueWidget';
+import AllTicketQueueWidget from './AllTicketQueueWidget';
+import TicketQueueDashboard from './TicketQueueDashboard';
 
 // Widget Registry - Central place to register all widgets
 const WidgetRegistry = {
@@ -62,7 +68,14 @@ const WidgetRegistry = {
     'tasks-widget': TasksWidget,
     'task-profile-widget': TaskProfileWidget,
     'tickets-widget': UnifiedTicketsWidget,
-    'ticket-profile-widget': TicketProfileWidget
+    'ticket-profile-widget': TicketProfileWidget,
+    
+    // Ticket Queue Widgets
+    'my-ticket-queue-widget': MyTicketQueueWidget,
+    'unassigned-ticket-queue-widget': UnassignedTicketQueueWidget,
+    'team-ticket-queue-widget': TeamTicketQueueWidget,
+    'all-ticket-queue-widget': AllTicketQueueWidget,
+    'ticket-queue-dashboard-widget': TicketQueueDashboard
 };
 
 // Dynamic widget loader for external widgets
