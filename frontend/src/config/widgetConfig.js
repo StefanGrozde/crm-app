@@ -176,49 +176,6 @@ export const WIDGET_TYPE_CONFIG = {
         cacheTimeout: 60000, // Cache for 1 minute
     },
     
-    // Ticket Queue Widgets
-    'my-ticket-queue-widget': {
-        ...DEFAULT_WIDGET_CONFIG,
-        renderMode: 'lazy',
-        autoReload: true, // Auto-reload for queue updates
-        reloadInterval: 30000, // Reload every 30 seconds
-        showLoadingSpinner: true,
-        debounceDelay: 300, // Search debouncing
-        cacheTimeout: 30000, // Short cache for real-time updates
-        skeletonLoading: true, // Use skeleton loading for better UX
-    },
-    
-    'unassigned-ticket-queue-widget': {
-        ...DEFAULT_WIDGET_CONFIG,
-        renderMode: 'lazy',
-        autoReload: true, // Auto-reload for queue updates
-        reloadInterval: 15000, // Reload every 15 seconds (more frequent for unassigned)
-        showLoadingSpinner: true,
-        debounceDelay: 300, // Search debouncing
-        cacheTimeout: 15000, // Short cache for real-time updates
-        skeletonLoading: true, // Use skeleton loading for better UX
-    },
-    
-    'team-ticket-queue-widget': {
-        ...DEFAULT_WIDGET_CONFIG,
-        renderMode: 'lazy',
-        autoReload: true, // Auto-reload for queue updates
-        reloadInterval: 30000, // Reload every 30 seconds
-        showLoadingSpinner: true,
-        debounceDelay: 300, // Search debouncing
-        cacheTimeout: 30000, // Short cache for real-time updates
-        skeletonLoading: true, // Use skeleton loading for better UX
-    },
-    
-    'all-ticket-queue-widget': {
-        ...DEFAULT_WIDGET_CONFIG,
-        renderMode: 'lazy',
-        autoReload: false, // No auto-reload for all tickets (performance)
-        showLoadingSpinner: true,
-        debounceDelay: 300, // Search debouncing
-        cacheTimeout: 60000, // Cache for 1 minute
-        skeletonLoading: true, // Use skeleton loading for better UX
-    },
     
     'ticket-queue-dashboard-widget': {
         ...DEFAULT_WIDGET_CONFIG,
@@ -281,10 +238,6 @@ export const WIDGET_REGISTRY_CONFIG = {
         'ticket-profile-widget',
         'tasks-widget',
         'task-profile-widget',
-        'my-ticket-queue-widget',
-        'unassigned-ticket-queue-widget',
-        'team-ticket-queue-widget',
-        'all-ticket-queue-widget',
         'ticket-queue-dashboard-widget',
         'configurable-ticket-queue-widget'
     ],

@@ -298,34 +298,6 @@ const Dashboard = () => {
                         path: null
                     },
                     {
-                        key: 'my-ticket-queue-widget',
-                        name: 'My Ticket Queue',
-                        description: 'View tickets assigned to you',
-                        type: 'builtin-react',
-                        path: null
-                    },
-                    {
-                        key: 'unassigned-ticket-queue-widget',
-                        name: 'Unassigned Ticket Queue',
-                        description: 'View unassigned tickets',
-                        type: 'builtin-react',
-                        path: null
-                    },
-                    {
-                        key: 'team-ticket-queue-widget',
-                        name: 'Team Ticket Queue',
-                        description: 'View team tickets',
-                        type: 'builtin-react',
-                        path: null
-                    },
-                    {
-                        key: 'all-ticket-queue-widget',
-                        name: 'All Tickets Queue',
-                        description: 'View all tickets',
-                        type: 'builtin-react',
-                        path: null
-                    },
-                    {
                         key: 'ticket-queue-dashboard-widget',
                         name: 'Ticket Queue Dashboard',
                         description: 'Multi-queue ticket dashboard',

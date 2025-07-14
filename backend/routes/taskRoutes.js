@@ -265,13 +265,22 @@ router.post('/', protect, async (req, res) => {
             return res.status(400).json({ message: 'Task title is required' });
         }
 
+        // Helper function to validate and parse dates
+        const parseDate = (dateValue) => {
+            if (dateValue === null || dateValue === '' || dateValue === undefined) {
+                return null;
+            }
+            const parsed = new Date(dateValue);
+            return isNaN(parsed.getTime()) ? null : parsed;
+        };
+
         // Create the task
         const task = await Task.create({
             title,
             description,
             status,
             priority,
-            dueDate: dueDate || null,
+            dueDate: parseDate(dueDate),
             estimatedHours: estimatedHours || null,
             assignmentType,
             assignedToAll: assignmentType === 'all_company' ? true : assignedToAll,
@@ -385,14 +394,23 @@ router.put('/:id', protect, async (req, res) => {
             saleId
         } = req.body;
 
+        // Helper function to validate and parse dates
+        const parseDate = (dateValue) => {
+            if (dateValue === null || dateValue === '' || dateValue === undefined) {
+                return null;
+            }
+            const parsed = new Date(dateValue);
+            return isNaN(parsed.getTime()) ? null : parsed;
+        };
+
         // Update task fields
         await task.update({
             title: title || task.title,
             description: description !== undefined ? description : task.description,
             status: status || task.status,
             priority: priority || task.priority,
-            dueDate: dueDate !== undefined ? dueDate : task.dueDate,
-            completedDate: completedDate !== undefined ? completedDate : task.completedDate,
+            dueDate: dueDate !== undefined ? parseDate(dueDate) : task.dueDate,
+            completedDate: completedDate !== undefined ? parseDate(completedDate) : task.completedDate,
             estimatedHours: estimatedHours !== undefined ? estimatedHours : task.estimatedHours,
             actualHours: actualHours !== undefined ? actualHours : task.actualHours,
             assignmentType: assignmentType || task.assignmentType,

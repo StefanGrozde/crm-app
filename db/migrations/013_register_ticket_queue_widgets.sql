@@ -5,50 +5,6 @@
 -- Insert the ticket queue widgets
 INSERT INTO widgets (widget_key, name, description, type, version, author, sort_order, is_active, config) VALUES
 (
-    'my-ticket-queue-widget',
-    'My Ticket Queue',
-    'View and manage tickets assigned to me with filtering and bulk operations',
-    'builtin-react',
-    '1.0.0',
-    'System',
-    20,
-    true,
-    '{"queueType": "my", "features": {"stats": true, "bulkActions": true, "assignmentActions": false}}'
-),
-(
-    'unassigned-ticket-queue-widget',
-    'Unassigned Ticket Queue',
-    'View and assign unassigned tickets with filtering and bulk operations',
-    'builtin-react',
-    '1.0.0',
-    'System',
-    21,
-    true,
-    '{"queueType": "unassigned", "features": {"stats": false, "bulkActions": true, "assignmentActions": true}}'
-),
-(
-    'team-ticket-queue-widget',
-    'Team Ticket Queue',
-    'View and manage tickets assigned to team members with filtering and bulk operations',
-    'builtin-react',
-    '1.0.0',
-    'System',
-    22,
-    true,
-    '{"queueType": "team", "features": {"stats": false, "bulkActions": true, "assignmentActions": true}}'
-),
-(
-    'all-ticket-queue-widget',
-    'All Ticket Queue',
-    'View and manage all tickets with comprehensive filtering and bulk operations',
-    'builtin-react',
-    '1.0.0',
-    'System',
-    23,
-    true,
-    '{"queueType": "all", "features": {"stats": true, "bulkActions": true, "assignmentActions": true}}'
-),
-(
     'ticket-queue-dashboard-widget',
     'Ticket Queue Dashboard',
     'Comprehensive ticket queue dashboard with tabs, statistics, and queue management',
@@ -107,12 +63,14 @@ ON CONFLICT (widget_key) DO UPDATE SET
 UPDATE widgets SET sort_order = 6 WHERE widget_key = 'lead-conversion';
 UPDATE widgets SET sort_order = 9 WHERE widget_key = 'users-widget';
 
--- Add ticket queue widgets to dependencies for dashboard functionality
--- Note: This assumes dashboard widgets might need to reference queue widgets
-UPDATE widgets SET 
-    dependencies = COALESCE(dependencies, '[]'::jsonb) || '["ticket-queue-dashboard-widget"]'::jsonb
-WHERE widget_key IN ('my-ticket-queue-widget', 'unassigned-ticket-queue-widget', 'team-ticket-queue-widget', 'all-ticket-queue-widget')
-AND NOT (dependencies @> '["ticket-queue-dashboard-widget"]'::jsonb);
+-- Mark individual queue widgets as inactive (cleanup)
+UPDATE widgets SET is_active = false WHERE widget_key IN (
+    'my-ticket-queue-widget',
+    'unassigned-ticket-queue-widget', 
+    'team-ticket-queue-widget',
+    'all-ticket-queue-widget'
+);
+
 
 -- Create migrations log table if it doesn't exist
 CREATE TABLE IF NOT EXISTS migrations_log (

@@ -29,10 +29,6 @@ import TaskProfileWidget from './TaskProfileWidget';
 import UnifiedTicketsWidget from './UnifiedTicketsWidget';
 import TicketProfileWidget from './TicketProfileWidget';
 // Ticket Queue Widgets
-import MyTicketQueueWidget from './MyTicketQueueWidget';
-import UnassignedTicketQueueWidget from './UnassignedTicketQueueWidget';
-import TeamTicketQueueWidget from './TeamTicketQueueWidget';
-import AllTicketQueueWidget from './AllTicketQueueWidget';
 import TicketQueueDashboard from './TicketQueueDashboard';
 import ConfigurableTicketQueueWidget from './ConfigurableTicketQueueWidget';
 
@@ -72,10 +68,6 @@ const WidgetRegistry = {
     'ticket-profile-widget': TicketProfileWidget,
     
     // Ticket Queue Widgets
-    'my-ticket-queue-widget': MyTicketQueueWidget,
-    'unassigned-ticket-queue-widget': UnassignedTicketQueueWidget,
-    'team-ticket-queue-widget': TeamTicketQueueWidget,
-    'all-ticket-queue-widget': AllTicketQueueWidget,
     'ticket-queue-dashboard-widget': TicketQueueDashboard,
     'configurable-ticket-queue-widget': ConfigurableTicketQueueWidget
 };
@@ -344,12 +336,8 @@ const DynamicWidget = memo(({ widgetKey, widgetPath, type, resultData, widgetDat
                 if (memoizedWidgetKey === 'tasks-widget') {
                     return <RegisteredWidget onOpenTaskProfile={onOpenTaskProfile} />;
                 }
-                // Pass ticket profile handler to TicketsWidget and all ticket queue widgets
+                // Pass ticket profile handler to TicketsWidget and ticket queue widgets
                 if (memoizedWidgetKey === 'tickets-widget' || 
-                    memoizedWidgetKey === 'my-ticket-queue-widget' ||
-                    memoizedWidgetKey === 'unassigned-ticket-queue-widget' ||
-                    memoizedWidgetKey === 'team-ticket-queue-widget' ||
-                    memoizedWidgetKey === 'all-ticket-queue-widget' ||
                     memoizedWidgetKey === 'ticket-queue-dashboard-widget' ||
                     memoizedWidgetKey === 'configurable-ticket-queue-widget') {
                     return <RegisteredWidget onOpenTicketProfile={onOpenTicketProfile} widgetData={widgetData} />;

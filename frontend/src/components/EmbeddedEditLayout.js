@@ -337,10 +337,26 @@ const EmbeddedEditLayout = ({ viewId, onExitEditMode, onSaveSuccess }) => {
     // Derived state - memoized to prevent unnecessary re-renders
     const currentWidgetKeys = useMemo(() => layout.map(item => item.i), [layout]);
     const availableWidgets = useMemo(() => {
-        const filtered = widgetLibrary.filter(widget => !currentWidgetKeys.includes(widget.key));
-        console.log('Available widgets:', filtered);
+        // Filter out widgets that are already in use AND profile widgets
+        const profileWidgetKeys = [
+            'contact-profile-widget',
+            'lead-profile-widget', 
+            'opportunity-profile-widget',
+            'business-profile-widget',
+            'user-profile-widget',
+            'sales-profile-widget',
+            'task-profile-widget',
+            'ticket-profile-widget'
+        ];
+        
+        const filtered = widgetLibrary.filter(widget => 
+            !currentWidgetKeys.includes(widget.key) && 
+            !profileWidgetKeys.includes(widget.key)
+        );
+        
+        console.log('Available widgets (filtered):', filtered);
         console.log('Current widget keys:', currentWidgetKeys);
-        console.log('Widget library:', widgetLibrary);
+        console.log('Filtered out profile widgets:', profileWidgetKeys);
         return filtered;
     }, [widgetLibrary, currentWidgetKeys]);
 
