@@ -6,6 +6,7 @@ const msal = require('@azure/msal-node');
 const Company = require('../models/Company');
 const User = require('../models/User');
 const { protect } = require('../middleware/authMiddleware');
+const AuditService = require('../services/AuditService');
 
 // --- MSAL Configuration ---
 let pca = null;
@@ -175,22 +176,143 @@ router.post('/register', async (req, res) => {
 });
 
 router.post('/login', async (req, res) => {
-    const { email, password } = req.body;
+    const { email, password, rememberMe } = req.body;
+    
+    const contextInfo = {
+        ipAddress: req.ip || req.connection.remoteAddress,
+        userAgent: req.get('User-Agent') || 'Unknown'
+    };
+    
     try {
         const user = await User.findOne({ where: { email } });
 
         // Add this check to prevent a crash if the user is not found
         if (!user) {
+            // Log failed login attempt
+            await AuditService.logFailedLogin(email, null, contextInfo, 'user_not_found');
             return res.status(401).json({ message: 'Invalid email or password' });
         }
 
         if (await user.matchPassword(password)) {
-            sendTokenResponse(user, 200, res);
+            // Generate JWT token
+            const token = jwt.sign(
+                { userId: user.id, companyId: user.companyId },
+                process.env.JWT_SECRET,
+                { expiresIn: rememberMe ? '30d' : '24h' }
+            );
+
+            // Set cookie
+            res.cookie('authToken', token, {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production',
+                maxAge: rememberMe ? 30 * 24 * 60 * 60 * 1000 : 24 * 60 * 60 * 1000
+            });
+
+            // Log successful login
+            await AuditService.logLogin(user.id, user.companyId, token, {
+                ...contextInfo,
+                loginMethod: rememberMe ? 'remember_me' : 'password'
+            });
+
+            res.json({
+                success: true,
+                user: {
+                    id: user.id,
+                    username: user.username,
+                    email: user.email,
+                    role: user.role,
+                    companyId: user.companyId
+                }
+            });
         } else {
+            // Log failed login attempt
+            await AuditService.logFailedLogin(email, user.companyId, contextInfo, 'invalid_password');
             res.status(401).json({ message: 'Invalid email or password' });
         }
     } catch (err) {
+        console.error('Login error:', err);
         res.status(500).json({ message: 'Server Error' });
+    }
+});
+
+// Logout endpoint - enhanced with audit logging
+router.post('/logout', protect, async (req, res) => {
+    try {
+        const contextInfo = {
+            ipAddress: req.ip || req.connection.remoteAddress,
+            userAgent: req.get('User-Agent') || 'Unknown'
+        };
+
+        // Log logout
+        if (req.cookies.authToken) {
+            await AuditService.logLogout(
+                req.user.id,
+                req.user.companyId,
+                req.cookies.authToken,
+                contextInfo
+            );
+        }
+
+        // Clear cookie
+        res.clearCookie('authToken');
+        
+        res.json({
+            success: true,
+            message: 'Logged out successfully'
+        });
+
+    } catch (error) {
+        console.error('Logout error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Logout failed'
+        });
+    }
+});
+
+// Check auth status - enhanced with session tracking
+router.get('/check', protect, async (req, res) => {
+    try {
+        // This endpoint is called when app loads with existing cookie
+        // Log as app access if this is the first check in a while
+        const contextInfo = {
+            ipAddress: req.ip || req.connection.remoteAddress,
+            userAgent: req.get('User-Agent') || 'Unknown'
+        };
+
+        // Check if this looks like a fresh app open
+        const isAppOpen = req.get('Referer') === undefined || 
+                         req.get('Referer').includes('login');
+
+        if (isAppOpen && req.cookies.authToken) {
+            // Don't await - log asynchronously
+            AuditService.logAppAccess(
+                req.user.id,
+                req.user.companyId,
+                req.cookies.authToken,
+                contextInfo
+            ).catch(error => {
+                console.error('Error logging app access:', error);
+            });
+        }
+
+        res.json({
+            success: true,
+            user: {
+                id: req.user.id,
+                username: req.user.username,
+                email: req.user.email,
+                role: req.user.role,
+                companyId: req.user.companyId
+            }
+        });
+
+    } catch (error) {
+        console.error('Auth check error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Authentication check failed'
+        });
     }
 });
 

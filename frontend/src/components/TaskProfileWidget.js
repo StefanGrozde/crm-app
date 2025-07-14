@@ -2,6 +2,7 @@ import React, { useState, useEffect, useContext, useCallback, memo } from 'react
 import axios from 'axios';
 import { AuthContext } from '../context/AuthContext';
 import { createPortal } from 'react-dom';
+import TimelineWithComments from './TimelineWithComments';
 
 const API_URL = process.env.REACT_APP_API_URL;
 
@@ -591,6 +592,22 @@ const TaskProfileWidget = ({ taskId }) => {
                     )}
                 </div>
             </div>
+
+            {/* Timeline with Comments - Enhanced Task View */}
+            {task && (
+                <div className="mt-6">
+                    <TimelineWithComments
+                        entityType="task"
+                        entityId={task.id}
+                        entityData={task}
+                        userRole={user?.role}
+                        showAddComment={true}
+                        showFilters={false}
+                        maxHeight="h-96"
+                        className="w-full"
+                    />
+                </div>
+            )}
 
             {/* Edit Modal */}
             {showEditModal && createPortal(

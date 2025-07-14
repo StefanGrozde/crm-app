@@ -2,6 +2,7 @@ const { DataTypes } = require('sequelize');
 const { sequelize } = require('../config/db');
 const Company = require('./Company');
 const bcrypt = require('bcryptjs');
+const { addSensitiveAuditHooks } = require('../utils/auditHooks');
 
 const User = sequelize.define('User', {
   id: {
@@ -68,5 +69,17 @@ User.beforeUpdate(async (user, options) => {
 User.prototype.matchPassword = async function (enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
 };
+
+// Add enhanced security audit hooks for User model
+addSensitiveAuditHooks(User, 'user', {
+  customMetadata: (instance, operation, context, change) => ({
+    username: instance?.username,
+    email: instance?.email,
+    role: instance?.role,
+    isAccountChange: ['role', 'isActive', 'password'].includes(change?.field),
+    isSecurityEvent: ['password', 'role'].includes(change?.field),
+    requiresApproval: ['role'].includes(change?.field)
+  })
+});
 
 module.exports = User;

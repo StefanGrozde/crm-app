@@ -3,6 +3,7 @@ const { sequelize } = require('../config/db');
 const Company = require('./Company');
 const User = require('./User');
 const Contact = require('./Contact');
+const { addAuditHooks } = require('../utils/auditHooks');
 
 const Opportunity = sequelize.define('Opportunity', {
   id: {
@@ -128,5 +129,18 @@ const Opportunity = sequelize.define('Opportunity', {
 });
 
 // Associations will be defined in the main index.js file
+
+// Add audit hooks for automatic change tracking
+addAuditHooks(Opportunity, 'opportunity', {
+  sensitiveFields: ['amount', 'probability', 'expectedCloseDate'], // Business-critical fields
+  customMetadata: (instance, operation, context) => ({
+    stage: instance?.stage,
+    dealSize: instance?.amount,
+    currency: instance?.currency,
+    probability: instance?.probability,
+    isClosedWon: instance?.stage === 'closed_won',
+    isClosedLost: instance?.stage === 'closed_lost'
+  })
+});
 
 module.exports = Opportunity; 

@@ -1,5 +1,6 @@
 const { DataTypes } = require('sequelize');
 const { sequelize } = require('../config/db');
+const { addAuditHooks } = require('../utils/auditHooks');
 
 const Task = sequelize.define('Task', {
   id: {
@@ -166,6 +167,20 @@ const Task = sequelize.define('Task', {
       fields: ['assignment_type'],
     },
   ],
+});
+
+// Add audit hooks for automatic change tracking
+addAuditHooks(Task, 'task', {
+  sensitiveFields: ['status', 'priority', 'dueDate'], // Important workflow fields
+  customMetadata: (instance, operation, context) => ({
+    status: instance?.status,
+    priority: instance?.priority,
+    assignmentType: instance?.assignmentType,
+    hasDueDate: !!instance?.dueDate,
+    isOverdue: instance?.dueDate && new Date(instance.dueDate) < new Date(),
+    entityType: instance?.entityType,
+    entityId: instance?.entityId
+  })
 });
 
 module.exports = Task;

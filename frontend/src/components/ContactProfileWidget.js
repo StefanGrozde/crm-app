@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import axios from 'axios';
 import { AuthContext } from '../context/AuthContext';
 import FileManager from './FileManager';
+import AuditTimeline from './AuditTimeline';
 
 const API_URL = process.env.REACT_APP_API_URL;
 
@@ -893,6 +894,20 @@ const ContactProfileWidget = ({ contactId }) => {
                     </div>
                 )}
             </div>
+
+            {/* Changes Section - Audit Timeline */}
+            {contact && (
+                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                    <AuditTimeline
+                        entityType="contact"
+                        entityId={contact.id}
+                        userRole={user?.role}
+                        className="w-full"
+                        showFilters={true}
+                        maxHeight="max-h-96"
+                    />
+                </div>
+            )}
 
             {/* Enhanced Edit Modal */}
             <EditModal

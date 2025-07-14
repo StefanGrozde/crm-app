@@ -3,6 +3,7 @@ const { sequelize } = require('../config/db');
 const Company = require('./Company');
 const User = require('./User');
 const Contact = require('./Contact');
+const { addAuditHooks } = require('../utils/auditHooks');
 
 const Lead = sequelize.define('Lead', {
   id: {
@@ -121,5 +122,17 @@ const Lead = sequelize.define('Lead', {
 });
 
 // Associations will be defined in the main index.js file
+
+// Add audit hooks for automatic change tracking
+addAuditHooks(Lead, 'lead', {
+  sensitiveFields: ['estimatedValue', 'expectedCloseDate'], // Business-sensitive fields
+  customMetadata: (instance, operation, context) => ({
+    status: instance?.status,
+    priority: instance?.priority,
+    hasValue: !!instance?.estimatedValue,
+    valueAmount: instance?.estimatedValue,
+    currency: instance?.currency
+  })
+});
 
 module.exports = Lead; 

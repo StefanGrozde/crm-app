@@ -1,5 +1,6 @@
 const { DataTypes } = require('sequelize');
 const { sequelize } = require('../config/db');
+const { addSensitiveAuditHooks } = require('../utils/auditHooks');
 
 const Company = sequelize.define('Company', {
   id: {
@@ -61,5 +62,16 @@ const Company = sequelize.define('Company', {
 
 // Associations will be defined after all models are loaded
 // This is handled in the main index.js file
+
+// Add enhanced security audit hooks for Company model
+addSensitiveAuditHooks(Company, 'company', {
+  customMetadata: (instance, operation, context, change) => ({
+    companyName: instance?.name,
+    hasMs365Integration: !!(instance?.ms365ClientId && instance?.ms365ClientSecret),
+    emailEnabled: instance?.emailEnabled,
+    isIntegrationChange: change?.field?.includes('ms365') || change?.field?.includes('email'),
+    isSecurityConfiguration: ['ms365ClientSecret', 'emailEnabled'].includes(change?.field)
+  })
+});
 
 module.exports = Company;

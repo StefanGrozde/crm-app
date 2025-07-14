@@ -2,6 +2,7 @@ import React, { useState, useEffect, useContext, useCallback, memo } from 'react
 import axios from 'axios';
 import { AuthContext } from '../context/AuthContext';
 import { createPortal } from 'react-dom';
+import TimelineWithComments from './TimelineWithComments';
 
 const API_URL = process.env.REACT_APP_API_URL;
 
@@ -487,6 +488,22 @@ const TicketProfileWidget = ({ ticketId }) => {
                     </div>
                 </div>
             </div>
+
+            {/* Timeline with Comments - Enhanced Ticket View */}
+            {ticket && (
+                <div className="mt-6">
+                    <TimelineWithComments
+                        entityType="ticket"
+                        entityId={ticket.id}
+                        entityData={ticket}
+                        userRole={user?.role}
+                        showAddComment={true}
+                        showFilters={false}
+                        maxHeight="h-full"
+                        className="w-full"
+                    />
+                </div>
+            )}
 
             {/* Comment Modal */}
             {showCommentModal && createPortal(

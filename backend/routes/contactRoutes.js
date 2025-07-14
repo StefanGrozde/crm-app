@@ -7,6 +7,7 @@ const User = require('../models/User');
 const Sale = require('../models/Sale');
 const ListMembership = require('../models/ListMembership');
 const { Op } = require('sequelize');
+const { getAuditContext } = require('../utils/auditHooks');
 
 // GET /api/contacts - Get all contacts with pagination and filtering
 router.get('/', protect, async (req, res) => {
@@ -346,7 +347,8 @@ router.post('/', protect, async (req, res) => {
             createdBy: req.user.id
         };
 
-        const contact = await Contact.create(sanitizedData);
+        // Create contact with audit context
+        const contact = await Contact.create(sanitizedData, getAuditContext(req));
 
         // Fetch the created contact with associations
         const createdContact = await Contact.findByPk(contact.id, {
@@ -443,7 +445,8 @@ router.put('/:id', protect, async (req, res) => {
             assignedTo: assignedTo && assignedTo !== '' ? parseInt(assignedTo) : null
         };
 
-        await contact.update(sanitizedData);
+        // Update contact with audit context
+        await contact.update(sanitizedData, getAuditContext(req));
 
         // Fetch the updated contact with associations
         const updatedContact = await Contact.findByPk(contact.id, {
@@ -491,7 +494,8 @@ router.delete('/:id', protect, async (req, res) => {
             deletedAt: new Date()
         };
 
-        await contact.destroy();
+        // Delete contact with audit context
+        await contact.destroy(getAuditContext(req));
 
         res.json({ 
             message: 'Contact deleted successfully',

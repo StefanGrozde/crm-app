@@ -2,6 +2,7 @@ import React, { useState, useEffect, useContext, useCallback, memo } from 'react
 import axios from 'axios';
 import { AuthContext } from '../context/AuthContext';
 import { createPortal } from 'react-dom';
+import AuditTimeline from './AuditTimeline';
 
 const API_URL = process.env.REACT_APP_API_URL;
 
@@ -443,6 +444,20 @@ const LeadProfileWidget = ({ leadId }) => {
                 <div className="mt-6 bg-white rounded-lg border border-gray-200 p-6">
                     <h2 className="text-lg font-semibold text-gray-900 mb-4">Notes</h2>
                     <p className="text-sm text-gray-900 whitespace-pre-wrap">{lead.notes}</p>
+                </div>
+            )}
+
+            {/* Changes Section - Audit Timeline */}
+            {lead && (
+                <div className="mt-6 bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                    <AuditTimeline
+                        entityType="lead"
+                        entityId={lead.id}
+                        userRole={user?.role}
+                        className="w-full"
+                        showFilters={true}
+                        maxHeight="max-h-96"
+                    />
                 </div>
             )}
 

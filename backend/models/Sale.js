@@ -2,6 +2,7 @@ const { DataTypes } = require('sequelize');
 const { sequelize } = require('../config/db');
 const Company = require('./Company');
 const User = require('./User');
+const { addAuditHooks } = require('../utils/auditHooks');
 
 const Sale = sequelize.define('Sale', {
   id: {
@@ -206,6 +207,20 @@ const Sale = sequelize.define('Sale', {
       }
     }
   }
+});
+
+// Add audit hooks for automatic change tracking
+addAuditHooks(Sale, 'sale', {
+  sensitiveFields: ['totalAmount', 'status', 'closedAt'], // Financial and status fields
+  customMetadata: (instance, operation, context) => ({
+    saleNumber: instance?.saleNumber,
+    status: instance?.status,
+    totalAmount: instance?.totalAmount,
+    currency: instance?.currency,
+    itemCount: instance?.items ? instance.items.length : 0,
+    isClosed: instance?.status === 'closed',
+    hasDiscount: !!instance?.discountAmount
+  })
 });
 
 module.exports = Sale;

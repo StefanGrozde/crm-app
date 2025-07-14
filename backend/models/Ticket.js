@@ -1,5 +1,6 @@
 const { DataTypes } = require('sequelize');
 const { sequelize } = require('../config/db');
+const { addAuditHooks } = require('../utils/auditHooks');
 
 const Ticket = sequelize.define('Ticket', {
   id: {
@@ -266,6 +267,20 @@ Ticket.beforeCreate(async (ticket, options) => {
       ticket.ticketNumber = `${companyPrefix}-${currentYear}-${String(nextNum).padStart(6, '0')}`;
     }
   }
+});
+
+// Add audit hooks for automatic change tracking
+addAuditHooks(Ticket, 'ticket', {
+  sensitiveFields: ['status', 'priority', 'assignedTo', 'queueId'], // Critical support fields
+  customMetadata: (instance, operation, context) => ({
+    ticketNumber: instance?.ticketNumber,
+    status: instance?.status,
+    priority: instance?.priority,
+    category: instance?.category,
+    source: instance?.source,
+    hasAssignee: !!instance?.assignedTo,
+    inQueue: !!instance?.queueId
+  })
 });
 
 module.exports = Ticket;

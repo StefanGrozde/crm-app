@@ -2,6 +2,7 @@ const { DataTypes } = require('sequelize');
 const { sequelize } = require('../config/db');
 const Company = require('./Company');
 const User = require('./User');
+const { addAuditHooks } = require('../utils/auditHooks');
 
 const Contact = sequelize.define('Contact', {
   id: {
@@ -137,5 +138,15 @@ const Contact = sequelize.define('Contact', {
 Contact.prototype.getFullName = function() {
   return `${this.firstName} ${this.lastName}`.trim();
 };
+
+// Add audit hooks for automatic change tracking
+addAuditHooks(Contact, 'contact', {
+  sensitiveFields: ['email', 'phone', 'mobile'], // PII fields
+  customMetadata: (instance, operation, context) => ({
+    fullName: instance ? `${instance.firstName} ${instance.lastName}`.trim() : null,
+    hasEmail: !!instance?.email,
+    hasPhone: !!(instance?.phone || instance?.mobile)
+  })
+});
 
 module.exports = Contact; 
