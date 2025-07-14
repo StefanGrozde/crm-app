@@ -26,6 +26,7 @@ const WidgetRenderer = memo(({
     onOpenBusinessProfile,
     onOpenUserProfile,
     onOpenSaleProfile,
+    onOpenTicketProfile,
     ...props 
 }) => {
     // Get widget configuration
@@ -55,13 +56,14 @@ const WidgetRenderer = memo(({
             onOpenBusinessProfile,
             onOpenUserProfile,
             onOpenSaleProfile,
+            onOpenTicketProfile,
             ...props
         };
         
 
         
         return memoizedProps;
-    }, [widgetKey, widgetPath, type, resultData, widgetData, onOpenContactProfile, onOpenLeadProfile, onOpenOpportunityProfile, onOpenBusinessProfile, onOpenUserProfile, onOpenSaleProfile, props]);
+    }, [widgetKey, widgetPath, type, resultData, widgetData, onOpenContactProfile, onOpenLeadProfile, onOpenOpportunityProfile, onOpenBusinessProfile, onOpenUserProfile, onOpenSaleProfile, onOpenTicketProfile, props]);
     
 
     

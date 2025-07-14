@@ -201,6 +201,474 @@ router.get('/filter-options', protect, async (req, res) => {
     }
 });
 
+// GET /api/tickets/queue/my - Get tickets assigned to current user
+router.get('/queue/my', protect, async (req, res) => {
+    try {
+        const {
+            page = 1,
+            limit = 20,
+            search,
+            status,
+            priority,
+            type,
+            sortBy = 'created_at',
+            sortOrder = 'DESC'
+        } = req.query;
+
+        const offset = (page - 1) * limit;
+        const whereClause = { 
+            companyId: req.user.companyId,
+            assignedTo: req.user.id,
+            archived: false
+        };
+
+        // Apply additional filters
+        if (search) {
+            whereClause[Op.or] = [
+                { ticketNumber: { [Op.iLike]: `%${search}%` } },
+                { title: { [Op.iLike]: `%${search}%` } },
+                { description: { [Op.iLike]: `%${search}%` } }
+            ];
+        }
+
+        if (status) whereClause.status = status;
+        if (priority) whereClause.priority = priority;
+        if (type) whereClause.type = type;
+
+        const { count, rows: tickets } = await Ticket.findAndCountAll({
+            where: whereClause,
+            include: [
+                {
+                    model: Company,
+                    as: 'company',
+                    attributes: ['id', 'name']
+                },
+                {
+                    model: Contact,
+                    as: 'contact',
+                    attributes: ['id', 'firstName', 'lastName', 'email']
+                },
+                {
+                    model: User,
+                    as: 'assignedUser',
+                    attributes: ['id', 'username', 'email']
+                },
+                {
+                    model: User,
+                    as: 'creator',
+                    attributes: ['id', 'username', 'email']
+                }
+            ],
+            order: [[sortBy, sortOrder.toUpperCase()]],
+            limit: parseInt(limit),
+            offset: offset,
+            distinct: true
+        });
+
+        const totalPages = Math.ceil(count / limit);
+
+        res.json({
+            tickets,
+            pagination: {
+                currentPage: parseInt(page),
+                totalPages,
+                totalItems: count,
+                itemsPerPage: parseInt(limit)
+            }
+        });
+    } catch (error) {
+        console.error('Error fetching my queue:', error);
+        res.status(500).json({ error: 'Failed to fetch my queue' });
+    }
+});
+
+// GET /api/tickets/queue/unassigned - Get unassigned tickets
+router.get('/queue/unassigned', protect, async (req, res) => {
+    try {
+        const {
+            page = 1,
+            limit = 20,
+            search,
+            status,
+            priority,
+            type,
+            sortBy = 'created_at',
+            sortOrder = 'DESC'
+        } = req.query;
+
+        const offset = (page - 1) * limit;
+        const whereClause = { 
+            companyId: req.user.companyId,
+            assignedTo: null,
+            archived: false
+        };
+
+        // Apply additional filters
+        if (search) {
+            whereClause[Op.or] = [
+                { ticketNumber: { [Op.iLike]: `%${search}%` } },
+                { title: { [Op.iLike]: `%${search}%` } },
+                { description: { [Op.iLike]: `%${search}%` } }
+            ];
+        }
+
+        if (status) whereClause.status = status;
+        if (priority) whereClause.priority = priority;
+        if (type) whereClause.type = type;
+
+        const { count, rows: tickets } = await Ticket.findAndCountAll({
+            where: whereClause,
+            include: [
+                {
+                    model: Company,
+                    as: 'company',
+                    attributes: ['id', 'name']
+                },
+                {
+                    model: Contact,
+                    as: 'contact',
+                    attributes: ['id', 'firstName', 'lastName', 'email']
+                },
+                {
+                    model: User,
+                    as: 'creator',
+                    attributes: ['id', 'username', 'email']
+                }
+            ],
+            order: [[sortBy, sortOrder.toUpperCase()]],
+            limit: parseInt(limit),
+            offset: offset,
+            distinct: true
+        });
+
+        const totalPages = Math.ceil(count / limit);
+
+        res.json({
+            tickets,
+            pagination: {
+                currentPage: parseInt(page),
+                totalPages,
+                totalItems: count,
+                itemsPerPage: parseInt(limit)
+            }
+        });
+    } catch (error) {
+        console.error('Error fetching unassigned queue:', error);
+        res.status(500).json({ error: 'Failed to fetch unassigned queue' });
+    }
+});
+
+// GET /api/tickets/queue/team - Get tickets assigned to team members
+router.get('/queue/team', protect, async (req, res) => {
+    try {
+        const {
+            page = 1,
+            limit = 20,
+            search,
+            status,
+            priority,
+            type,
+            assignedTo,
+            sortBy = 'created_at',
+            sortOrder = 'DESC'
+        } = req.query;
+
+        const offset = (page - 1) * limit;
+        
+        // Get all users in the same company (team members)
+        const teamMembers = await User.findAll({
+            where: { companyId: req.user.companyId },
+            attributes: ['id']
+        });
+        
+        const teamMemberIds = teamMembers.map(user => user.id);
+        
+        const whereClause = { 
+            companyId: req.user.companyId,
+            assignedTo: { [Op.in]: teamMemberIds },
+            archived: false
+        };
+
+        // Apply additional filters
+        if (search) {
+            whereClause[Op.or] = [
+                { ticketNumber: { [Op.iLike]: `%${search}%` } },
+                { title: { [Op.iLike]: `%${search}%` } },
+                { description: { [Op.iLike]: `%${search}%` } }
+            ];
+        }
+
+        if (status) whereClause.status = status;
+        if (priority) whereClause.priority = priority;
+        if (type) whereClause.type = type;
+        if (assignedTo) whereClause.assignedTo = assignedTo;
+
+        const { count, rows: tickets } = await Ticket.findAndCountAll({
+            where: whereClause,
+            include: [
+                {
+                    model: Company,
+                    as: 'company',
+                    attributes: ['id', 'name']
+                },
+                {
+                    model: Contact,
+                    as: 'contact',
+                    attributes: ['id', 'firstName', 'lastName', 'email']
+                },
+                {
+                    model: User,
+                    as: 'assignedUser',
+                    attributes: ['id', 'username', 'email']
+                },
+                {
+                    model: User,
+                    as: 'creator',
+                    attributes: ['id', 'username', 'email']
+                }
+            ],
+            order: [[sortBy, sortOrder.toUpperCase()]],
+            limit: parseInt(limit),
+            offset: offset,
+            distinct: true
+        });
+
+        const totalPages = Math.ceil(count / limit);
+
+        res.json({
+            tickets,
+            pagination: {
+                currentPage: parseInt(page),
+                totalPages,
+                totalItems: count,
+                itemsPerPage: parseInt(limit)
+            }
+        });
+    } catch (error) {
+        console.error('Error fetching team queue:', error);
+        res.status(500).json({ error: 'Failed to fetch team queue' });
+    }
+});
+
+// GET /api/tickets/queue/stats - Get queue statistics
+router.get('/queue/stats', protect, async (req, res) => {
+    try {
+        const companyId = req.user.companyId;
+        const userId = req.user.id;
+
+        // Get all users in the same company for team stats
+        const teamMembers = await User.findAll({
+            where: { companyId },
+            attributes: ['id']
+        });
+        const teamMemberIds = teamMembers.map(user => user.id);
+
+        // Get queue counts
+        const [myCount, unassignedCount, teamCount, totalCount] = await Promise.all([
+            Ticket.count({
+                where: { companyId, assignedTo: userId, archived: false }
+            }),
+            Ticket.count({
+                where: { companyId, assignedTo: null, archived: false }
+            }),
+            Ticket.count({
+                where: { companyId, assignedTo: { [Op.in]: teamMemberIds }, archived: false }
+            }),
+            Ticket.count({
+                where: { companyId, archived: false }
+            })
+        ]);
+
+        // Get priority breakdown for my queue
+        const myPriorityStats = await Ticket.findAll({
+            where: { companyId, assignedTo: userId, archived: false },
+            attributes: [
+                'priority',
+                [Ticket.sequelize.fn('COUNT', Ticket.sequelize.col('id')), 'count']
+            ],
+            group: ['priority'],
+            raw: true
+        });
+
+        // Get status breakdown for my queue
+        const myStatusStats = await Ticket.findAll({
+            where: { companyId, assignedTo: userId, archived: false },
+            attributes: [
+                'status',
+                [Ticket.sequelize.fn('COUNT', Ticket.sequelize.col('id')), 'count']
+            ],
+            group: ['status'],
+            raw: true
+        });
+
+        res.json({
+            queues: {
+                my: myCount,
+                unassigned: unassignedCount,
+                team: teamCount,
+                total: totalCount
+            },
+            myQueue: {
+                priority: myPriorityStats.reduce((acc, stat) => {
+                    acc[stat.priority] = parseInt(stat.count);
+                    return acc;
+                }, {}),
+                status: myStatusStats.reduce((acc, stat) => {
+                    acc[stat.status] = parseInt(stat.count);
+                    return acc;
+                }, {})
+            }
+        });
+    } catch (error) {
+        console.error('Error fetching queue stats:', error);
+        res.status(500).json({ error: 'Failed to fetch queue stats' });
+    }
+});
+
+// PUT /api/tickets/:id/assign - Assign ticket to user
+router.put('/:id/assign', protect, async (req, res) => {
+    try {
+        const { assignedTo } = req.body;
+        
+        const ticket = await Ticket.findOne({
+            where: {
+                id: req.params.id,
+                companyId: req.user.companyId,
+                archived: false
+            }
+        });
+
+        if (!ticket) {
+            return res.status(404).json({ error: 'Ticket not found' });
+        }
+
+        // Validate assignedTo user belongs to same company
+        if (assignedTo) {
+            const user = await User.findOne({
+                where: { id: assignedTo, companyId: req.user.companyId }
+            });
+            if (!user) {
+                return res.status(400).json({ error: 'Invalid user assignment' });
+            }
+        }
+
+        await ticket.update({ assignedTo });
+
+        // Fetch updated ticket with associations
+        const updatedTicket = await Ticket.findByPk(ticket.id, {
+            include: [
+                {
+                    model: Company,
+                    as: 'company',
+                    attributes: ['id', 'name']
+                },
+                {
+                    model: Contact,
+                    as: 'contact',
+                    attributes: ['id', 'firstName', 'lastName', 'email']
+                },
+                {
+                    model: User,
+                    as: 'assignedUser',
+                    attributes: ['id', 'username', 'email']
+                },
+                {
+                    model: User,
+                    as: 'creator',
+                    attributes: ['id', 'username', 'email']
+                }
+            ]
+        });
+
+        res.json(updatedTicket);
+    } catch (error) {
+        console.error('Error assigning ticket:', error);
+        res.status(500).json({ error: 'Failed to assign ticket' });
+    }
+});
+
+// PUT /api/tickets/bulk/assign - Bulk assign tickets
+router.put('/bulk/assign', protect, async (req, res) => {
+    try {
+        const { ticketIds, assignedTo } = req.body;
+        
+        if (!Array.isArray(ticketIds) || ticketIds.length === 0) {
+            return res.status(400).json({ error: 'Ticket IDs are required' });
+        }
+
+        // Validate assignedTo user belongs to same company
+        if (assignedTo) {
+            const user = await User.findOne({
+                where: { id: assignedTo, companyId: req.user.companyId }
+            });
+            if (!user) {
+                return res.status(400).json({ error: 'Invalid user assignment' });
+            }
+        }
+
+        // Update tickets
+        const [updatedCount] = await Ticket.update(
+            { assignedTo },
+            {
+                where: {
+                    id: { [Op.in]: ticketIds },
+                    companyId: req.user.companyId,
+                    archived: false
+                }
+            }
+        );
+
+        res.json({ 
+            message: `${updatedCount} tickets assigned successfully`,
+            updatedCount 
+        });
+    } catch (error) {
+        console.error('Error bulk assigning tickets:', error);
+        res.status(500).json({ error: 'Failed to bulk assign tickets' });
+    }
+});
+
+// PUT /api/tickets/bulk/status - Bulk update ticket status
+router.put('/bulk/status', protect, async (req, res) => {
+    try {
+        const { ticketIds, status } = req.body;
+        
+        if (!Array.isArray(ticketIds) || ticketIds.length === 0) {
+            return res.status(400).json({ error: 'Ticket IDs are required' });
+        }
+
+        if (!status) {
+            return res.status(400).json({ error: 'Status is required' });
+        }
+
+        // Validate status
+        const validStatuses = ['open', 'in_progress', 'resolved', 'closed', 'on_hold'];
+        if (!validStatuses.includes(status)) {
+            return res.status(400).json({ error: 'Invalid status' });
+        }
+
+        // Update tickets
+        const [updatedCount] = await Ticket.update(
+            { status },
+            {
+                where: {
+                    id: { [Op.in]: ticketIds },
+                    companyId: req.user.companyId,
+                    archived: false
+                }
+            }
+        );
+
+        res.json({ 
+            message: `${updatedCount} tickets updated successfully`,
+            updatedCount 
+        });
+    } catch (error) {
+        console.error('Error bulk updating ticket status:', error);
+        res.status(500).json({ error: 'Failed to bulk update ticket status' });
+    }
+});
+
 // GET /api/tickets/:id - Get a specific ticket with comments
 router.get('/:id', protect, async (req, res) => {
     try {

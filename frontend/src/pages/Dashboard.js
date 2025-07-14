@@ -282,6 +282,13 @@ const Dashboard = () => {
                         description: 'Manage your dashboard views',
                         type: 'builtin-react',
                         path: null
+                    },
+                    {
+                        key: 'ticket-profile-widget',
+                        name: 'Ticket Profile Widget',
+                        description: 'Display detailed ticket information',
+                        type: 'builtin-react',
+                        path: null
                     }
                 ];
                 
@@ -801,6 +808,11 @@ const Dashboard = () => {
                 endpoint: 'tasks',
                 nameFields: (data) => data.title,
                 defaultName: 'Task Profile'
+            },
+            ticket: {
+                endpoint: 'tickets',
+                nameFields: (data) => data.subject || data.title,
+                defaultName: 'Ticket Profile'
             }
         };
         
@@ -834,7 +846,8 @@ const Dashboard = () => {
                    profileType === 'business' ? 'orange' :
                    profileType === 'user' ? 'gray' :
                    profileType === 'sales' ? 'indigo' :
-                   profileType === 'task' ? 'teal' : 'blue'
+                   profileType === 'task' ? 'teal' :
+                   profileType === 'ticket' ? 'red' : 'blue'
         };
         
         // Create a simple layout for the profile
@@ -845,7 +858,7 @@ const Dashboard = () => {
             w: 12,
             h: 8,
             widgetKey: `${profileType}-profile-widget-${profileId}`,
-            widgetData: { [profileType === 'sales' ? 'saleId' : `${profileType}Id`]: profileId }
+            widgetData: { [(profileType === 'sales' || profileType === 'sale') ? 'saleId' : `${profileType}Id`]: profileId }
         }];
         
         // Update all state synchronously
@@ -892,6 +905,10 @@ const Dashboard = () => {
 
     const handleOpenTaskProfile = async (taskId, taskTitle) => {
         await handleOpenProfile('task', taskId, taskTitle);
+    };
+
+    const handleOpenTicketProfile = async (ticketId, ticketTitle) => {
+        await handleOpenProfile('ticket', ticketId, ticketTitle);
     };
 
     // Generic function to open any page as a new tab
@@ -1247,6 +1264,7 @@ const Dashboard = () => {
                             onOpenUserProfile={handleOpenUserProfile}
                             onOpenSaleProfile={handleOpenSalesProfile}
                             onOpenTaskProfile={handleOpenTaskProfile}
+                            onOpenTicketProfile={handleOpenTicketProfile}
                         />
                     )}
                     

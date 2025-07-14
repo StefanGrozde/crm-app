@@ -1007,5 +1007,301 @@ export const entityConfigs = {
                 render: (item) => `${item.firstName} ${item.lastName}`
             }
         }
+    },
+
+    // Queue-specific configurations
+    myTicketQueue: {
+        title: 'My Ticket Queue',
+        apiEndpoint: 'tickets/queue/my',
+        dataKey: 'tickets',
+        features: {
+            queueView: true,
+            filtering: true,
+            filterOptions: true,
+            bulkSelection: true,
+            stats: true,
+            assignmentActions: false,
+            bulkActions: true
+        },
+        defaultFilters: {
+            status: '',
+            priority: '',
+            type: ''
+        },
+        fields: {
+            display: [
+                { 
+                    name: 'ticketNumber', 
+                    label: 'Ticket #',
+                    render: (value, item, onOpenProfile) => (
+                        <div>
+                            <div 
+                                className="text-sm font-medium text-blue-600 cursor-pointer hover:text-blue-800 hover:underline"
+                                onClick={() => onOpenProfile && onOpenProfile(item.id)}
+                            >
+                                {value}
+                            </div>
+                        </div>
+                    )
+                },
+                { 
+                    name: 'title', 
+                    label: 'Title',
+                    render: (value, item, onOpenProfile) => (
+                        <div>
+                            <div 
+                                className="text-sm font-medium text-gray-900 cursor-pointer hover:text-blue-600 hover:underline"
+                                onClick={() => onOpenProfile && onOpenProfile(item.id)}
+                            >
+                                {value}
+                            </div>
+                            <div className="flex items-center space-x-2 mt-1">
+                                <span className={`px-2 py-1 text-xs rounded-full ${
+                                    item.type === 'bug' ? 'bg-red-100 text-red-800' :
+                                    item.type === 'feature_request' ? 'bg-blue-100 text-blue-800' :
+                                    item.type === 'support' ? 'bg-green-100 text-green-800' :
+                                    item.type === 'incident' ? 'bg-purple-100 text-purple-800' :
+                                    item.type === 'task' ? 'bg-yellow-100 text-yellow-800' :
+                                    'bg-gray-100 text-gray-800'
+                                }`}>
+                                    {item.type?.replace('_', ' ')}
+                                </span>
+                                <span className={`px-2 py-1 text-xs rounded-full ${
+                                    item.priority === 'urgent' ? 'bg-red-100 text-red-800' :
+                                    item.priority === 'high' ? 'bg-orange-100 text-orange-800' :
+                                    item.priority === 'medium' ? 'bg-yellow-100 text-yellow-800' :
+                                    'bg-green-100 text-green-800'
+                                }`}>
+                                    {item.priority}
+                                </span>
+                            </div>
+                        </div>
+                    )
+                },
+                { 
+                    name: 'status', 
+                    label: 'Status', 
+                    type: 'status',
+                    statusColors: {
+                        open: 'bg-blue-100 text-blue-800',
+                        in_progress: 'bg-yellow-100 text-yellow-800',
+                        resolved: 'bg-green-100 text-green-800',
+                        closed: 'bg-gray-100 text-gray-800',
+                        on_hold: 'bg-orange-100 text-orange-800'
+                    }
+                },
+                { 
+                    name: 'contact', 
+                    label: 'Contact',
+                    render: (value) => value ? `${value.firstName} ${value.lastName}` : '-'
+                },
+                { 
+                    name: 'createdAt', 
+                    label: 'Created',
+                    render: (value) => new Date(value).toLocaleDateString()
+                }
+            ]
+        }
+    },
+
+    unassignedTicketQueue: {
+        title: 'Unassigned Ticket Queue',
+        apiEndpoint: 'tickets/queue/unassigned',
+        dataKey: 'tickets',
+        features: {
+            queueView: true,
+            filtering: true,
+            filterOptions: true,
+            bulkSelection: true,
+            stats: false,
+            assignmentActions: true,
+            bulkActions: true
+        },
+        defaultFilters: {
+            status: '',
+            priority: '',
+            type: ''
+        },
+        fields: {
+            display: [
+                { 
+                    name: 'ticketNumber', 
+                    label: 'Ticket #',
+                    render: (value, item, onOpenProfile) => (
+                        <div>
+                            <div 
+                                className="text-sm font-medium text-blue-600 cursor-pointer hover:text-blue-800 hover:underline"
+                                onClick={() => onOpenProfile && onOpenProfile(item.id)}
+                            >
+                                {value}
+                            </div>
+                        </div>
+                    )
+                },
+                { 
+                    name: 'title', 
+                    label: 'Title',
+                    render: (value, item, onOpenProfile) => (
+                        <div>
+                            <div 
+                                className="text-sm font-medium text-gray-900 cursor-pointer hover:text-blue-600 hover:underline"
+                                onClick={() => onOpenProfile && onOpenProfile(item.id)}
+                            >
+                                {value}
+                            </div>
+                            <div className="flex items-center space-x-2 mt-1">
+                                <span className={`px-2 py-1 text-xs rounded-full ${
+                                    item.type === 'bug' ? 'bg-red-100 text-red-800' :
+                                    item.type === 'feature_request' ? 'bg-blue-100 text-blue-800' :
+                                    item.type === 'support' ? 'bg-green-100 text-green-800' :
+                                    item.type === 'incident' ? 'bg-purple-100 text-purple-800' :
+                                    item.type === 'task' ? 'bg-yellow-100 text-yellow-800' :
+                                    'bg-gray-100 text-gray-800'
+                                }`}>
+                                    {item.type?.replace('_', ' ')}
+                                </span>
+                                <span className={`px-2 py-1 text-xs rounded-full ${
+                                    item.priority === 'urgent' ? 'bg-red-100 text-red-800' :
+                                    item.priority === 'high' ? 'bg-orange-100 text-orange-800' :
+                                    item.priority === 'medium' ? 'bg-yellow-100 text-yellow-800' :
+                                    'bg-green-100 text-green-800'
+                                }`}>
+                                    {item.priority}
+                                </span>
+                            </div>
+                        </div>
+                    )
+                },
+                { 
+                    name: 'status', 
+                    label: 'Status', 
+                    type: 'status',
+                    statusColors: {
+                        open: 'bg-blue-100 text-blue-800',
+                        in_progress: 'bg-yellow-100 text-yellow-800',
+                        resolved: 'bg-green-100 text-green-800',
+                        closed: 'bg-gray-100 text-gray-800',
+                        on_hold: 'bg-orange-100 text-orange-800'
+                    }
+                },
+                { 
+                    name: 'contact', 
+                    label: 'Contact',
+                    render: (value) => value ? `${value.firstName} ${value.lastName}` : '-'
+                },
+                { 
+                    name: 'creator', 
+                    label: 'Created By',
+                    render: (value) => value ? value.username : '-'
+                },
+                { 
+                    name: 'createdAt', 
+                    label: 'Created',
+                    render: (value) => new Date(value).toLocaleDateString()
+                }
+            ]
+        }
+    },
+
+    teamTicketQueue: {
+        title: 'Team Ticket Queue',
+        apiEndpoint: 'tickets/queue/team',
+        dataKey: 'tickets',
+        features: {
+            queueView: true,
+            filtering: true,
+            filterOptions: true,
+            bulkSelection: true,
+            stats: false,
+            assignmentActions: true,
+            bulkActions: true
+        },
+        defaultFilters: {
+            status: '',
+            priority: '',
+            type: '',
+            assignedTo: ''
+        },
+        fields: {
+            display: [
+                { 
+                    name: 'ticketNumber', 
+                    label: 'Ticket #',
+                    render: (value, item, onOpenProfile) => (
+                        <div>
+                            <div 
+                                className="text-sm font-medium text-blue-600 cursor-pointer hover:text-blue-800 hover:underline"
+                                onClick={() => onOpenProfile && onOpenProfile(item.id)}
+                            >
+                                {value}
+                            </div>
+                        </div>
+                    )
+                },
+                { 
+                    name: 'title', 
+                    label: 'Title',
+                    render: (value, item, onOpenProfile) => (
+                        <div>
+                            <div 
+                                className="text-sm font-medium text-gray-900 cursor-pointer hover:text-blue-600 hover:underline"
+                                onClick={() => onOpenProfile && onOpenProfile(item.id)}
+                            >
+                                {value}
+                            </div>
+                            <div className="flex items-center space-x-2 mt-1">
+                                <span className={`px-2 py-1 text-xs rounded-full ${
+                                    item.type === 'bug' ? 'bg-red-100 text-red-800' :
+                                    item.type === 'feature_request' ? 'bg-blue-100 text-blue-800' :
+                                    item.type === 'support' ? 'bg-green-100 text-green-800' :
+                                    item.type === 'incident' ? 'bg-purple-100 text-purple-800' :
+                                    item.type === 'task' ? 'bg-yellow-100 text-yellow-800' :
+                                    'bg-gray-100 text-gray-800'
+                                }`}>
+                                    {item.type?.replace('_', ' ')}
+                                </span>
+                                <span className={`px-2 py-1 text-xs rounded-full ${
+                                    item.priority === 'urgent' ? 'bg-red-100 text-red-800' :
+                                    item.priority === 'high' ? 'bg-orange-100 text-orange-800' :
+                                    item.priority === 'medium' ? 'bg-yellow-100 text-yellow-800' :
+                                    'bg-green-100 text-green-800'
+                                }`}>
+                                    {item.priority}
+                                </span>
+                            </div>
+                        </div>
+                    )
+                },
+                { 
+                    name: 'status', 
+                    label: 'Status', 
+                    type: 'status',
+                    statusColors: {
+                        open: 'bg-blue-100 text-blue-800',
+                        in_progress: 'bg-yellow-100 text-yellow-800',
+                        resolved: 'bg-green-100 text-green-800',
+                        closed: 'bg-gray-100 text-gray-800',
+                        on_hold: 'bg-orange-100 text-orange-800'
+                    }
+                },
+                { 
+                    name: 'assignedUser', 
+                    label: 'Assigned To',
+                    render: (value) => value ? value.username : 'Unassigned'
+                },
+                { 
+                    name: 'contact', 
+                    label: 'Contact',
+                    render: (value) => value ? `${value.firstName} ${value.lastName}` : '-'
+                },
+                { 
+                    name: 'createdAt', 
+                    label: 'Created',
+                    render: (value) => new Date(value).toLocaleDateString()
+                }
+            ]
+        }
     }
 };
+
+export { entityConfigs };
