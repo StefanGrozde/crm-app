@@ -35,13 +35,18 @@ const TicketQueueConfigModal = ({
     };
 
     const handleQueueTypeChange = (queueType) => {
+        console.log('Queue type changed to:', queueType);
         const queueOption = queueOptions.find(opt => opt.value === queueType);
-        setConfig(prev => ({
-            ...prev,
-            queueType,
-            // Auto-set title if not manually edited
-            title: prev.title === '' ? queueOption.label : prev.title
-        }));
+        setConfig(prev => {
+            const newConfig = {
+                ...prev,
+                queueType,
+                // Auto-set title if not manually edited
+                title: prev.title === '' || prev.title === queueOptions.find(opt => opt.value === prev.queueType)?.label ? queueOption.label : prev.title
+            };
+            console.log('New config:', newConfig);
+            return newConfig;
+        });
     };
 
     if (!isOpen) return null;
@@ -66,23 +71,26 @@ const TicketQueueConfigModal = ({
                                     <label className="block text-sm font-medium text-gray-700 mb-2">
                                         Queue Type
                                     </label>
-                                    <div className="space-y-2">
+                                    <div className="space-y-3">
                                         {queueOptions.map(option => (
-                                            <div key={option.value} className="flex items-start">
+                                            <div key={option.value} className="flex items-start p-3 border rounded-lg hover:bg-gray-50 cursor-pointer" onClick={() => handleQueueTypeChange(option.value)}>
                                                 <input
                                                     type="radio"
                                                     id={`queue-${option.value}`}
                                                     name="queueType"
                                                     value={option.value}
                                                     checked={config.queueType === option.value}
-                                                    onChange={(e) => handleQueueTypeChange(e.target.value)}
-                                                    className="mt-1 mr-3 text-blue-600 border-gray-300 focus:ring-blue-500"
+                                                    onChange={(e) => {
+                                                        e.stopPropagation();
+                                                        handleQueueTypeChange(e.target.value);
+                                                    }}
+                                                    className="mt-0.5 mr-3 h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500 focus:ring-2 cursor-pointer"
                                                 />
-                                                <div className="flex-1">
+                                                <div className="flex-1 cursor-pointer">
                                                     <label htmlFor={`queue-${option.value}`} className="block text-sm font-medium text-gray-900 cursor-pointer">
                                                         {option.label}
                                                     </label>
-                                                    <p className="text-xs text-gray-500">{option.description}</p>
+                                                    <p className="text-xs text-gray-500 mt-1">{option.description}</p>
                                                 </div>
                                             </div>
                                         ))}
