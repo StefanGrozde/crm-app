@@ -98,16 +98,41 @@ const TicketProfileWidget = ({ ticketId }) => {
     // Logic: Update ticket
     const handleUpdateTicket = async (updatedData) => {
         try {
-            const response = await axios.put(`${API_URL}/api/tickets/${ticketId}`, updatedData, {
+            // Structure the data according to what the backend expects
+            const submitData = {
+                title: updatedData.title,
+                description: updatedData.description || '',
+                status: updatedData.status,
+                priority: updatedData.priority,
+                type: updatedData.type,
+                contactId: updatedData.contactId && updatedData.contactId !== '' ? parseInt(updatedData.contactId) : null,
+                assignedTo: updatedData.assignedTo && updatedData.assignedTo !== '' ? parseInt(updatedData.assignedTo) : null,
+                relatedLeadId: updatedData.relatedLeadId && updatedData.relatedLeadId !== '' ? parseInt(updatedData.relatedLeadId) : null,
+                relatedOpportunityId: updatedData.relatedOpportunityId && updatedData.relatedOpportunityId !== '' ? parseInt(updatedData.relatedOpportunityId) : null,
+                relatedSaleId: updatedData.relatedSaleId && updatedData.relatedSaleId !== '' ? parseInt(updatedData.relatedSaleId) : null,
+                relatedTaskId: updatedData.relatedTaskId && updatedData.relatedTaskId !== '' ? parseInt(updatedData.relatedTaskId) : null,
+                estimatedHours: updatedData.estimatedHours ? parseFloat(updatedData.estimatedHours) : null,
+                actualHours: updatedData.actualHours ? parseFloat(updatedData.actualHours) : null,
+                resolutionNotes: updatedData.resolutionNotes || '',
+                tags: updatedData.tags || []
+            };
+            
+            console.log('Submitting ticket data:', submitData);
+            
+            const response = await axios.put(`${API_URL}/api/tickets/${ticketId}`, submitData, {
                 withCredentials: true
             });
+            
+            console.log('Ticket update response:', response.data);
             
             setTicket(response.data);
             setShowEditModal(false);
             alert('Ticket updated successfully!');
         } catch (error) {
             console.error('Error updating ticket:', error);
-            alert('Failed to update ticket');
+            console.error('Error response:', error.response?.data);
+            const errorMessage = error.response?.data?.message || error.response?.data?.error || 'Failed to update ticket';
+            alert(errorMessage);
         }
     };
 
@@ -179,7 +204,10 @@ const TicketProfileWidget = ({ ticketId }) => {
 
     // Logic: Save edit
     const handleSaveEdit = () => {
-        const updatedData = { ...formData, tags };
+        const updatedData = { 
+            ...formData, 
+            tags: tags 
+        };
         handleUpdateTicket(updatedData);
     };
 

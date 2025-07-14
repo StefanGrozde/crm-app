@@ -179,18 +179,39 @@ const TaskProfileWidget = ({ taskId }) => {
         e.preventDefault();
         
         try {
+            // Structure the data according to what the backend expects
             const submitData = {
-                ...formData,
+                title: formData.title,
+                description: formData.description || '',
+                status: formData.status,
+                priority: formData.priority,
+                dueDate: formData.dueDate || null,
+                completedDate: formData.completedDate || null,
+                estimatedHours: formData.estimatedHours ? parseFloat(formData.estimatedHours) : null,
+                actualHours: formData.actualHours ? parseFloat(formData.actualHours) : null,
+                assignmentType: formData.assignmentType || 'individual',
+                category: formData.category || '',
+                notes: formData.notes || '',
+                contactId: formData.contactId && formData.contactId !== '' ? parseInt(formData.contactId) : null,
+                leadId: formData.leadId && formData.leadId !== '' ? parseInt(formData.leadId) : null,
+                opportunityId: formData.opportunityId && formData.opportunityId !== '' ? parseInt(formData.opportunityId) : null,
+                saleId: formData.saleId && formData.saleId !== '' ? parseInt(formData.saleId) : null,
                 tags: tags,
-                assignedUsers: selectedUsers
+                assignedUsers: selectedUsers.map(id => parseInt(id))
             };
             
-            await axios.put(`${API_URL}/api/tasks/${task.id}`, submitData, {
+            console.log('Submitting task data:', submitData);
+            
+            const response = await axios.put(`${API_URL}/api/tasks/${task.id}`, submitData, {
                 withCredentials: true
             });
             
+            console.log('Task update response:', response.data);
+            
             setShowEditModal(false);
-            await loadTask(); // Reload task data
+            setTask(response.data); // Update the task with the response data
+            setTags(response.data.tags || []);
+            setSelectedUsers(response.data.assignments?.map(a => a.userId) || []);
             
             // Notify other components that a task was updated
             window.dispatchEvent(new CustomEvent('taskUpdated', { 
@@ -198,7 +219,9 @@ const TaskProfileWidget = ({ taskId }) => {
             }));
         } catch (error) {
             console.error('Error updating task:', error);
-            alert(error.response?.data?.message || 'Failed to update task');
+            console.error('Error response:', error.response?.data);
+            const errorMessage = error.response?.data?.message || error.response?.data?.error || 'Failed to update task';
+            alert(errorMessage);
         }
     }, [formData, tags, selectedUsers, task, loadTask]);
 
@@ -693,6 +716,41 @@ const TaskProfileWidget = ({ taskId }) => {
                                         type="text"
                                         name="category"
                                         value={formData.category}
+                                        onChange={handleInputChange}
+                                        className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Assignment Type</label>
+                                    <select
+                                        name="assignmentType"
+                                        value={formData.assignmentType}
+                                        onChange={handleInputChange}
+                                        className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                    >
+                                        <option value="individual">Individual</option>
+                                        <option value="multiple">Multiple</option>
+                                        <option value="all_company">All Company</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Actual Hours</label>
+                                    <input
+                                        type="number"
+                                        name="actualHours"
+                                        value={formData.actualHours}
+                                        onChange={handleInputChange}
+                                        step="0.5"
+                                        min="0"
+                                        className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Completed Date</label>
+                                    <input
+                                        type="date"
+                                        name="completedDate"
+                                        value={formData.completedDate}
                                         onChange={handleInputChange}
                                         className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                                     />

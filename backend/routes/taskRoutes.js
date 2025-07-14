@@ -532,6 +532,17 @@ router.put('/:id', protect, async (req, res) => {
 
     } catch (error) {
         console.error('Error updating task:', error);
+        if (error.name === 'SequelizeValidationError') {
+            return res.status(400).json({ 
+                message: 'Validation error', 
+                error: error.errors.map(e => e.message).join(', ')
+            });
+        }
+        if (error.name === 'SequelizeForeignKeyConstraintError') {
+            return res.status(400).json({ 
+                message: 'Invalid reference (contact, user, or related entity not found)' 
+            });
+        }
         res.status(500).json({ 
             message: 'Failed to update task',
             error: process.env.NODE_ENV === 'development' ? error.message : undefined

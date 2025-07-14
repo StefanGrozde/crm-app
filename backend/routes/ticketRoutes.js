@@ -875,24 +875,25 @@ router.put('/:id', protect, async (req, res) => {
         const oldStatus = ticket.status;
         const oldAssignedTo = ticket.assignedTo;
 
-        // Update fields
-        if (title !== undefined) ticket.title = title.trim();
-        if (description !== undefined) ticket.description = description?.trim();
-        if (status !== undefined) ticket.status = status;
-        if (priority !== undefined) ticket.priority = priority;
-        if (type !== undefined) ticket.type = type;
-        if (contactId !== undefined) ticket.contactId = contactId;
-        if (assignedTo !== undefined) ticket.assignedTo = assignedTo;
-        if (relatedLeadId !== undefined) ticket.relatedLeadId = relatedLeadId;
-        if (relatedOpportunityId !== undefined) ticket.relatedOpportunityId = relatedOpportunityId;
-        if (relatedSaleId !== undefined) ticket.relatedSaleId = relatedSaleId;
-        if (relatedTaskId !== undefined) ticket.relatedTaskId = relatedTaskId;
-        if (estimatedHours !== undefined) ticket.estimatedHours = estimatedHours;
-        if (actualHours !== undefined) ticket.actualHours = actualHours;
-        if (resolutionNotes !== undefined) ticket.resolutionNotes = resolutionNotes?.trim();
-        if (tags !== undefined) ticket.tags = tags;
+        // Update fields using update method
+        const updateData = {};
+        if (title !== undefined) updateData.title = title.trim();
+        if (description !== undefined) updateData.description = description?.trim();
+        if (status !== undefined) updateData.status = status;
+        if (priority !== undefined) updateData.priority = priority;
+        if (type !== undefined) updateData.type = type;
+        if (contactId !== undefined) updateData.contactId = contactId;
+        if (assignedTo !== undefined) updateData.assignedTo = assignedTo;
+        if (relatedLeadId !== undefined) updateData.relatedLeadId = relatedLeadId;
+        if (relatedOpportunityId !== undefined) updateData.relatedOpportunityId = relatedOpportunityId;
+        if (relatedSaleId !== undefined) updateData.relatedSaleId = relatedSaleId;
+        if (relatedTaskId !== undefined) updateData.relatedTaskId = relatedTaskId;
+        if (estimatedHours !== undefined) updateData.estimatedHours = estimatedHours;
+        if (actualHours !== undefined) updateData.actualHours = actualHours;
+        if (resolutionNotes !== undefined) updateData.resolutionNotes = resolutionNotes?.trim();
+        if (tags !== undefined) updateData.tags = tags;
 
-        await ticket.save();
+        await ticket.update(updateData);
 
         // Create notifications for status and assignment changes
         try {
@@ -946,7 +947,21 @@ router.put('/:id', protect, async (req, res) => {
         res.json(updatedTicket);
     } catch (error) {
         console.error('Error updating ticket:', error);
-        res.status(500).json({ error: 'Failed to update ticket' });
+        if (error.name === 'SequelizeValidationError') {
+            return res.status(400).json({ 
+                error: 'Validation error', 
+                details: error.errors.map(e => e.message) 
+            });
+        }
+        if (error.name === 'SequelizeForeignKeyConstraintError') {
+            return res.status(400).json({ 
+                error: 'Invalid reference (contact, user, or related entity not found)' 
+            });
+        }
+        res.status(500).json({ 
+            error: 'Failed to update ticket',
+            message: process.env.NODE_ENV === 'development' ? error.message : undefined
+        });
     }
 });
 
