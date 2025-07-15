@@ -1,5 +1,6 @@
 const { DataTypes } = require('sequelize');
 const { sequelize } = require('../config/db');
+const { addAuditHooks } = require('../utils/auditHooks');
 
 const TicketComment = sequelize.define('TicketComment', {
   id: {
@@ -65,5 +66,16 @@ TicketComment.prototype.isPublic = function() {
 TicketComment.prototype.getType = function() {
   return this.isInternal ? 'internal' : 'public';
 };
+
+// Add audit hooks for automatic change tracking
+addAuditHooks(TicketComment, 'ticket_comment', {
+  sensitiveFields: ['isInternal'], // Track internal/public status changes
+  customMetadata: (instance, operation, context) => ({
+    ticketId: instance?.ticketId,
+    commentLength: instance?.comment?.length || 0,
+    isInternal: instance?.isInternal,
+    hasContent: !!instance?.comment
+  })
+});
 
 module.exports = TicketComment;

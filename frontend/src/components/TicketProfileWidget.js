@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext, useCallback, memo } from 'react';
+import React, { useState, useEffect, useContext, useCallback, memo, useRef, useMemo } from 'react';
 import axios from 'axios';
 import { AuthContext } from '../context/AuthContext';
 import { createPortal } from 'react-dom';
@@ -42,6 +42,9 @@ const TicketProfileWidget = ({ ticketId }) => {
     // Tags handling
     const [tags, setTags] = useState([]);
     const [tagInput, setTagInput] = useState('');
+    
+    // Timeline refresh reference
+    const timelineRef = useRef(null);
 
     // Logic: Load ticket data
     const loadTicket = useCallback(async () => {
@@ -127,6 +130,14 @@ const TicketProfileWidget = ({ ticketId }) => {
             
             setTicket(response.data);
             setShowEditModal(false);
+            
+            // Refresh the timeline to show new audit logs (with small delay to ensure audit log creation)
+            setTimeout(() => {
+                if (timelineRef.current && timelineRef.current.refresh) {
+                    timelineRef.current.refresh();
+                }
+            }, 500);
+            
             alert('Ticket updated successfully!');
         } catch (error) {
             console.error('Error updating ticket:', error);
@@ -152,6 +163,13 @@ const TicketProfileWidget = ({ ticketId }) => {
             
             // Reload ticket to get updated comments
             await loadTicket();
+            
+            // Refresh the timeline to show new audit logs (with small delay to ensure audit log creation)
+            setTimeout(() => {
+                if (timelineRef.current && timelineRef.current.refresh) {
+                    timelineRef.current.refresh();
+                }
+            }, 500);
             
             setNewComment('');
             setIsInternalComment(false);
@@ -267,6 +285,21 @@ const TicketProfileWidget = ({ ticketId }) => {
         };
         return colors[type] || 'bg-gray-100 text-gray-800';
     };
+
+    // Memoized ticket data for timeline to prevent unnecessary re-renders
+    const memoizedTicketData = useMemo(() => {
+        if (!ticket) return null;
+        return {
+            id: ticket.id,
+            title: ticket.title,
+            status: ticket.status,
+            priority: ticket.priority,
+            type: ticket.type,
+            created_at: ticket.created_at,
+            updated_at: ticket.updated_at,
+            assignedTo: ticket.assignedTo
+        };
+    }, [ticket?.id, ticket?.title, ticket?.status, ticket?.priority, ticket?.type, ticket?.created_at, ticket?.updated_at, ticket?.assignedTo]);
 
     if (loading) {
         return (
@@ -518,12 +551,13 @@ const TicketProfileWidget = ({ ticketId }) => {
             </div>
 
             {/* Timeline with Comments - Enhanced Ticket View */}
-            {ticket && (
+            {memoizedTicketData && (
                 <div className="mt-6">
                     <TimelineWithComments
+                        ref={timelineRef}
                         entityType="ticket"
-                        entityId={ticket.id}
-                        entityData={ticket}
+                        entityId={memoizedTicketData.id}
+                        entityData={memoizedTicketData}
                         userRole={user?.role}
                         showAddComment={true}
                         showFilters={false}

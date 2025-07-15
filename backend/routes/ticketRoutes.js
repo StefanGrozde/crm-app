@@ -893,7 +893,12 @@ router.put('/:id', protect, async (req, res) => {
         if (resolutionNotes !== undefined) updateData.resolutionNotes = resolutionNotes?.trim();
         if (tags !== undefined) updateData.tags = tags;
 
-        await ticket.update(updateData);
+        await ticket.update(updateData, {
+            // Pass user context for audit logging
+            user: req.user,
+            userId: req.user.id,
+            companyId: req.user.companyId
+        });
 
         // Create notifications for status and assignment changes
         try {
@@ -1040,6 +1045,11 @@ router.post('/:id/comments', protect, async (req, res) => {
             userId: req.user.id,
             comment: comment.trim(),
             isInternal
+        }, {
+            // Pass user context for audit logging
+            user: req.user,
+            userId: req.user.id,
+            companyId: req.user.companyId
         });
 
         // Create comment notification
