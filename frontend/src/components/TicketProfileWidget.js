@@ -299,9 +299,12 @@ const TicketProfileWidget = ({ ticketId }) => {
             priority: ticket.priority,
             type: ticket.type,
             created_at: ticket.created_at,
-            updated_at: ticket.updated_at
+            updated_at: ticket.updated_at,
+            assignedUser: ticket.assignedUser,
+            ticketNumber: ticket.ticketNumber,
+            description: ticket.description
         };
-    }, [ticket?.id, ticket?.title, ticket?.status, ticket?.priority, ticket?.type, ticket?.created_at, ticket?.updated_at]);
+    }, [ticket?.id, ticket?.title, ticket?.status, ticket?.priority, ticket?.type, ticket?.created_at, ticket?.updated_at, ticket?.assignedUser, ticket?.ticketNumber, ticket?.description]);
 
     if (loading) {
         return (
@@ -398,7 +401,7 @@ const TicketProfileWidget = ({ ticketId }) => {
                                 <div>
                                     <dt className="text-sm font-medium text-gray-500">Assigned To</dt>
                                     <dd className="text-sm text-gray-900">
-                                        {ticket.assignedTo ? `User ID: ${ticket.assignedTo}` : 'Unassigned'}
+                                        {ticket.assignedUser ? ticket.assignedUser.username : 'Unassigned'}
                                     </dd>
                                 </div>
                                 <div>

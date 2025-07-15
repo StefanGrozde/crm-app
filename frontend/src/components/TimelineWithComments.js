@@ -192,7 +192,7 @@ const TimelineWithComments = React.memo(forwardRef(({
   // Render comment timeline item
   const renderCommentItem = (comment) => {
     return (
-      <div className="bg-gray-100 rounded-lg p-6 shadow-sm border border-gray-200 w-full">
+      <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200 w-full max-w-2xl">
         <div className="flex items-start justify-between mb-3">
           <div className="flex items-center space-x-3">
             <span className="font-medium text-gray-900">{comment.user?.username || 'Unknown User'}</span>
@@ -535,7 +535,7 @@ const TimelineWithComments = React.memo(forwardRef(({
                     </div>
                     
                     {/* Content below the line */}
-                    <div className="w-full max-w-md">
+                    <div className="w-full">
                       {item.type === 'comment' ? 
                         renderCommentItem(item.data) : 
                         renderAuditItem(item.data)
