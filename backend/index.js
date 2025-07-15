@@ -24,6 +24,7 @@ const fileRoutes = require('./routes/fileRoutes');
 const ticketRoutes = require('./routes/ticketRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
 const auditRoutes = require('./routes/auditRoutes');
+const messengerRoutes = require('./routes/messengerRoutes');
 const path = require('path');
 
 console.log("Application starting...");
@@ -91,6 +92,7 @@ app.use('/api/files', fileRoutes);
 app.use('/api/tickets', ticketRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/audit-logs', auditRoutes);
+app.use('/api/messenger', messengerRoutes);
 app.use('/api/widgets/buildin', express.static(path.join(__dirname, 'widgets', 'buildin')));
 app.use('/api/widgets/custom', express.static(path.join(__dirname, 'widgets', 'custom')));
 // Test Route to check DB connection
