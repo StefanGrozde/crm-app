@@ -7,6 +7,13 @@ const crypto = require('crypto');
 router.get('/webhook', (req, res) => {
     const VERIFY_TOKEN = process.env.FB_VERIFY_TOKEN;
     
+    console.log('Webhook verification attempt:', {
+        mode: req.query['hub.mode'],
+        token: req.query['hub.verify_token'],
+        challenge: req.query['hub.challenge'],
+        expectedToken: VERIFY_TOKEN
+    });
+    
     // Parse the query params
     const mode = req.query['hub.mode'];
     const token = req.query['hub.verify_token'];
@@ -22,6 +29,8 @@ router.get('/webhook', (req, res) => {
         } else {
             // Respond with '403 Forbidden' if verify tokens do not match
             console.log('Webhook verification failed: Invalid verify token');
+            console.log('Expected:', VERIFY_TOKEN);
+            console.log('Received:', token);
             res.sendStatus(403);
         }
     } else {
