@@ -42,10 +42,8 @@ const InviteRegistration = () => {
         setError('');
         
         try {
-            // Store the invitation token in localStorage to use after Microsoft callback
-            localStorage.setItem('invitation_token', token);
-            
             // Redirect to Microsoft SSO with invitation parameter
+            // The invitation token will be passed through the state parameter
             window.location.href = `${API_URL}/api/auth/microsoft/login?invitation=${token}`;
         } catch (error) {
             console.error('Error initiating Microsoft SSO:', error);

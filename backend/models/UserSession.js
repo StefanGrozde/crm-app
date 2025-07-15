@@ -67,7 +67,7 @@ const UserSession = sequelize.define('UserSession', {
         allowNull: true,
         field: 'login_method',
         validate: {
-            isIn: [['password', 'remember_me', 'session_resume']]
+            isIn: [['password', 'remember_me', 'session_resume', 'microsoft_sso', 'microsoft_sso_invitation']]
         }
     },
     deviceInfo: {

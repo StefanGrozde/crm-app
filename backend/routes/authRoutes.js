@@ -75,16 +75,27 @@ router.get('/microsoft/login', (req, res) => {
         return res.status(500).json({ message: 'Microsoft authentication not configured' });
     }
     
-    // For invitation registration, the invitation token will be passed through URL parameters
-    // and handled on the frontend
+    // Check if this is an invitation registration
+    const invitationToken = req.query.invitation;
+    
+    // Create different redirect URIs for invitation vs regular login
+    const redirectUri = invitationToken ? 
+        `${REDIRECT_URI}?invitation=${invitationToken}` : 
+        REDIRECT_URI;
     
     pca
         .getAuthCodeUrl({
             scopes: ['openid', 'email', 'profile', 'User.Read'],
-            redirectUri: REDIRECT_URI,
+            redirectUri: REDIRECT_URI, // Microsoft requires the exact registered URI
         })
         .then((response) => {
-            res.redirect(response);
+            // Store invitation token in the callback URL as state
+            if (invitationToken) {
+                const urlWithState = `${response}&state=${invitationToken}`;
+                res.redirect(urlWithState);
+            } else {
+                res.redirect(response);
+            }
         })
         .catch((error) => {
             console.error("Failed to get auth code URL:", error);
@@ -95,14 +106,26 @@ router.get('/microsoft/login', (req, res) => {
 // STEP 2: Handle the callback from Microsoft and pass the code to the frontend.
 router.get('/microsoft/callback', (req, res) => {
     const code = req.query.code;
+    const state = req.query.state; // This contains the invitation token if it's an invitation flow
     
     if (code) {
-        // Check if there's an invitation token in localStorage (we'll handle this differently)
-        // For now, always redirect to login success and let frontend handle invitation logic
-        res.redirect(`${FRONTEND_URI}/login/success?mscode=${code}`);
+        // Check if this is an invitation flow (state contains invitation token)
+        if (state) {
+            // This is an invitation registration - redirect to invitation success handler
+            res.redirect(`${FRONTEND_URI}/invite-success?mscode=${code}&invitation=${state}`);
+        } else {
+            // Regular login flow
+            res.redirect(`${FRONTEND_URI}/login/success?mscode=${code}`);
+        }
     } else {
         // Handle cases where no code is provided
-        res.redirect(`${FRONTEND_URI}/login?error=microsoft-login-failed`);
+        if (state) {
+            // Invitation flow error
+            res.redirect(`${FRONTEND_URI}/invite/${state}?error=microsoft-login-failed`);
+        } else {
+            // Regular login flow error
+            res.redirect(`${FRONTEND_URI}/login?error=microsoft-login-failed`);
+        }
     }
 });
 
@@ -232,11 +255,20 @@ router.post('/microsoft/complete-invitation', async (req, res) => {
         await invitation.markAsUsed();
 
         // Log successful registration
-        await AuditService.logLogin(newUser.id, newUser.companyId, 'microsoft_sso_registration', {
+        const contextInfo = {
             ipAddress: req.ip || req.connection.remoteAddress,
             userAgent: req.get('User-Agent') || 'Unknown',
             loginMethod: 'microsoft_sso_invitation'
-        });
+        };
+        
+        // Generate a session token for the audit log
+        const sessionToken = jwt.sign(
+            { userId: newUser.id, companyId: newUser.companyId },
+            process.env.JWT_SECRET,
+            { expiresIn: '1d' }
+        );
+        
+        await AuditService.logLogin(newUser.id, newUser.companyId, sessionToken, contextInfo);
 
         // Generate JWT token and send response
         sendTokenResponse(newUser, 201, res);
