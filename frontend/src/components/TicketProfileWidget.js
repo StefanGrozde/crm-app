@@ -296,10 +296,9 @@ const TicketProfileWidget = ({ ticketId }) => {
             priority: ticket.priority,
             type: ticket.type,
             created_at: ticket.created_at,
-            updated_at: ticket.updated_at,
-            assignedTo: ticket.assignedTo
+            updated_at: ticket.updated_at
         };
-    }, [ticket?.id, ticket?.title, ticket?.status, ticket?.priority, ticket?.type, ticket?.created_at, ticket?.updated_at, ticket?.assignedTo]);
+    }, [ticket?.id, ticket?.title, ticket?.status, ticket?.priority, ticket?.type, ticket?.created_at, ticket?.updated_at]);
 
     if (loading) {
         return (
@@ -396,7 +395,7 @@ const TicketProfileWidget = ({ ticketId }) => {
                                 <div>
                                     <dt className="text-sm font-medium text-gray-500">Assigned To</dt>
                                     <dd className="text-sm text-gray-900">
-                                        {ticket.assignedUser ? ticket.assignedUser.username : 'Unassigned'}
+                                        {ticket.assignedTo ? `User ID: ${ticket.assignedTo}` : 'Unassigned'}
                                     </dd>
                                 </div>
                                 <div>

@@ -271,13 +271,7 @@ const TaskProfileWidget = ({ taskId }) => {
                 withCredentials: true
             });
 
-            // Update local state
-            setAssignmentStatuses(prev => ({ ...prev, [userId]: status }));
-            if (hours !== null) {
-                setHoursLogged(prev => ({ ...prev, [userId]: hours }));
-            }
-
-            // Reload task to get updated data
+            // Reload task to get updated data (this will update all assignment states)
             await loadTask();
             
             // Refresh the timeline to show new audit logs (with small delay to ensure audit log creation)
@@ -349,10 +343,9 @@ const TaskProfileWidget = ({ taskId }) => {
             priority: task.priority,
             dueDate: task.dueDate,
             created_at: task.created_at,
-            updated_at: task.updated_at,
-            assignments: task.assignments
+            updated_at: task.updated_at
         };
-    }, [task?.id, task?.title, task?.status, task?.priority, task?.dueDate, task?.created_at, task?.updated_at, task?.assignments]);
+    }, [task?.id, task?.title, task?.status, task?.priority, task?.dueDate, task?.created_at, task?.updated_at]);
 
     // Rendering: Loading state
     if (loading) {
@@ -525,8 +518,8 @@ const TaskProfileWidget = ({ taskId }) => {
                                     <div key={assignment.id} className="border rounded-lg p-3">
                                         <div className="flex justify-between items-start mb-2">
                                             <div>
-                                                <div className="font-medium">{assignment.user.username}</div>
-                                                <div className="text-sm text-gray-600">{assignment.user.email}</div>
+                                                <div className="font-medium">User ID: {assignment.userId}</div>
+                                                <div className="text-sm text-gray-600">Status: {assignment.status}</div>
                                             </div>
                                             <span className={`px-2 py-1 text-xs rounded-full ${getAssignmentStatusColor(assignment.status)}`}>
                                                 {assignment.status.replace('_', ' ')}
