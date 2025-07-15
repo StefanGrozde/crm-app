@@ -192,7 +192,7 @@ const TimelineWithComments = React.memo(forwardRef(({
   // Render comment timeline item
   const renderCommentItem = (comment) => {
     return (
-      <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200 w-full max-w-2xl">
+      <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200 w-full max-w-3xl">
         <div className="flex items-start justify-between mb-3">
           <div className="flex items-center space-x-3">
             <span className="font-medium text-gray-900">{comment.user?.username || 'Unknown User'}</span>
@@ -214,7 +214,7 @@ const TimelineWithComments = React.memo(forwardRef(({
   // Render audit log timeline item
   const renderAuditItem = (log) => {
     return (
-      <div className="bg-gray-100 rounded-lg p-3 shadow-sm border border-gray-200 w-full">
+      <div className="bg-gray-100 rounded-lg p-3 shadow-sm border border-gray-200 w-full max-w-lg">
         <div className="flex items-center justify-between mb-1">
           <p className="text-sm text-gray-900">
             <span className="font-medium">{log.user?.username || 'System'}</span>{' '}
@@ -523,19 +523,19 @@ const TimelineWithComments = React.memo(forwardRef(({
             /* Timeline with vertical line */
             <div className="relative">
               {/* Vertical line */}
-              <div className="absolute left-1/2 top-0 bottom-0 w-0.5 bg-gray-300 transform -translate-x-1/2"></div>
+              <div className="absolute left-8 top-0 bottom-0 w-0.5 bg-gray-300"></div>
               
               {/* Timeline items */}
-              <div className="space-y-8">
+              <div className="space-y-6">
                 {mergedTimeline.map((item) => (
-                  <div key={item.id} className="relative flex flex-col items-center">
-                    {/* User avatar above the line */}
-                    <div className="relative z-10 flex-shrink-0 mb-4">
+                  <div key={item.id} className="relative flex items-start">
+                    {/* User avatar on the line */}
+                    <div className="relative z-10 flex-shrink-0 mr-4">
                       {generateUserAvatar(item.user?.username || 'System')}
                     </div>
                     
-                    {/* Content below the line */}
-                    <div className="w-full">
+                    {/* Content to the right of the line */}
+                    <div className="flex-1">
                       {item.type === 'comment' ? 
                         renderCommentItem(item.data) : 
                         renderAuditItem(item.data)

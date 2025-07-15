@@ -189,8 +189,8 @@ const useNotifications = () => {
   useEffect(() => {
     refreshNotifications();
     
-    // Set up periodic refresh every 30 seconds
-    const interval = setInterval(refreshNotifications, 30000);
+    // Set up periodic refresh every 5 seconds
+    const interval = setInterval(refreshNotifications, 5000);
     
     return () => clearInterval(interval);
   }, [refreshNotifications]);
