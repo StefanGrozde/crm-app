@@ -202,7 +202,7 @@ const TimelineWithComments = React.memo(forwardRef(({
             </span>
           </div>
           <span className="text-xs text-gray-500">
-            {formatTimestamp(comment.created_at || comment.createdAt)}
+            {JSON.stringify(comment.created_at || comment.createdAt)}
           </span>
         </div>
         <div className="text-sm text-gray-700 whitespace-pre-wrap">
