@@ -14,6 +14,19 @@ const LoginSuccess = () => {
     useEffect(() => {
         const completeMicrosoftLogin = async (code) => {
             try {
+                // Check if there's an invitation token in localStorage
+                const invitationToken = localStorage.getItem('invitation_token');
+                
+                if (invitationToken) {
+                    // Clear the invitation token from localStorage
+                    localStorage.removeItem('invitation_token');
+                    
+                    // This is an invitation registration, redirect to the invitation success handler
+                    navigate(`/invite-success?mscode=${code}&invitation=${invitationToken}`);
+                    return;
+                }
+
+                // Regular Microsoft login flow
                 const response = await axios.post(`${API_URL}/api/auth/microsoft/complete`, 
                     { mscode: code },
                     { withCredentials: true }

@@ -5,6 +5,7 @@ const bcrypt = require('bcryptjs');
 const msal = require('@azure/msal-node');
 const Company = require('../models/Company');
 const User = require('../models/User');
+const UserInvitation = require('../models/UserInvitation');
 const { protect } = require('../middleware/authMiddleware');
 const AuditService = require('../services/AuditService');
 
@@ -74,6 +75,9 @@ router.get('/microsoft/login', (req, res) => {
         return res.status(500).json({ message: 'Microsoft authentication not configured' });
     }
     
+    // For invitation registration, the invitation token will be passed through URL parameters
+    // and handled on the frontend
+    
     pca
         .getAuthCodeUrl({
             scopes: ['openid', 'email', 'profile', 'User.Read'],
@@ -91,8 +95,10 @@ router.get('/microsoft/login', (req, res) => {
 // STEP 2: Handle the callback from Microsoft and pass the code to the frontend.
 router.get('/microsoft/callback', (req, res) => {
     const code = req.query.code;
+    
     if (code) {
-        // Redirect to a dedicated success page on the frontend with the code
+        // Check if there's an invitation token in localStorage (we'll handle this differently)
+        // For now, always redirect to login success and let frontend handle invitation logic
         res.redirect(`${FRONTEND_URI}/login/success?mscode=${code}`);
     } else {
         // Handle cases where no code is provided
@@ -145,6 +151,99 @@ router.post('/microsoft/complete', async (req, res) => {
     } catch (error) {
         console.error("Error during Microsoft token acquisition:", error);
         res.status(500).json({ message: "Failed to verify Microsoft login. Please try again." });
+    }
+});
+
+// STEP 4: Complete invitation registration using Microsoft SSO
+router.post('/microsoft/complete-invitation', async (req, res) => {
+    if (!pca) {
+        return res.status(500).json({ message: 'Microsoft authentication not configured' });
+    }
+    
+    const { mscode, invitationToken } = req.body;
+
+    if (!mscode || !invitationToken) {
+        return res.status(400).json({ message: 'Microsoft authentication code and invitation token are required' });
+    }
+
+    const tokenRequest = {
+        code: mscode,
+        scopes: ['openid', 'email', 'profile', 'User.Read'],
+        redirectUri: REDIRECT_URI,
+    };
+
+    try {
+        // Get Microsoft user details
+        const response = await pca.acquireTokenByCode(tokenRequest);
+        const email = response.account.idTokenClaims.email || response.account.username;
+        const name = response.account.name;
+
+        if (!email) {
+            return res.status(500).json({ message: "Could not retrieve user email from Microsoft" });
+        }
+
+        // Find and validate invitation
+        const invitation = await UserInvitation.findOne({
+            where: { token: invitationToken },
+            include: [
+                {
+                    model: Company,
+                    attributes: ['id', 'name']
+                }
+            ]
+        });
+
+        if (!invitation) {
+            return res.status(404).json({ message: 'Invitation not found' });
+        }
+
+        if (invitation.isUsed) {
+            return res.status(400).json({ message: 'Invitation has already been used' });
+        }
+
+        if (invitation.isExpired()) {
+            return res.status(400).json({ message: 'Invitation has expired' });
+        }
+
+        // Verify that the Microsoft email matches the invitation email
+        if (email.toLowerCase() !== invitation.email.toLowerCase()) {
+            return res.status(400).json({ 
+                message: `Microsoft account email (${email}) does not match invitation email (${invitation.email})` 
+            });
+        }
+
+        // Check if user already exists
+        const existingUser = await User.findOne({ where: { email } });
+        if (existingUser) {
+            return res.status(400).json({ message: 'User with this email already exists' });
+        }
+
+        // Create new user using Microsoft email as username
+        const username = email.split('@')[0]; // Use email prefix as username
+        const newUser = await User.create({
+            username,
+            email,
+            password: Math.random().toString(36), // Random password since they'll use SSO
+            role: invitation.role,
+            companyId: invitation.companyId
+        });
+
+        // Mark invitation as used
+        await invitation.markAsUsed();
+
+        // Log successful registration
+        await AuditService.logLogin(newUser.id, newUser.companyId, 'microsoft_sso_registration', {
+            ipAddress: req.ip || req.connection.remoteAddress,
+            userAgent: req.get('User-Agent') || 'Unknown',
+            loginMethod: 'microsoft_sso_invitation'
+        });
+
+        // Generate JWT token and send response
+        sendTokenResponse(newUser, 201, res);
+
+    } catch (error) {
+        console.error("Error during Microsoft invitation completion:", error);
+        res.status(500).json({ message: "Failed to complete Microsoft invitation registration" });
     }
 });
 

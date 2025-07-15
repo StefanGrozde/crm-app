@@ -11,6 +11,7 @@ import Tickets from './pages/Tickets';
 import TicketQueues from './pages/TicketQueues';
 
 import InviteRegistration from './pages/InviteRegistration';
+import InviteSuccess from './pages/InviteSuccess';
 import PrivateRoute from './components/PrivateRoute';
 import AdminRoute from './components/AdminRoute';
 
@@ -22,6 +23,7 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/login/success" element={<LoginSuccess />} />
           <Route path="/invite/:token" element={<InviteRegistration />} />
+          <Route path="/invite-success" element={<InviteSuccess />} />
           
           {/* Protected Routes */}
           <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
