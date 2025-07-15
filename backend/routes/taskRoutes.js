@@ -499,14 +499,55 @@ router.put('/:id', protect, async (req, res) => {
             }
         }
 
-        // Fetch updated task (simplified without associations for now)
-        const updatedTask = await Task.findByPk(task.id);
+        // Fetch updated task with full associations
+        const updatedTask = await Task.findByPk(task.id, {
+            include: [
+                {
+                    model: User,
+                    as: 'creator',
+                    attributes: ['id', 'username', 'email']
+                },
+                {
+                    model: TaskAssignment,
+                    as: 'assignments',
+                    include: [
+                        {
+                            model: User,
+                            as: 'user',
+                            attributes: ['id', 'username', 'email']
+                        }
+                    ]
+                },
+                {
+                    model: Contact,
+                    as: 'contact',
+                    attributes: ['id', 'firstName', 'lastName', 'email'],
+                    required: false
+                },
+                {
+                    model: Lead,
+                    as: 'lead',
+                    attributes: ['id', 'title'],
+                    required: false
+                },
+                {
+                    model: Opportunity,
+                    as: 'opportunity',
+                    attributes: ['id', 'name'],
+                    required: false
+                },
+                {
+                    model: Sale,
+                    as: 'sale',
+                    attributes: ['id', 'title', 'saleNumber'],
+                    required: false
+                }
+            ]
+        });
         
-        console.log('Task updated successfully:', updatedTask.toJSON());
+        console.log('Task updated successfully:', updatedTask.id);
 
         // Create status change notifications if status changed
-        // Temporarily disabled for debugging
-        /*
         if (statusChanged) {
             try {
                 // Get assigned user IDs
@@ -524,7 +565,6 @@ router.put('/:id', protect, async (req, res) => {
                 console.error('Error creating status change notification:', notificationError);
             }
         }
-        */
 
         res.json(updatedTask);
 
