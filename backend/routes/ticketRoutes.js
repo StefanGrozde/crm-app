@@ -1106,7 +1106,7 @@ router.get('/:id/comments', protect, async (req, res) => {
                     attributes: ['id', 'username', 'email']
                 }
             ],
-            order: [['createdAt', 'ASC']]
+            order: [['created_at', 'ASC']]
         });
 
         res.json(comments);
