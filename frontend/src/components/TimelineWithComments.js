@@ -66,6 +66,7 @@ const TimelineWithComments = React.memo(forwardRef(({
       }
       
       const data = await response.json();
+      console.log('Fetched comments data:', data); // Debug log
       setComments(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error('Error fetching comments:', error);
@@ -110,7 +111,16 @@ const TimelineWithComments = React.memo(forwardRef(({
 
   // Format timestamp to match design (DD/MM/YYYY HH:MM)
   const formatTimestamp = (timestamp) => {
+    if (!timestamp) return 'Invalid date';
+    
     const date = new Date(timestamp);
+    
+    // Check if date is valid
+    if (isNaN(date.getTime())) {
+      console.warn('Invalid timestamp:', timestamp);
+      return 'Invalid date';
+    }
+    
     const day = String(date.getDate()).padStart(2, '0');
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const year = date.getFullYear();
@@ -138,13 +148,14 @@ const TimelineWithComments = React.memo(forwardRef(({
     
     // Add comments
     comments.forEach(comment => {
+      const timestamp = comment.created_at || comment.createdAt;
       timelineItems.push({
         id: `comment-${comment.id}`,
         type: 'comment',
         data: comment,
-        timestamp: new Date(comment.createdAt),
+        timestamp: new Date(timestamp),
         user: comment.user,
-        createdAt: comment.createdAt
+        createdAt: timestamp
       });
     });
     
@@ -191,7 +202,7 @@ const TimelineWithComments = React.memo(forwardRef(({
             </span>
           </div>
           <span className="text-xs text-gray-500">
-            {formatTimestamp(comment.createdAt)}
+            {formatTimestamp(comment.created_at || comment.createdAt)}
           </span>
         </div>
         <div className="text-sm text-gray-700 whitespace-pre-wrap">
