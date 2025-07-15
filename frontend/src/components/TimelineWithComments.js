@@ -1,4 +1,4 @@
-import React, { useState, useContext, useMemo, forwardRef, useImperativeHandle } from 'react';
+import React, { useState, useContext, useMemo, forwardRef, useImperativeHandle, useEffect } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { useAuditHistory } from '../hooks/useAuditHistory';
 
@@ -19,6 +19,9 @@ const TimelineWithComments = React.memo(forwardRef(({
   const { user } = useContext(AuthContext);
   const [newComment, setNewComment] = useState('');
   const [isAddingComment, setIsAddingComment] = useState(false);
+  const [comments, setComments] = useState([]);
+  const [commentsLoading, setCommentsLoading] = useState(false);
+  const [commentsError, setCommentsError] = useState(null);
 
   // Memoize hook options to prevent unnecessary re-renders
   const hookOptions = useMemo(() => ({
@@ -35,9 +38,43 @@ const TimelineWithComments = React.memo(forwardRef(({
     refresh
   } = useAuditHistory(entityType, entityId, hookOptions);
 
+  // Fetch comments for the entity
+  const fetchComments = async () => {
+    if (!entityId || entityType !== 'ticket') return; // Only tickets have comments for now
+    
+    setCommentsLoading(true);
+    setCommentsError(null);
+    
+    try {
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/tickets/${entityId}/comments`, {
+        credentials: 'include'
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch comments');
+      }
+      
+      const data = await response.json();
+      setComments(data);
+    } catch (error) {
+      console.error('Error fetching comments:', error);
+      setCommentsError(error.message);
+    } finally {
+      setCommentsLoading(false);
+    }
+  };
+
+  // Fetch comments when component mounts or entityId changes
+  useEffect(() => {
+    fetchComments();
+  }, [entityId, entityType]);
+
   // Expose refresh method to parent component
   useImperativeHandle(ref, () => ({
-    refresh
+    refresh: () => {
+      refresh();
+      fetchComments();
+    }
   }), [refresh]);
 
   // Generate user avatar with colored background
@@ -71,6 +108,38 @@ const TimelineWithComments = React.memo(forwardRef(({
     return `${day}/${month}/${year} ${hours}:${minutes}`;
   };
 
+  // Merge and sort comments with audit logs for unified timeline
+  const mergedTimeline = useMemo(() => {
+    const timelineItems = [];
+    
+    // Add audit logs
+    auditLogs.forEach(log => {
+      timelineItems.push({
+        id: `audit-${log.id}`,
+        type: 'audit',
+        data: log,
+        timestamp: new Date(log.createdAt),
+        user: log.user,
+        createdAt: log.createdAt
+      });
+    });
+    
+    // Add comments
+    comments.forEach(comment => {
+      timelineItems.push({
+        id: `comment-${comment.id}`,
+        type: 'comment',
+        data: comment,
+        timestamp: new Date(comment.createdAt),
+        user: comment.user,
+        createdAt: comment.createdAt
+      });
+    });
+    
+    // Sort by timestamp (newest first)
+    return timelineItems.sort((a, b) => b.timestamp - a.timestamp);
+  }, [auditLogs, comments]);
+
   // Format change description to match the analyzed design
   const formatChangeDescription = (log) => {
     if (log.operation === 'CREATE') {
@@ -98,17 +167,77 @@ const TimelineWithComments = React.memo(forwardRef(({
     }
   };
 
-  // Handle adding a new comment (placeholder for future implementation)
+  // Render comment timeline item
+  const renderCommentItem = (comment) => {
+    return (
+      <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
+        <div className="flex items-start justify-between mb-2">
+          <div className="flex items-center space-x-2">
+            <span className="font-medium text-gray-900">{comment.user?.username || 'Unknown User'}</span>
+            <span className="text-xs text-blue-600 bg-blue-100 px-2 py-1 rounded">
+              {comment.isInternal ? 'Internal Note' : 'Comment'}
+            </span>
+          </div>
+          <span className="text-xs text-gray-500">
+            {formatTimestamp(comment.createdAt)}
+          </span>
+        </div>
+        <div className="text-sm text-gray-700 whitespace-pre-wrap">
+          {comment.comment}
+        </div>
+      </div>
+    );
+  };
+
+  // Render audit log timeline item
+  const renderAuditItem = (log) => {
+    return (
+      <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
+        <div className="flex items-center justify-between mb-2">
+          <p className="text-sm text-gray-900">
+            <span className="font-medium">{log.user?.username || 'System'}</span>{' '}
+            {formatChangeDescription(log)}
+          </p>
+          <span className="text-xs text-gray-500">
+            {formatTimestamp(log.createdAt)}
+          </span>
+        </div>
+        
+        {/* Additional metadata for sensitive changes */}
+        {log.isSensitive && (
+          <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded text-xs text-red-800">
+            🔒 Sensitive change - requires administrator access to view details
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  // Handle adding a new comment
   const handleAddComment = async () => {
-    if (!newComment.trim()) return;
+    if (!newComment.trim() || entityType !== 'ticket') return;
     
     setIsAddingComment(true);
     try {
-      // TODO: Implement comment API call
-      console.log('Adding comment:', newComment);
-      // await addComment(entityType, entityId, newComment);
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/tickets/${entityId}/comments`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          comment: newComment.trim(),
+          isInternal: false // Default to public comments
+        })
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to add comment');
+      }
+      
       setNewComment('');
-      refresh(); // Refresh the timeline
+      fetchComments(); // Refresh comments
+      refresh(); // Refresh the audit timeline
     } catch (error) {
       console.error('Error adding comment:', error);
     } finally {
@@ -285,7 +414,7 @@ const TimelineWithComments = React.memo(forwardRef(({
         </div>
 
         {/* Add Comment Section */}
-        {showAddComment && (
+        {showAddComment && entityType === 'ticket' && (
           <div className="mb-6 p-4 bg-white rounded-lg border border-gray-200">
             <div className="flex items-start space-x-3">
               <div className="flex-shrink-0">
@@ -320,18 +449,29 @@ const TimelineWithComments = React.memo(forwardRef(({
           </div>
         )}
 
+        {/* Note for tasks without comment support */}
+        {showAddComment && entityType === 'task' && (
+          <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <p className="text-sm text-blue-800">
+              💡 Comments are not yet supported for tasks. Only audit logs are shown below.
+            </p>
+          </div>
+        )}
+
         {/* Timeline Content */}
         <div className="relative">
-          {loading && auditLogs.length === 0 ? (
+          {(loading || commentsLoading) && mergedTimeline.length === 0 ? (
             <div className="p-8 text-center">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
               <p className="text-gray-500 mt-2">Loading activity...</p>
             </div>
-          ) : error ? (
+          ) : error || commentsError ? (
             <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-              <p className="text-sm text-red-800">Error loading activity: {error}</p>
+              <p className="text-sm text-red-800">
+                Error loading activity: {error || commentsError}
+              </p>
             </div>
-          ) : auditLogs.length === 0 ? (
+          ) : mergedTimeline.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
               <svg className="w-12 h-12 mx-auto mb-2 text-gray-300" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M4 4a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2H4zm0 2v8h12V6H4z" clipRule="evenodd"/>
@@ -346,42 +486,31 @@ const TimelineWithComments = React.memo(forwardRef(({
               
               {/* Timeline items */}
               <div className="space-y-6">
-                {auditLogs.map((log, index) => (
-                  <div key={log.id} className="relative flex items-start space-x-4">
+                {mergedTimeline.map((item) => (
+                  <div key={item.id} className="relative flex items-start space-x-4">
                     {/* Timeline dot */}
                     <div className="relative z-10 flex-shrink-0">
-                      {generateUserAvatar(log.user?.username || 'System')}
+                      {generateUserAvatar(item.user?.username || 'System')}
                     </div>
                     
                     {/* Content */}
                     <div className="flex-1 min-w-0">
-                      <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
-                        <div className="flex items-center justify-between mb-2">
-                          <p className="text-sm text-gray-900">
-                            <span className="font-medium">{log.user?.username || 'System'}</span>{' '}
-                            {formatChangeDescription(log)}
-                          </p>
-                          <span className="text-xs text-gray-500">
-                            {formatTimestamp(log.createdAt)}
-                          </span>
-                        </div>
-                        
-                        {/* Additional metadata for sensitive changes */}
-                        {log.isSensitive && (
-                          <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded text-xs text-red-800">
-                            🔒 Sensitive change - requires administrator access to view details
-                          </div>
-                        )}
-                      </div>
+                      {item.type === 'comment' ? 
+                        renderCommentItem(item.data) : 
+                        renderAuditItem(item.data)
+                      }
                     </div>
                   </div>
                 ))}
               </div>
               
-              {auditLogs.length > 10 && (
+              {mergedTimeline.length > 10 && (
                 <div className="text-center mt-6">
                   <button 
-                    onClick={refresh}
+                    onClick={() => {
+                      refresh();
+                      fetchComments();
+                    }}
                     className="text-sm text-blue-600 hover:text-blue-800"
                   >
                     Load More...
