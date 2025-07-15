@@ -1,4 +1,4 @@
-import React, { useState, useContext, useMemo } from 'react';
+import React, { useState, useContext, useMemo, forwardRef, useImperativeHandle } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { useAuditHistory } from '../hooks/useAuditHistory';
 
@@ -6,7 +6,7 @@ import { useAuditHistory } from '../hooks/useAuditHistory';
  * TimelineWithComments Component - Based on the analyzed UI design
  * Specialized timeline component for Tasks and Tickets with two-panel layout
  */
-const TimelineWithComments = React.memo(({ 
+const TimelineWithComments = React.memo(forwardRef(({ 
   entityType, // 'task' or 'ticket'
   entityId,
   entityData, // The actual task/ticket data for the left panel
@@ -15,7 +15,7 @@ const TimelineWithComments = React.memo(({
   showFilters = false, // Keep minimal as per design
   maxHeight = 'h-full', // Full height as shown in design
   className = ''
-}) => {
+}, ref) => {
   const { user } = useContext(AuthContext);
   const [newComment, setNewComment] = useState('');
   const [isAddingComment, setIsAddingComment] = useState(false);
@@ -34,6 +34,11 @@ const TimelineWithComments = React.memo(({
     hasAccess,
     refresh
   } = useAuditHistory(entityType, entityId, hookOptions);
+
+  // Expose refresh method to parent component
+  useImperativeHandle(ref, () => ({
+    refresh
+  }), [refresh]);
 
   // Generate user avatar with colored background
   const generateUserAvatar = (username) => {

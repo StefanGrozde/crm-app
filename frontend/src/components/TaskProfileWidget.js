@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext, useCallback, memo, useMemo } from 'react';
+import React, { useState, useEffect, useContext, useCallback, memo, useMemo, useRef } from 'react';
 import axios from 'axios';
 import { AuthContext } from '../context/AuthContext';
 import { createPortal } from 'react-dom';
@@ -42,6 +42,9 @@ const TaskProfileWidget = ({ taskId }) => {
     // eslint-disable-next-line no-unused-vars
     const [assignmentStatuses, setAssignmentStatuses] = useState({});
     const [hoursLogged, setHoursLogged] = useState({});
+    
+    // Timeline refresh reference
+    const timelineRef = useRef(null);
 
     // Logic: Load task data
     const loadTask = useCallback(async () => {
@@ -213,6 +216,13 @@ const TaskProfileWidget = ({ taskId }) => {
             setTags(response.data.tags || []);
             setSelectedUsers(response.data.assignments?.map(a => a.userId) || []);
             
+            // Refresh the timeline to show new audit logs (with small delay to ensure audit log creation)
+            setTimeout(() => {
+                if (timelineRef.current && timelineRef.current.refresh) {
+                    timelineRef.current.refresh();
+                }
+            }, 500);
+            
             // Notify other components that a task was updated
             window.dispatchEvent(new CustomEvent('taskUpdated', { 
                 detail: { taskId: task.id, status: submitData.status } 
@@ -269,6 +279,13 @@ const TaskProfileWidget = ({ taskId }) => {
 
             // Reload task to get updated data
             await loadTask();
+            
+            // Refresh the timeline to show new audit logs (with small delay to ensure audit log creation)
+            setTimeout(() => {
+                if (timelineRef.current && timelineRef.current.refresh) {
+                    timelineRef.current.refresh();
+                }
+            }, 500);
             
             // Notify other components that a task assignment was updated
             window.dispatchEvent(new CustomEvent('taskUpdated', { 
@@ -332,9 +349,10 @@ const TaskProfileWidget = ({ taskId }) => {
             priority: task.priority,
             dueDate: task.dueDate,
             created_at: task.created_at,
-            updated_at: task.updated_at
+            updated_at: task.updated_at,
+            assignments: task.assignments
         };
-    }, [task?.id, task?.title, task?.status, task?.priority, task?.dueDate, task?.created_at, task?.updated_at]);
+    }, [task?.id, task?.title, task?.status, task?.priority, task?.dueDate, task?.created_at, task?.updated_at, task?.assignments]);
 
     // Rendering: Loading state
     if (loading) {
@@ -634,6 +652,7 @@ const TaskProfileWidget = ({ taskId }) => {
             {memoizedTaskData && (
                 <div className="mt-6">
                     <TimelineWithComments
+                        ref={timelineRef}
                         entityType="task"
                         entityId={memoizedTaskData.id}
                         entityData={memoizedTaskData}

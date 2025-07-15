@@ -1,5 +1,6 @@
 const { DataTypes } = require('sequelize');
 const { sequelize } = require('../config/db');
+const { addAuditHooks } = require('../utils/auditHooks');
 
 const TaskAssignment = sequelize.define('TaskAssignment', {
   id: {
@@ -70,6 +71,18 @@ const TaskAssignment = sequelize.define('TaskAssignment', {
       fields: ['task_id', 'user_id'],
     },
   ],
+});
+
+// Add audit hooks for automatic change tracking
+addAuditHooks(TaskAssignment, 'task_assignment', {
+  sensitiveFields: ['status', 'userId'], // Track assignment changes
+  customMetadata: (instance, operation, context) => ({
+    taskId: instance?.taskId,
+    userId: instance?.userId,
+    status: instance?.status,
+    hoursLogged: instance?.hoursLogged,
+    hasNotes: !!instance?.notes
+  })
 });
 
 module.exports = TaskAssignment;

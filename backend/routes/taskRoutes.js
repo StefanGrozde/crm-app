@@ -443,7 +443,7 @@ router.put('/:id', protect, async (req, res) => {
         const newStatus = status || task.status;
         const statusChanged = oldStatus !== newStatus;
 
-        // Update task fields
+        // Update task fields with audit context
         await task.update({
             title: title || task.title,
             description: description !== undefined ? description : task.description,
@@ -462,6 +462,11 @@ router.put('/:id', protect, async (req, res) => {
             leadId: leadId !== undefined ? leadId : task.leadId,
             opportunityId: opportunityId !== undefined ? opportunityId : task.opportunityId,
             saleId: saleId !== undefined ? saleId : task.saleId
+        }, {
+            // Pass user context for audit logging
+            user: req.user,
+            userId: req.user.id,
+            companyId: req.user.companyId
         });
 
         // Handle assignment updates if provided
@@ -471,6 +476,11 @@ router.put('/:id', protect, async (req, res) => {
             // Remove existing assignments
             await TaskAssignment.destroy({
                 where: { taskId: task.id }
+            }, {
+                // Pass user context for audit logging
+                user: req.user,
+                userId: req.user.id,
+                companyId: req.user.companyId
             });
 
             // Create new assignments
@@ -486,7 +496,12 @@ router.put('/:id', protect, async (req, res) => {
                 }));
 
                 if (assignments.length > 0) {
-                    await TaskAssignment.bulkCreate(assignments);
+                    await TaskAssignment.bulkCreate(assignments, {
+                        // Pass user context for audit logging
+                        user: req.user,
+                        userId: req.user.id,
+                        companyId: req.user.companyId
+                    });
                 }
 
             } else if (assignedUsers && assignedUsers.length > 0) {
@@ -495,7 +510,12 @@ router.put('/:id', protect, async (req, res) => {
                     userId: parseInt(userId)
                 }));
 
-                await TaskAssignment.bulkCreate(assignments);
+                await TaskAssignment.bulkCreate(assignments, {
+                    // Pass user context for audit logging
+                    user: req.user,
+                    userId: req.user.id,
+                    companyId: req.user.companyId
+                });
             }
         }
 
@@ -714,7 +734,12 @@ router.put('/:id/assignment/:userId', protect, async (req, res) => {
             updateData.completedAt = new Date();
         }
 
-        await assignment.update(updateData);
+        await assignment.update(updateData, {
+            // Pass user context for audit logging
+            user: req.user,
+            userId: req.user.id,
+            companyId: req.user.companyId
+        });
 
         res.json(assignment);
 
