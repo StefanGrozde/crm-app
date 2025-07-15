@@ -131,6 +131,9 @@ const TicketProfileWidget = ({ ticketId }) => {
             setTicket(response.data);
             setShowEditModal(false);
             
+            // Reload ticket to get updated assignment data
+            await loadTicket();
+            
             // Refresh the timeline to show new audit logs (with small delay to ensure audit log creation)
             setTimeout(() => {
                 if (timelineRef.current && timelineRef.current.refresh) {

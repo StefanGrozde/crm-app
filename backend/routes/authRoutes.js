@@ -244,17 +244,19 @@ router.post('/logout', protect, async (req, res) => {
         };
 
         // Log logout
-        if (req.cookies.authToken) {
+        const token = req.cookies.authToken || req.cookies.token;
+        if (token) {
             await AuditService.logLogout(
                 req.user.id,
                 req.user.companyId,
-                req.cookies.authToken,
+                token,
                 contextInfo
             );
         }
 
-        // Clear cookie
+        // Clear both possible cookies
         res.clearCookie('authToken');
+        res.clearCookie('token');
         
         res.json({
             success: true,
@@ -284,12 +286,13 @@ router.get('/check', protect, async (req, res) => {
         const isAppOpen = req.get('Referer') === undefined || 
                          req.get('Referer').includes('login');
 
-        if (isAppOpen && req.cookies.authToken) {
+        const token = req.cookies.authToken || req.cookies.token;
+        if (isAppOpen && token) {
             // Don't await - log asynchronously
             AuditService.logAppAccess(
                 req.user.id,
                 req.user.companyId,
-                req.cookies.authToken,
+                token,
                 contextInfo
             ).catch(error => {
                 console.error('Error logging app access:', error);

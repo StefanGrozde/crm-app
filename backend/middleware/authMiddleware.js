@@ -4,10 +4,10 @@ const User = require('../models/User');
 const protect = async (req, res, next) => {
   let token;
 
-  if (req.cookies && req.cookies.token) {
+  if (req.cookies && (req.cookies.token || req.cookies.authToken)) {
     try {
-      // Get token from cookie
-      token = req.cookies.token;
+      // Get token from cookie - check both possible cookie names
+      token = req.cookies.token || req.cookies.authToken;
 
       // Verify token
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
