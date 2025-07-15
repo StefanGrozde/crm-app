@@ -233,7 +233,7 @@ const TaskProfileWidget = ({ taskId }) => {
             const errorMessage = error.response?.data?.message || error.response?.data?.error || 'Failed to update task';
             alert(errorMessage);
         }
-    }, [formData, tags, selectedUsers, task, loadTask]);
+    }, [formData, tags, selectedUsers, task]);
 
     // Logic: Handle delete
     const handleDelete = useCallback(async () => {
@@ -345,7 +345,7 @@ const TaskProfileWidget = ({ taskId }) => {
             created_at: task.created_at,
             updated_at: task.updated_at
         };
-    }, [task?.id, task?.title, task?.status, task?.priority, task?.dueDate, task?.created_at, task?.updated_at]);
+    }, [task]);
 
     // Rendering: Loading state
     if (loading) {

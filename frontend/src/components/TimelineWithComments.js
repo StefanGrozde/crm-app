@@ -1,4 +1,4 @@
-import React, { useState, useContext, useMemo, forwardRef, useImperativeHandle, useEffect } from 'react';
+import React, { useState, useContext, useMemo, forwardRef, useImperativeHandle, useEffect, useCallback } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { useAuditHistory } from '../hooks/useAuditHistory';
 
@@ -39,8 +39,11 @@ const TimelineWithComments = React.memo(forwardRef(({
   } = useAuditHistory(entityType, entityId, hookOptions);
 
   // Fetch comments for the entity
-  const fetchComments = async () => {
-    if (!entityId || entityType !== 'ticket') return; // Only tickets have comments for now
+  const fetchComments = useCallback(async () => {
+    if (!entityId || entityType !== 'ticket') {
+      setComments([]); // Clear comments for non-tickets
+      return;
+    }
     
     setCommentsLoading(true);
     setCommentsError(null);
@@ -51,23 +54,32 @@ const TimelineWithComments = React.memo(forwardRef(({
       });
       
       if (!response.ok) {
-        throw new Error('Failed to fetch comments');
+        const errorText = await response.text();
+        let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+        try {
+          const errorData = JSON.parse(errorText);
+          errorMessage = errorData.error || errorMessage;
+        } catch (parseError) {
+          errorMessage = errorText || errorMessage;
+        }
+        throw new Error(errorMessage);
       }
       
       const data = await response.json();
-      setComments(data);
+      setComments(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error('Error fetching comments:', error);
       setCommentsError(error.message);
+      setComments([]); // Clear comments on error
     } finally {
       setCommentsLoading(false);
     }
-  };
+  }, [entityId, entityType]);
 
   // Fetch comments when component mounts or entityId changes
   useEffect(() => {
     fetchComments();
-  }, [entityId, entityType]);
+  }, [entityId, entityType, fetchComments]);
 
   // Expose refresh method to parent component
   useImperativeHandle(ref, () => ({
@@ -75,7 +87,7 @@ const TimelineWithComments = React.memo(forwardRef(({
       refresh();
       fetchComments();
     }
-  }), [refresh]);
+  }), [refresh, fetchComments]);
 
   // Generate user avatar with colored background
   const generateUserAvatar = (username) => {
@@ -458,6 +470,25 @@ const TimelineWithComments = React.memo(forwardRef(({
           </div>
         )}
 
+        {/* Comment Error Warning (non-blocking) */}
+        {commentsError && !error && (
+          <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <div className="flex items-start">
+              <svg className="w-5 h-5 text-yellow-600 mr-2 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd"/>
+              </svg>
+              <div>
+                <p className="text-sm text-yellow-800">
+                  <strong>Comments unavailable:</strong> {commentsError}
+                </p>
+                <p className="text-xs text-yellow-700 mt-1">
+                  Audit logs are still available below.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Timeline Content */}
         <div className="relative">
           {(loading || commentsLoading) && mergedTimeline.length === 0 ? (
@@ -465,10 +496,10 @@ const TimelineWithComments = React.memo(forwardRef(({
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
               <p className="text-gray-500 mt-2">Loading activity...</p>
             </div>
-          ) : error || commentsError ? (
+          ) : error ? (
             <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
               <p className="text-sm text-red-800">
-                Error loading activity: {error || commentsError}
+                Error loading activity: {error}
               </p>
             </div>
           ) : mergedTimeline.length === 0 ? (
