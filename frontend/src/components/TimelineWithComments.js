@@ -394,6 +394,6 @@ const TimelineWithComments = React.memo(forwardRef(({
       </div>
     </div>
   );
-});
+}));
 
 export default TimelineWithComments;
