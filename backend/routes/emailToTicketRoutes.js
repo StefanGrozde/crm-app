@@ -16,6 +16,12 @@ EmailProcessing.belongsTo(Company, { foreignKey: 'companyId' });
 EmailProcessing.belongsTo(Ticket, { foreignKey: 'ticketId', required: false });
 EmailProcessing.belongsTo(Contact, { foreignKey: 'contactId', required: false });
 
+// Add reverse associations
+Company.hasMany(EmailConfiguration, { foreignKey: 'companyId' });
+EmailConfiguration.hasMany(EmailProcessing, { foreignKey: 'emailConfigId' });
+Ticket.hasMany(EmailProcessing, { foreignKey: 'ticketId' });
+Contact.hasMany(EmailProcessing, { foreignKey: 'contactId' });
+
 // Middleware to validate webhook requests
 const validateWebhook = (req, res, next) => {
   const { validationToken } = req.query;
@@ -102,16 +108,32 @@ router.get('/configurations', protect, authorize('Administrator'), async (req, r
   try {
     const { companyId } = req.user;
     
+    console.log('[EMAIL-TO-TICKET] Fetching configurations for company:', companyId);
+    
+    // Check if tables exist by trying a simple query first
+    const { sequelize } = require('../config/db');
+    
+    try {
+      await sequelize.query("SELECT 1 FROM email_configurations LIMIT 1");
+      console.log('[EMAIL-TO-TICKET] email_configurations table exists');
+    } catch (tableError) {
+      console.log('[EMAIL-TO-TICKET] email_configurations table does not exist:', tableError.message);
+      // Return empty array if table doesn't exist
+      return res.json([]);
+    }
+    
     const configurations = await EmailConfiguration.findAll({
       where: { companyId },
       order: [['createdAt', 'DESC']]
     });
     
+    console.log('[EMAIL-TO-TICKET] Found configurations:', configurations.length);
+    
     res.json(configurations);
     
   } catch (error) {
     console.error('[EMAIL-TO-TICKET] Error fetching configurations:', error);
-    res.status(500).json({ error: 'Failed to fetch configurations' });
+    res.status(500).json({ error: 'Failed to fetch configurations', details: error.message });
   }
 });
 
@@ -326,7 +348,7 @@ router.get('/processing', protect, authorize('Administrator'), async (req, res) 
       limit: parseInt(limit),
       offset: parseInt(offset),
       include: [
-        { model: EmailConfiguration },
+        { model: EmailConfiguration, required: false },
         { model: Ticket, required: false },
         { model: Contact, required: false }
       ]
@@ -399,8 +421,36 @@ router.get('/stats', protect, authorize('Administrator'), async (req, res) => {
     const { companyId } = req.user;
     const { days = 30 } = req.query;
     
+    console.log('[EMAIL-TO-TICKET] Fetching stats for company:', companyId);
+    
+    // Check if tables exist by trying a simple query first
+    const { sequelize } = require('../config/db');
+    
+    try {
+      await sequelize.query("SELECT 1 FROM email_processing LIMIT 1");
+      console.log('[EMAIL-TO-TICKET] email_processing table exists');
+    } catch (tableError) {
+      console.log('[EMAIL-TO-TICKET] email_processing table does not exist:', tableError.message);
+      // Return default stats if table doesn't exist
+      return res.json({
+        period: `${days} days`,
+        totalProcessed: 0,
+        totalSuccessful: 0,
+        totalFailed: 0,
+        successRate: 0,
+        actions: {
+          ticketsCreated: 0,
+          commentsAdded: 0,
+          ticketsReopened: 0
+        }
+      });
+    }
+    
     const since = new Date();
     since.setDate(since.getDate() - parseInt(days));
+    
+    // Use raw Sequelize instead of requiring it inline
+    const { Op } = require('sequelize');
     
     const [
       totalProcessed,
@@ -410,13 +460,15 @@ router.get('/stats', protect, authorize('Administrator'), async (req, res) => {
       commentsAdded,
       ticketsReopened
     ] = await Promise.all([
-      EmailProcessing.count({ where: { companyId, createdAt: { [require('sequelize').Op.gte]: since } } }),
-      EmailProcessing.count({ where: { companyId, processingStatus: 'completed', createdAt: { [require('sequelize').Op.gte]: since } } }),
-      EmailProcessing.count({ where: { companyId, processingStatus: 'failed', createdAt: { [require('sequelize').Op.gte]: since } } }),
-      EmailProcessing.count({ where: { companyId, actionTaken: 'ticket_created', createdAt: { [require('sequelize').Op.gte]: since } } }),
-      EmailProcessing.count({ where: { companyId, actionTaken: 'comment_added', createdAt: { [require('sequelize').Op.gte]: since } } }),
-      EmailProcessing.count({ where: { companyId, actionTaken: 'ticket_reopened', createdAt: { [require('sequelize').Op.gte]: since } } })
+      EmailProcessing.count({ where: { companyId, createdAt: { [Op.gte]: since } } }),
+      EmailProcessing.count({ where: { companyId, processingStatus: 'completed', createdAt: { [Op.gte]: since } } }),
+      EmailProcessing.count({ where: { companyId, processingStatus: 'failed', createdAt: { [Op.gte]: since } } }),
+      EmailProcessing.count({ where: { companyId, actionTaken: 'ticket_created', createdAt: { [Op.gte]: since } } }),
+      EmailProcessing.count({ where: { companyId, actionTaken: 'comment_added', createdAt: { [Op.gte]: since } } }),
+      EmailProcessing.count({ where: { companyId, actionTaken: 'ticket_reopened', createdAt: { [Op.gte]: since } } })
     ]);
+    
+    console.log('[EMAIL-TO-TICKET] Stats calculated successfully');
     
     res.json({
       period: `${days} days`,
@@ -433,7 +485,7 @@ router.get('/stats', protect, authorize('Administrator'), async (req, res) => {
     
   } catch (error) {
     console.error('[EMAIL-TO-TICKET] Error fetching stats:', error);
-    res.status(500).json({ error: 'Failed to fetch statistics' });
+    res.status(500).json({ error: 'Failed to fetch statistics', details: error.message });
   }
 });
 

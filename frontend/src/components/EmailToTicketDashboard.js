@@ -43,20 +43,49 @@ const EmailToTicketDashboard = () => {
 
   const fetchStats = async () => {
     try {
+      console.log('Fetching stats...');
       const response = await fetch(`${process.env.REACT_APP_API_URL}/api/email-to-ticket/stats`, {
         credentials: 'include'
       });
 
+      console.log('Stats response status:', response.status);
+
       if (response.ok) {
         const data = await response.json();
+        console.log('Stats data:', data);
         setStats(data);
       } else {
-        const errorData = await response.json();
-        setError(errorData.error || 'Failed to fetch statistics');
+        const errorData = await response.json().catch(() => ({}));
+        console.error('Stats fetch error:', errorData);
+        setError(errorData.error || `Failed to fetch statistics (${response.status})`);
+        // Set default stats to prevent crashes
+        setStats({
+          totalProcessed: 0,
+          totalSuccessful: 0,
+          totalFailed: 0,
+          successRate: 0,
+          actions: {
+            ticketsCreated: 0,
+            commentsAdded: 0,
+            ticketsReopened: 0
+          }
+        });
       }
     } catch (error) {
       console.error('Error fetching statistics:', error);
-      setError('Failed to fetch statistics');
+      setError('Failed to fetch statistics: ' + error.message);
+      // Set default stats to prevent crashes
+      setStats({
+        totalProcessed: 0,
+        totalSuccessful: 0,
+        totalFailed: 0,
+        successRate: 0,
+        actions: {
+          ticketsCreated: 0,
+          commentsAdded: 0,
+          ticketsReopened: 0
+        }
+      });
     } finally {
       setLoading(false);
     }

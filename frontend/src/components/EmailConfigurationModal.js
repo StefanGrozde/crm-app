@@ -56,10 +56,23 @@ const EmailConfigurationModal = ({ isOpen, onClose, configuration, onSave }) => 
       });
       if (response.ok) {
         const data = await response.json();
-        setUsers(data);
+        console.log('Users data:', data);
+        // Handle both array and object responses
+        if (Array.isArray(data)) {
+          setUsers(data);
+        } else if (data.users && Array.isArray(data.users)) {
+          setUsers(data.users);
+        } else {
+          console.error('Unexpected users data format:', data);
+          setUsers([]);
+        }
+      } else {
+        console.error('Failed to fetch users:', response.status);
+        setUsers([]);
       }
     } catch (error) {
       console.error('Error fetching users:', error);
+      setUsers([]);
     }
   };
 
