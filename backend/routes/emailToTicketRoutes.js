@@ -220,6 +220,40 @@ router.delete('/configurations/:id', protect, authorize('Administrator'), async 
 });
 
 /**
+ * POST /api/email-to-ticket/configurations/:id/test-permissions
+ * Test Microsoft Graph permissions for an email configuration (Administrator only)
+ */
+router.post('/configurations/:id/test-permissions', protect, authorize('Administrator'), async (req, res) => {
+  try {
+    const { companyId } = req.user;
+    const { id } = req.params;
+    
+    const configuration = await EmailConfiguration.findOne({
+      where: { id, companyId },
+      include: [{ model: Company }]
+    });
+    
+    if (!configuration) {
+      return res.status(404).json({ error: 'Configuration not found' });
+    }
+
+    const company = configuration.Company;
+    
+    // Test Microsoft Graph authentication and permissions
+    const testResult = await EmailToTicketService.testGraphPermissions(configuration, company);
+    
+    res.json({ 
+      message: 'Permission test completed', 
+      result: testResult 
+    });
+    
+  } catch (error) {
+    console.error('[EMAIL-TO-TICKET] Error testing permissions:', error);
+    res.status(500).json({ error: 'Failed to test permissions' });
+  }
+});
+
+/**
  * POST /api/email-to-ticket/configurations/:id/webhook
  * Create webhook subscription for an email configuration (Administrator only)
  */

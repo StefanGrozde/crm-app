@@ -442,6 +442,114 @@ class EmailToTicketService {
   }
 
   /**
+   * Test Microsoft Graph permissions and access
+   * @param {Object} emailConfig - Email configuration
+   * @param {Object} company - Company object
+   * @returns {Promise<Object>} - Test result
+   */
+  static async testGraphPermissions(emailConfig, company) {
+    try {
+      const testResults = {
+        authentication: false,
+        userAccess: false,
+        messagesAccess: false,
+        subscriptionPermissions: false,
+        errors: []
+      };
+
+      console.log('[EMAIL-TO-TICKET] Testing Microsoft Graph permissions...');
+
+      // Configure MSAL
+      const msalConfig = {
+        auth: {
+          clientId: company.ms365ClientId,
+          authority: `https://login.microsoftonline.com/${company.ms365TenantId}`,
+          clientSecret: company.ms365ClientSecret,
+        },
+      };
+
+      const cca = new msal.ConfidentialClientApplication(msalConfig);
+
+      // Test 1: Authentication
+      console.log('[EMAIL-TO-TICKET] Testing authentication...');
+      try {
+        const authResponse = await cca.acquireTokenByClientCredential({
+          scopes: ['https://graph.microsoft.com/.default'],
+        });
+
+        if (authResponse?.accessToken) {
+          testResults.authentication = true;
+          console.log('[EMAIL-TO-TICKET] Authentication successful');
+        } else {
+          testResults.errors.push('Failed to acquire access token');
+        }
+      } catch (authError) {
+        testResults.errors.push(`Authentication failed: ${authError.message}`);
+        console.error('[EMAIL-TO-TICKET] Authentication error:', authError);
+      }
+
+      if (!testResults.authentication) {
+        return testResults;
+      }
+
+      // Initialize Graph client
+      const graphClient = Client.init({
+        authProvider: (done) => {
+          const authResponse = cca.acquireTokenByClientCredential({
+            scopes: ['https://graph.microsoft.com/.default'],
+          });
+          authResponse.then(result => done(null, result.accessToken));
+        },
+      });
+
+      // Test 2: User access
+      console.log('[EMAIL-TO-TICKET] Testing user access...');
+      try {
+        const userInfo = await graphClient.api(`/users/${emailConfig.emailAddress}`).get();
+        testResults.userAccess = true;
+        console.log('[EMAIL-TO-TICKET] User access successful:', userInfo.displayName);
+      } catch (userError) {
+        testResults.errors.push(`User access failed: ${userError.message}`);
+        console.error('[EMAIL-TO-TICKET] User access error:', userError);
+      }
+
+      // Test 3: Messages access
+      console.log('[EMAIL-TO-TICKET] Testing messages access...');
+      try {
+        const messages = await graphClient.api(`/users/${emailConfig.emailAddress}/messages`).top(1).get();
+        testResults.messagesAccess = true;
+        console.log('[EMAIL-TO-TICKET] Messages access successful, found', messages.value.length, 'messages');
+      } catch (messagesError) {
+        testResults.errors.push(`Messages access failed: ${messagesError.message}`);
+        console.error('[EMAIL-TO-TICKET] Messages access error:', messagesError);
+      }
+
+      // Test 4: Subscription permissions (try to list existing subscriptions)
+      console.log('[EMAIL-TO-TICKET] Testing subscription permissions...');
+      try {
+        const subscriptions = await graphClient.api('/subscriptions').get();
+        testResults.subscriptionPermissions = true;
+        console.log('[EMAIL-TO-TICKET] Subscription permissions successful, found', subscriptions.value.length, 'subscriptions');
+      } catch (subscriptionError) {
+        testResults.errors.push(`Subscription permissions failed: ${subscriptionError.message}`);
+        console.error('[EMAIL-TO-TICKET] Subscription permissions error:', subscriptionError);
+      }
+
+      return testResults;
+
+    } catch (error) {
+      console.error('[EMAIL-TO-TICKET] Error testing permissions:', error);
+      return { 
+        authentication: false, 
+        userAccess: false, 
+        messagesAccess: false, 
+        subscriptionPermissions: false,
+        errors: [error.message] 
+      };
+    }
+  }
+
+  /**
    * Create Microsoft Graph webhook subscription
    * @param {Object} emailConfig - Email configuration
    * @param {Object} company - Company object
@@ -450,6 +558,15 @@ class EmailToTicketService {
    */
   static async createWebhookSubscription(emailConfig, company, notificationUrl) {
     try {
+      console.log('[EMAIL-TO-TICKET] Creating webhook subscription...');
+      console.log('[EMAIL-TO-TICKET] Company ID:', company.id);
+      console.log('[EMAIL-TO-TICKET] Email Config ID:', emailConfig.id);
+      console.log('[EMAIL-TO-TICKET] Email Address:', emailConfig.emailAddress);
+      console.log('[EMAIL-TO-TICKET] Notification URL:', notificationUrl);
+      console.log('[EMAIL-TO-TICKET] MS365 Client ID:', company.ms365ClientId ? 'Present' : 'Missing');
+      console.log('[EMAIL-TO-TICKET] MS365 Tenant ID:', company.ms365TenantId ? 'Present' : 'Missing');
+      console.log('[EMAIL-TO-TICKET] MS365 Client Secret:', company.ms365ClientSecret ? 'Present' : 'Missing');
+
       // Configure MSAL
       const msalConfig = {
         auth: {
@@ -462,6 +579,7 @@ class EmailToTicketService {
       const cca = new msal.ConfidentialClientApplication(msalConfig);
 
       // Acquire token
+      console.log('[EMAIL-TO-TICKET] Acquiring access token...');
       const authResponse = await cca.acquireTokenByClientCredential({
         scopes: ['https://graph.microsoft.com/.default'],
       });
@@ -470,6 +588,8 @@ class EmailToTicketService {
         throw new Error('Failed to acquire access token');
       }
 
+      console.log('[EMAIL-TO-TICKET] Access token acquired successfully');
+
       // Initialize Graph client
       const graphClient = Client.init({
         authProvider: (done) => {
@@ -477,14 +597,41 @@ class EmailToTicketService {
         },
       });
 
+      // First, let's test if we can access the user's mailbox
+      console.log('[EMAIL-TO-TICKET] Testing access to user mailbox...');
+      try {
+        const userInfo = await graphClient.api(`/users/${emailConfig.emailAddress}`).get();
+        console.log('[EMAIL-TO-TICKET] User info retrieved successfully:', userInfo.displayName);
+      } catch (userError) {
+        console.error('[EMAIL-TO-TICKET] Error accessing user mailbox:', userError);
+        throw new Error(`Cannot access user mailbox: ${userError.message}`);
+      }
+
+      // Test if we can access messages
+      console.log('[EMAIL-TO-TICKET] Testing access to messages...');
+      try {
+        const messages = await graphClient.api(`/users/${emailConfig.emailAddress}/messages`).top(1).get();
+        console.log('[EMAIL-TO-TICKET] Messages access successful, found', messages.value.length, 'messages');
+      } catch (messagesError) {
+        console.error('[EMAIL-TO-TICKET] Error accessing messages:', messagesError);
+        throw new Error(`Cannot access messages: ${messagesError.message}`);
+      }
+
       // Create subscription
-      const subscription = await graphClient.api('/subscriptions').post({
+      console.log('[EMAIL-TO-TICKET] Creating subscription...');
+      const subscriptionPayload = {
         changeType: 'created',
         notificationUrl,
         resource: `/users/${emailConfig.emailAddress}/messages`,
         expirationDateTime: new Date(Date.now() + 4230 * 60 * 1000).toISOString(), // 4230 minutes (max for messages)
         clientState: `${company.id}-${emailConfig.id}` // For validation
-      });
+      };
+
+      console.log('[EMAIL-TO-TICKET] Subscription payload:', JSON.stringify(subscriptionPayload, null, 2));
+
+      const subscription = await graphClient.api('/subscriptions').post(subscriptionPayload);
+
+      console.log('[EMAIL-TO-TICKET] Subscription created successfully:', subscription.id);
 
       // Update email configuration
       await emailConfig.update({
@@ -497,6 +644,10 @@ class EmailToTicketService {
 
     } catch (error) {
       console.error('[EMAIL-TO-TICKET] Error creating webhook subscription:', error);
+      console.error('[EMAIL-TO-TICKET] Error details:', error.code, error.message);
+      if (error.body) {
+        console.error('[EMAIL-TO-TICKET] Error body:', error.body);
+      }
       return { success: false, message: error.message };
     }
   }
