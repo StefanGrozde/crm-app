@@ -124,7 +124,7 @@ router.get('/configurations', protect, authorize('Administrator'), async (req, r
     
     const configurations = await EmailConfiguration.findAll({
       where: { companyId },
-      order: [['createdAt', 'DESC']]
+      order: [['created_at', 'DESC']]
     });
     
     console.log('[EMAIL-TO-TICKET] Found configurations:', configurations.length);
@@ -344,7 +344,7 @@ router.get('/processing', protect, authorize('Administrator'), async (req, res) 
     
     const { count, rows } = await EmailProcessing.findAndCountAll({
       where,
-      order: [['createdAt', 'DESC']],
+      order: [['created_at', 'DESC']],
       limit: parseInt(limit),
       offset: parseInt(offset),
       include: [
@@ -460,12 +460,12 @@ router.get('/stats', protect, authorize('Administrator'), async (req, res) => {
       commentsAdded,
       ticketsReopened
     ] = await Promise.all([
-      EmailProcessing.count({ where: { companyId, createdAt: { [Op.gte]: since } } }),
-      EmailProcessing.count({ where: { companyId, processingStatus: 'completed', createdAt: { [Op.gte]: since } } }),
-      EmailProcessing.count({ where: { companyId, processingStatus: 'failed', createdAt: { [Op.gte]: since } } }),
-      EmailProcessing.count({ where: { companyId, actionTaken: 'ticket_created', createdAt: { [Op.gte]: since } } }),
-      EmailProcessing.count({ where: { companyId, actionTaken: 'comment_added', createdAt: { [Op.gte]: since } } }),
-      EmailProcessing.count({ where: { companyId, actionTaken: 'ticket_reopened', createdAt: { [Op.gte]: since } } })
+      EmailProcessing.count({ where: { companyId, created_at: { [Op.gte]: since } } }),
+      EmailProcessing.count({ where: { companyId, processingStatus: 'completed', created_at: { [Op.gte]: since } } }),
+      EmailProcessing.count({ where: { companyId, processingStatus: 'failed', created_at: { [Op.gte]: since } } }),
+      EmailProcessing.count({ where: { companyId, actionTaken: 'ticket_created', created_at: { [Op.gte]: since } } }),
+      EmailProcessing.count({ where: { companyId, actionTaken: 'comment_added', created_at: { [Op.gte]: since } } }),
+      EmailProcessing.count({ where: { companyId, actionTaken: 'ticket_reopened', created_at: { [Op.gte]: since } } })
     ]);
     
     console.log('[EMAIL-TO-TICKET] Stats calculated successfully');
