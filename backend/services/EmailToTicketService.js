@@ -454,6 +454,7 @@ class EmailToTicketService {
         userAccess: false,
         messagesAccess: false,
         subscriptionPermissions: false,
+        subscriptionCreation: false,
         errors: []
       };
 
@@ -492,15 +493,42 @@ class EmailToTicketService {
         return testResults;
       }
 
+      // Get the access token for detailed analysis
+      const authResponse = await cca.acquireTokenByClientCredential({
+        scopes: ['https://graph.microsoft.com/.default'],
+      });
+
       // Initialize Graph client
       const graphClient = Client.init({
         authProvider: (done) => {
-          const authResponse = cca.acquireTokenByClientCredential({
-            scopes: ['https://graph.microsoft.com/.default'],
-          });
-          authResponse.then(result => done(null, result.accessToken));
+          done(null, authResponse.accessToken);
         },
       });
+
+      // Test 1.5: Check what permissions we actually have
+      console.log('[EMAIL-TO-TICKET] Checking granted permissions...');
+      try {
+        // Try to get service principal info to see granted permissions
+        const servicePrincipal = await graphClient.api(`/servicePrincipals?$filter=appId eq '${company.ms365ClientId}'`).get();
+        if (servicePrincipal.value.length > 0) {
+          console.log('[EMAIL-TO-TICKET] Service principal found:', servicePrincipal.value[0].displayName);
+          
+          // Get OAuth2 permission grants
+          const grants = await graphClient.api(`/servicePrincipals/${servicePrincipal.value[0].id}/oauth2PermissionGrants`).get();
+          console.log('[EMAIL-TO-TICKET] OAuth2 permission grants:', grants.value.length);
+          
+          // Get app role assignments
+          const appRoles = await graphClient.api(`/servicePrincipals/${servicePrincipal.value[0].id}/appRoleAssignments`).get();
+          console.log('[EMAIL-TO-TICKET] App role assignments:', appRoles.value.length);
+          
+          for (const role of appRoles.value) {
+            console.log('[EMAIL-TO-TICKET] App role:', role.appRoleId, role.principalDisplayName);
+          }
+        }
+      } catch (spError) {
+        console.error('[EMAIL-TO-TICKET] Error checking service principal permissions:', spError);
+        testResults.errors.push(`Permission check failed: ${spError.message}`);
+      }
 
       // Test 2: User access
       console.log('[EMAIL-TO-TICKET] Testing user access...');
@@ -511,6 +539,12 @@ class EmailToTicketService {
       } catch (userError) {
         testResults.errors.push(`User access failed: ${userError.message}`);
         console.error('[EMAIL-TO-TICKET] User access error:', userError);
+        console.error('[EMAIL-TO-TICKET] User access error details:', {
+          code: userError.code,
+          statusCode: userError.statusCode,
+          message: userError.message,
+          body: userError.body
+        });
       }
 
       // Test 3: Messages access
@@ -533,6 +567,51 @@ class EmailToTicketService {
       } catch (subscriptionError) {
         testResults.errors.push(`Subscription permissions failed: ${subscriptionError.message}`);
         console.error('[EMAIL-TO-TICKET] Subscription permissions error:', subscriptionError);
+        console.error('[EMAIL-TO-TICKET] Subscription error details:', {
+          code: subscriptionError.code,
+          statusCode: subscriptionError.statusCode,
+          message: subscriptionError.message,
+          body: subscriptionError.body
+        });
+      }
+
+      // Test 5: Try to create a test subscription (but don't save it)
+      console.log('[EMAIL-TO-TICKET] Testing subscription creation permissions...');
+      try {
+        const testSubscriptionPayload = {
+          changeType: 'created',
+          notificationUrl: 'https://webhook.site/test-webhook-url', // Dummy URL for testing
+          resource: `/users/${emailConfig.emailAddress}/messages`,
+          expirationDateTime: new Date(Date.now() + 60 * 1000).toISOString(), // 1 minute expiration
+          clientState: 'test-client-state'
+        };
+
+        console.log('[EMAIL-TO-TICKET] Test subscription payload:', JSON.stringify(testSubscriptionPayload, null, 2));
+        
+        // Try to create the subscription
+        const testSubscription = await graphClient.api('/subscriptions').post(testSubscriptionPayload);
+        console.log('[EMAIL-TO-TICKET] Test subscription created successfully:', testSubscription.id);
+        
+        // Clean up by deleting the test subscription
+        try {
+          await graphClient.api(`/subscriptions/${testSubscription.id}`).delete();
+          console.log('[EMAIL-TO-TICKET] Test subscription deleted successfully');
+        } catch (deleteError) {
+          console.warn('[EMAIL-TO-TICKET] Could not delete test subscription:', deleteError);
+        }
+        
+        testResults.subscriptionCreation = true;
+        
+      } catch (createError) {
+        testResults.subscriptionCreation = false;
+        testResults.errors.push(`Subscription creation failed: ${createError.message}`);
+        console.error('[EMAIL-TO-TICKET] Subscription creation error:', createError);
+        console.error('[EMAIL-TO-TICKET] Subscription creation error details:', {
+          code: createError.code,
+          statusCode: createError.statusCode,
+          message: createError.message,
+          body: createError.body
+        });
       }
 
       return testResults;
@@ -544,6 +623,7 @@ class EmailToTicketService {
         userAccess: false, 
         messagesAccess: false, 
         subscriptionPermissions: false,
+        subscriptionCreation: false,
         errors: [error.message] 
       };
     }
