@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { protect } = require('../middleware/authMiddleware');
+const { protect, authorize } = require('../middleware/authMiddleware');
 const EmailToTicketService = require('../services/EmailToTicketService');
 const EmailConfiguration = require('../models/EmailConfiguration');
 const EmailProcessing = require('../models/EmailProcessing');
@@ -96,9 +96,9 @@ router.post('/webhook', validateWebhook, async (req, res) => {
 
 /**
  * GET /api/email-to-ticket/configurations
- * Get email configurations for the user's company
+ * Get email configurations for the user's company (Administrator only)
  */
-router.get('/configurations', protect, async (req, res) => {
+router.get('/configurations', protect, authorize('Administrator'), async (req, res) => {
   try {
     const { companyId } = req.user;
     
@@ -117,9 +117,9 @@ router.get('/configurations', protect, async (req, res) => {
 
 /**
  * POST /api/email-to-ticket/configurations
- * Create a new email configuration
+ * Create a new email configuration (Administrator only)
  */
-router.post('/configurations', protect, async (req, res) => {
+router.post('/configurations', protect, authorize('Administrator'), async (req, res) => {
   try {
     const { companyId } = req.user;
     const configData = { ...req.body, companyId };
@@ -136,9 +136,9 @@ router.post('/configurations', protect, async (req, res) => {
 
 /**
  * PUT /api/email-to-ticket/configurations/:id
- * Update an email configuration
+ * Update an email configuration (Administrator only)
  */
-router.put('/configurations/:id', protect, async (req, res) => {
+router.put('/configurations/:id', protect, authorize('Administrator'), async (req, res) => {
   try {
     const { companyId } = req.user;
     const { id } = req.params;
@@ -163,9 +163,9 @@ router.put('/configurations/:id', protect, async (req, res) => {
 
 /**
  * DELETE /api/email-to-ticket/configurations/:id
- * Delete an email configuration
+ * Delete an email configuration (Administrator only)
  */
-router.delete('/configurations/:id', protect, async (req, res) => {
+router.delete('/configurations/:id', protect, authorize('Administrator'), async (req, res) => {
   try {
     const { companyId } = req.user;
     const { id } = req.params;
@@ -196,9 +196,9 @@ router.delete('/configurations/:id', protect, async (req, res) => {
 
 /**
  * POST /api/email-to-ticket/configurations/:id/webhook
- * Create webhook subscription for an email configuration
+ * Create webhook subscription for an email configuration (Administrator only)
  */
-router.post('/configurations/:id/webhook', protect, async (req, res) => {
+router.post('/configurations/:id/webhook', protect, authorize('Administrator'), async (req, res) => {
   try {
     const { companyId } = req.user;
     const { id } = req.params;
@@ -236,9 +236,9 @@ router.post('/configurations/:id/webhook', protect, async (req, res) => {
 
 /**
  * PUT /api/email-to-ticket/configurations/:id/webhook
- * Renew webhook subscription for an email configuration
+ * Renew webhook subscription for an email configuration (Administrator only)
  */
-router.put('/configurations/:id/webhook', protect, async (req, res) => {
+router.put('/configurations/:id/webhook', protect, authorize('Administrator'), async (req, res) => {
   try {
     const { companyId } = req.user;
     const { id } = req.params;
@@ -271,9 +271,9 @@ router.put('/configurations/:id/webhook', protect, async (req, res) => {
 
 /**
  * DELETE /api/email-to-ticket/configurations/:id/webhook
- * Delete webhook subscription for an email configuration
+ * Delete webhook subscription for an email configuration (Administrator only)
  */
-router.delete('/configurations/:id/webhook', protect, async (req, res) => {
+router.delete('/configurations/:id/webhook', protect, authorize('Administrator'), async (req, res) => {
   try {
     const { companyId } = req.user;
     const { id } = req.params;
@@ -306,9 +306,9 @@ router.delete('/configurations/:id/webhook', protect, async (req, res) => {
 
 /**
  * GET /api/email-to-ticket/processing
- * Get email processing history for the user's company
+ * Get email processing history for the user's company (Administrator only)
  */
-router.get('/processing', protect, async (req, res) => {
+router.get('/processing', protect, authorize('Administrator'), async (req, res) => {
   try {
     const { companyId } = req.user;
     const { page = 1, limit = 20, status } = req.query;
@@ -350,9 +350,9 @@ router.get('/processing', protect, async (req, res) => {
 
 /**
  * POST /api/email-to-ticket/processing/:id/retry
- * Retry failed email processing
+ * Retry failed email processing (Administrator only)
  */
-router.post('/processing/:id/retry', protect, async (req, res) => {
+router.post('/processing/:id/retry', protect, authorize('Administrator'), async (req, res) => {
   try {
     const { companyId } = req.user;
     const { id } = req.params;
@@ -392,9 +392,9 @@ router.post('/processing/:id/retry', protect, async (req, res) => {
 
 /**
  * GET /api/email-to-ticket/stats
- * Get email-to-ticket statistics for the user's company
+ * Get email-to-ticket statistics for the user's company (Administrator only)
  */
-router.get('/stats', protect, async (req, res) => {
+router.get('/stats', protect, authorize('Administrator'), async (req, res) => {
   try {
     const { companyId } = req.user;
     const { days = 30 } = req.query;

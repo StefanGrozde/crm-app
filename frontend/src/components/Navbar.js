@@ -126,6 +126,10 @@ const Navbar = ({
     const handleOpenTicketQueuesTab = () => onOpenPageTab('ticket-queues', 'Ticket Queues', 'ticket-queue-dashboard-widget');
     const handleOpenBusinessTab = () => onOpenPageTab('business', 'Business', 'business-widget');
     const handleOpenUsersTab = () => onOpenPageTab('users', 'Users', 'users-widget');
+    const handleOpenEmailToTicketTab = () => {
+        // Navigate to email-to-ticket page instead of opening a tab
+        window.location.href = '/email-to-ticket';
+    };
 
     // Notification handlers
     const handleNotificationClick = () => {
@@ -309,6 +313,18 @@ const Navbar = ({
                                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
                                                     </svg>
                                                     <span>Users</span>
+                                                </button>
+                                                <button
+                                                    onClick={() => {
+                                                        handleOpenEmailToTicketTab();
+                                                        setPagesMenuOpen(false);
+                                                    }}
+                                                    className="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
+                                                >
+                                                    <svg className="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
+                                                    </svg>
+                                                    <span>Email to Ticket</span>
                                                 </button>
                                             </>
                                         )}

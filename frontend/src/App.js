@@ -9,6 +9,7 @@ import EditCompany from './pages/EditCompany';
 import Contacts from './pages/Contacts';
 import Tickets from './pages/Tickets';
 import TicketQueues from './pages/TicketQueues';
+import EmailToTicketDashboard from './components/EmailToTicketDashboard';
 
 import InviteRegistration from './pages/InviteRegistration';
 import InviteSuccess from './pages/InviteSuccess';
@@ -36,6 +37,7 @@ function App() {
           {/* Admin Only Route */}
           <Route element={<AdminRoute />}>
             <Route path="/edit-company" element={<EditCompany />} />
+            <Route path="/email-to-ticket" element={<EmailToTicketDashboard />} />
           </Route>
 
           {/* Redirect root to login or dashboard */}
