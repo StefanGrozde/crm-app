@@ -64,7 +64,7 @@ const corsOptions = {
 // Apply CORS to all routes except webhook endpoints
 app.use((req, res, next) => {
     // Skip CORS for webhook endpoints
-    if (req.path.startsWith('/api/messenger/webhook')) {
+    if (req.path.startsWith('/api/messenger/webhook') || req.path.startsWith('/api/email-to-ticket/webhook')) {
         return next();
     }
     cors(corsOptions)(req, res, next);
