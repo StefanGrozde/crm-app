@@ -264,54 +264,9 @@ const TimelineWithComments = React.memo(forwardRef(({
       return colors[priority] || 'bg-gray-100 text-gray-800';
     };
 
+    // Don't show ticket info panel here since it's now in the main TicketProfileWidget
     if (entityType === 'ticket') {
-      return (
-        <div className="bg-teal-700 text-white p-6 rounded-lg">
-          <h3 className="text-lg font-semibold mb-4">Ticket Information</h3>
-          
-          <div className="grid grid-cols-2 gap-4 mb-4">
-            <div>
-              <div className="bg-white bg-opacity-20 rounded px-3 py-2 mb-3">
-                <div className="text-xs text-teal-100 mb-1">Case Number</div>
-                <div className="font-medium">{entityData.ticketNumber || entityData.id}</div>
-              </div>
-            </div>
-            
-            <div>
-              <div className="bg-white bg-opacity-20 rounded px-3 py-2 mb-3">
-                <div className="text-xs text-teal-100 mb-1">Case Owner</div>
-                <div className="font-medium">{entityData.assignedUser?.username || 'Unassigned'}</div>
-              </div>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4 mb-4">
-            <div>
-              <div className="bg-white bg-opacity-20 rounded px-3 py-2 mb-3">
-                <div className="text-xs text-teal-100 mb-1">Status</div>
-                <div className="font-medium">{entityData.status || 'Open'}</div>
-              </div>
-            </div>
-            
-            <div>
-              <div className="bg-white bg-opacity-20 rounded px-3 py-2 mb-3">
-                <div className="text-xs text-teal-100 mb-1">Priority</div>
-                <div className="font-medium">{entityData.priority || 'Medium'}</div>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white bg-opacity-20 rounded px-3 py-2 mb-3">
-            <div className="text-xs text-teal-100 mb-1">Subject</div>
-            <div className="font-medium">{entityData.title || entityData.subject || 'No subject'}</div>
-          </div>
-
-          <div className="bg-white bg-opacity-20 rounded px-3 py-2">
-            <div className="text-xs text-teal-100 mb-1">Description</div>
-            <div className="text-sm">{entityData.description || 'No description'}</div>
-          </div>
-        </div>
-      );
+      return null;
     } else if (entityType === 'task') {
       return (
         <div className="bg-blue-700 text-white p-6 rounded-lg">
@@ -381,14 +336,16 @@ const TimelineWithComments = React.memo(forwardRef(({
   }
 
   return (
-    <div className={`timeline-with-comments ${className} flex gap-6 ${maxHeight}`}>
-      {/* Left Panel - Entity Information */}
-      <div className="w-1/3 flex-shrink-0">
-        {renderEntityInfoPanel()}
-      </div>
+    <div className={`timeline-with-comments ${className} ${entityType === 'ticket' ? '' : 'flex gap-6'} ${maxHeight}`}>
+      {/* Left Panel - Entity Information (only for non-ticket entities) */}
+      {entityType !== 'ticket' && (
+        <div className="w-1/3 flex-shrink-0">
+          {renderEntityInfoPanel()}
+        </div>
+      )}
 
       {/* Right Panel - Timeline Activity */}
-      <div className="flex-1 bg-gray-50 rounded-lg p-4">
+      <div className={`${entityType === 'ticket' ? 'w-full' : 'flex-1'} bg-gray-50 rounded-lg p-4`}>
         {/* Header */}
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-lg font-semibold text-gray-900">Activity Timeline</h3>
