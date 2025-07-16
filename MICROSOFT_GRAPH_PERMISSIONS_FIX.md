@@ -62,7 +62,60 @@ POST /api/email-to-ticket/configurations/:id/test-permissions
 
 This will tell you exactly which permissions are working and which are failing.
 
+## Troubleshooting Authorization_RequestDenied Error
+
+### Step 1: Verify Application Registration Type
+1. Go to Azure Portal → Azure Active Directory → App registrations
+2. Find your app and click on it
+3. Check **Authentication** tab:
+   - Should have **Platform configurations** set up
+   - **Supported account types** should be appropriate for your organization
+4. Check **Certificates & secrets** tab:
+   - Ensure client secret is not expired
+   - Note the exact Client ID and Secret you're using
+
+### Step 2: Verify Permissions Are Application Type
+1. Go to **API permissions** tab
+2. **CRITICAL CHECK:** Each permission should show:
+   - **Type**: Application (NOT Delegated)
+   - **Admin consent required**: Yes
+   - **Status**: Granted for [Your Organization]
+
+### Step 3: Grant Admin Consent Properly
+1. In **API permissions** tab, click **Grant admin consent for [Your Organization]**
+2. **Important:** This button must be clicked AFTER adding all permissions
+3. Look for green checkmarks next to each permission
+4. If you see red X marks, admin consent failed
+
+### Step 4: Check Service Principal in Enterprise Applications
+1. Go to **Azure Active Directory** → **Enterprise applications**
+2. Search for your app name
+3. Click on it → **Permissions** tab
+4. Verify the permissions are listed here too
+5. If not found, the app registration might have issues
+
+### Step 5: Verify Tenant and User Configuration
+1. **Tenant ID**: Must be the correct tenant where the user mailbox exists
+2. **User Email**: Must be a valid user in the same tenant
+3. **User License**: User must have Exchange Online license
+
+### Step 6: Check Token Scopes (Run the Test)
+Run the test endpoint and check the logs for:
+```
+[EMAIL-TO-TICKET] Token payload: {
+  roles: [...], // Should list your granted permissions
+  aud: "https://graph.microsoft.com",
+  appid: "your-client-id"
+}
+```
+
 ## Common Issues
+
+### "Authorization_RequestDenied" Error
+- **Most Common**: Admin consent not properly granted
+- **Check**: Permissions are Application type, not Delegated
+- **Verify**: All permissions show green checkmarks in Azure portal
+- **Solution**: Re-grant admin consent after ensuring all permissions are added
 
 ### "Insufficient privileges" Error
 - Usually means missing **Application permissions** or missing **admin consent**

@@ -45,14 +45,10 @@ class EmailToTicketService {
         return { success: false, message: 'Email not enabled for company' };
       }
 
-      // Process each notification in the array
-      const results = [];
-      for (const notificationItem of notification.value || [notification]) {
-        const result = await this.processEmailNotification(notificationItem, emailConfig, company);
-        results.push(result);
-      }
-
-      return { success: true, results };
+      // Process the notification directly (it's already a single notification object)
+      const result = await this.processEmailNotification(notification, emailConfig, company);
+      
+      return { success: true, result };
 
     } catch (error) {
       console.error('[EMAIL-TO-TICKET] Error processing webhook:', error);
@@ -69,8 +65,20 @@ class EmailToTicketService {
    */
   static async processEmailNotification(notification, emailConfig, company) {
     try {
-      const { resource } = notification;
-      const messageId = resource.split('/messages/')[1];
+      const { resource, resourceData } = notification;
+      
+      // Extract message ID from either resourceData.id or resource path
+      let messageId;
+      if (resourceData && resourceData.id) {
+        messageId = resourceData.id;
+      } else if (resource && resource.includes('/messages/')) {
+        messageId = resource.split('/messages/')[1];
+      } else {
+        console.error('[EMAIL-TO-TICKET] Cannot extract message ID from notification:', notification);
+        return { success: false, message: 'Cannot extract message ID from notification' };
+      }
+
+      console.log('[EMAIL-TO-TICKET] Processing message ID:', messageId);
 
       // Check if we've already processed this message
       const existingProcessing = await EmailProcessing.findOne({
@@ -497,6 +505,22 @@ class EmailToTicketService {
       const authResponse = await cca.acquireTokenByClientCredential({
         scopes: ['https://graph.microsoft.com/.default'],
       });
+
+      // Decode and log token information (for debugging)
+      try {
+        const tokenParts = authResponse.accessToken.split('.');
+        const tokenPayload = JSON.parse(Buffer.from(tokenParts[1], 'base64').toString());
+        console.log('[EMAIL-TO-TICKET] Token payload:', {
+          aud: tokenPayload.aud,
+          iss: tokenPayload.iss,
+          roles: tokenPayload.roles || 'No roles found',
+          scp: tokenPayload.scp || 'No scopes found',
+          appid: tokenPayload.appid,
+          tenant: tokenPayload.tid
+        });
+      } catch (tokenError) {
+        console.error('[EMAIL-TO-TICKET] Error decoding token:', tokenError);
+      }
 
       // Initialize Graph client
       const graphClient = Client.init({
