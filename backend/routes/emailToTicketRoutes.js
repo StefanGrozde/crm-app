@@ -29,18 +29,20 @@ const validateWebhook = (req, res, next) => {
   // Microsoft Graph webhook validation
   if (validationToken) {
     console.log('[EMAIL-WEBHOOK] Validating webhook with token:', validationToken);
-    return res.status(200).send(validationToken);
+    return res.status(200).type('text/plain').send(validationToken);
   }
   
   // For actual webhook notifications, validate the client state
   const notifications = req.body.value || [];
-  for (const notification of notifications) {
-    if (notification.clientState) {
-      // Client state format: "companyId-emailConfigId"
-      const [companyId, emailConfigId] = notification.clientState.split('-');
-      if (!companyId || !emailConfigId) {
-        console.error('[EMAIL-WEBHOOK] Invalid client state format:', notification.clientState);
-        return res.status(400).json({ error: 'Invalid client state' });
+  if (notifications.length > 0) {
+    for (const notification of notifications) {
+      if (notification.clientState) {
+        // Client state format: "companyId-emailConfigId"
+        const [companyId, emailConfigId] = notification.clientState.split('-');
+        if (!companyId || !emailConfigId) {
+          console.error('[EMAIL-WEBHOOK] Invalid client state format:', notification.clientState);
+          return res.status(400).json({ error: 'Invalid client state' });
+        }
       }
     }
   }
@@ -236,8 +238,10 @@ router.post('/configurations/:id/webhook', protect, authorize('Administrator'), 
     }
     
     // Generate webhook notification URL
-    const baseUrl = process.env.WEBHOOK_BASE_URL || 'https://your-app.com';
+    const baseUrl = process.env.WEBHOOK_BASE_URL || 'https://backend.svnikolaturs.mk';
     const notificationUrl = `${baseUrl}/api/email-to-ticket/webhook`;
+    
+    console.log('[EMAIL-WEBHOOK] Creating webhook subscription with URL:', notificationUrl);
     
     const result = await EmailToTicketService.createWebhookSubscription(
       configuration,
