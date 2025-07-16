@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const authMiddleware = require('../middleware/authMiddleware');
+const { protect } = require('../middleware/protect');
 const EmailToTicketService = require('../services/EmailToTicketService');
 const EmailConfiguration = require('../models/EmailConfiguration');
 const EmailProcessing = require('../models/EmailProcessing');
@@ -98,7 +98,7 @@ router.post('/webhook', validateWebhook, async (req, res) => {
  * GET /api/email-to-ticket/configurations
  * Get email configurations for the user's company
  */
-router.get('/configurations', authMiddleware, async (req, res) => {
+router.get('/configurations', protect, async (req, res) => {
   try {
     const { companyId } = req.user;
     
@@ -119,7 +119,7 @@ router.get('/configurations', authMiddleware, async (req, res) => {
  * POST /api/email-to-ticket/configurations
  * Create a new email configuration
  */
-router.post('/configurations', authMiddleware, async (req, res) => {
+router.post('/configurations', protect, async (req, res) => {
   try {
     const { companyId } = req.user;
     const configData = { ...req.body, companyId };
@@ -138,7 +138,7 @@ router.post('/configurations', authMiddleware, async (req, res) => {
  * PUT /api/email-to-ticket/configurations/:id
  * Update an email configuration
  */
-router.put('/configurations/:id', authMiddleware, async (req, res) => {
+router.put('/configurations/:id', protect, async (req, res) => {
   try {
     const { companyId } = req.user;
     const { id } = req.params;
@@ -165,7 +165,7 @@ router.put('/configurations/:id', authMiddleware, async (req, res) => {
  * DELETE /api/email-to-ticket/configurations/:id
  * Delete an email configuration
  */
-router.delete('/configurations/:id', authMiddleware, async (req, res) => {
+router.delete('/configurations/:id', protect, async (req, res) => {
   try {
     const { companyId } = req.user;
     const { id } = req.params;
@@ -198,7 +198,7 @@ router.delete('/configurations/:id', authMiddleware, async (req, res) => {
  * POST /api/email-to-ticket/configurations/:id/webhook
  * Create webhook subscription for an email configuration
  */
-router.post('/configurations/:id/webhook', authMiddleware, async (req, res) => {
+router.post('/configurations/:id/webhook', protect, async (req, res) => {
   try {
     const { companyId } = req.user;
     const { id } = req.params;
@@ -238,7 +238,7 @@ router.post('/configurations/:id/webhook', authMiddleware, async (req, res) => {
  * PUT /api/email-to-ticket/configurations/:id/webhook
  * Renew webhook subscription for an email configuration
  */
-router.put('/configurations/:id/webhook', authMiddleware, async (req, res) => {
+router.put('/configurations/:id/webhook', protect, async (req, res) => {
   try {
     const { companyId } = req.user;
     const { id } = req.params;
@@ -273,7 +273,7 @@ router.put('/configurations/:id/webhook', authMiddleware, async (req, res) => {
  * DELETE /api/email-to-ticket/configurations/:id/webhook
  * Delete webhook subscription for an email configuration
  */
-router.delete('/configurations/:id/webhook', authMiddleware, async (req, res) => {
+router.delete('/configurations/:id/webhook', protect, async (req, res) => {
   try {
     const { companyId } = req.user;
     const { id } = req.params;
@@ -308,7 +308,7 @@ router.delete('/configurations/:id/webhook', authMiddleware, async (req, res) =>
  * GET /api/email-to-ticket/processing
  * Get email processing history for the user's company
  */
-router.get('/processing', authMiddleware, async (req, res) => {
+router.get('/processing', protect, async (req, res) => {
   try {
     const { companyId } = req.user;
     const { page = 1, limit = 20, status } = req.query;
@@ -352,7 +352,7 @@ router.get('/processing', authMiddleware, async (req, res) => {
  * POST /api/email-to-ticket/processing/:id/retry
  * Retry failed email processing
  */
-router.post('/processing/:id/retry', authMiddleware, async (req, res) => {
+router.post('/processing/:id/retry', protect, async (req, res) => {
   try {
     const { companyId } = req.user;
     const { id } = req.params;
@@ -394,7 +394,7 @@ router.post('/processing/:id/retry', authMiddleware, async (req, res) => {
  * GET /api/email-to-ticket/stats
  * Get email-to-ticket statistics for the user's company
  */
-router.get('/stats', authMiddleware, async (req, res) => {
+router.get('/stats', protect, async (req, res) => {
   try {
     const { companyId } = req.user;
     const { days = 30 } = req.query;
