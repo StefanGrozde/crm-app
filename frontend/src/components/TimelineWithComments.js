@@ -17,8 +17,6 @@ const TimelineWithComments = React.memo(forwardRef(({
   className = ''
 }, ref) => {
   const { user } = useContext(AuthContext);
-  const [newComment, setNewComment] = useState('');
-  const [isAddingComment, setIsAddingComment] = useState(false);
   const [comments, setComments] = useState([]);
   const [commentsLoading, setCommentsLoading] = useState(false);
   const [commentsError, setCommentsError] = useState(null);
@@ -235,37 +233,7 @@ const TimelineWithComments = React.memo(forwardRef(({
     );
   };
 
-  // Handle adding a new comment
-  const handleAddComment = async () => {
-    if (!newComment.trim() || entityType !== 'ticket') return;
-    
-    setIsAddingComment(true);
-    try {
-      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/tickets/${entityId}/comments`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify({
-          comment: newComment.trim(),
-          isInternal: false // Default to public comments
-        })
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to add comment');
-      }
-      
-      setNewComment('');
-      fetchComments(); // Refresh comments
-      refresh(); // Refresh the audit timeline
-    } catch (error) {
-      console.error('Error adding comment:', error);
-    } finally {
-      setIsAddingComment(false);
-    }
-  };
+
 
   // Render entity information panel
   const renderEntityInfoPanel = () => {
@@ -435,41 +403,7 @@ const TimelineWithComments = React.memo(forwardRef(({
           )}
         </div>
 
-        {/* Add Comment Section */}
-        {showAddComment && entityType === 'ticket' && (
-          <div className="mb-6 p-4 bg-white rounded-lg border border-gray-200">
-            <div className="flex items-start space-x-3">
-              <div className="flex-shrink-0">
-                {generateUserAvatar(user?.username || 'You')}
-              </div>
-              <div className="flex-1">
-                <textarea
-                  value={newComment}
-                  onChange={(e) => setNewComment(e.target.value)}
-                  placeholder="Add a comment..."
-                  className="w-full p-3 border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  rows="3"
-                />
-                <div className="flex justify-end mt-2 space-x-2">
-                  <button
-                    onClick={() => setNewComment('')}
-                    className="px-3 py-1 text-sm text-gray-600 hover:text-gray-800"
-                    disabled={isAddingComment}
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handleAddComment}
-                    disabled={!newComment.trim() || isAddingComment}
-                    className="px-4 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {isAddingComment ? 'Adding...' : 'Add Comment'}
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
+
 
         {/* Note for tasks without comment support */}
         {showAddComment && entityType === 'task' && (

@@ -3,6 +3,7 @@ import axios from 'axios';
 import { AuthContext } from '../context/AuthContext';
 import { createPortal } from 'react-dom';
 import TimelineWithComments from './TimelineWithComments';
+import CommentEmailTabs from './CommentEmailTabs';
 
 const API_URL = process.env.REACT_APP_API_URL;
 
@@ -20,22 +21,11 @@ const TicketProfileWidget = ({ ticketId }) => {
     const [showEditModal, setShowEditModal] = useState(false);
     const [formData, setFormData] = useState({});
     
-    // Comment states
+    // Comment states (keeping only the modal state for the separate Add Comment button in header)
     const [showCommentModal, setShowCommentModal] = useState(false);
     const [newComment, setNewComment] = useState('');
     const [isInternalComment, setIsInternalComment] = useState(false);
     const [addingComment, setAddingComment] = useState(false);
-    
-    // Email states
-    const [emailData, setEmailData] = useState({
-        to: '',
-        subject: '',
-        htmlContent: ''
-    });
-    const [sendingEmail, setSendingEmail] = useState(false);
-    
-    // Tab state for the merged section
-    const [activeTab, setActiveTab] = useState('comment'); // 'comment' or 'email'
     
     // Additional data for dropdowns
     const [users, setUsers] = useState([]);
@@ -197,85 +187,28 @@ const TicketProfileWidget = ({ ticketId }) => {
         }
     };
 
-    // Logic: Send email
-    const handleSendEmail = async () => {
-        if (!emailData.to || !emailData.subject || !emailData.htmlContent) {
-            alert('Please fill in all required fields');
-            return;
-        }
+    // Callbacks for the reusable component
+    const handleCommentAddedFromTabs = useCallback(async () => {
+        // Reload ticket to get updated comments
+        await loadTicket();
         
-        try {
-            setSendingEmail(true);
-            const response = await axios.post(`${API_URL}/api/companies/${user.companyId}/send-email`, {
-                to: emailData.to,
-                subject: emailData.subject,
-                htmlContent: emailData.htmlContent
-            }, {
-                withCredentials: true
-            });
-            
-            if (response.data.success) {
-                alert('Email sent successfully!');
-                setEmailData({ to: '', subject: '', htmlContent: '' });
-                
-                // Add a comment to the ticket indicating an email was sent
-                await axios.post(`${API_URL}/api/tickets/${ticketId}/comments`, {
-                    comment: `Email sent to ${emailData.to}\nSubject: ${emailData.subject}`,
-                    isInternal: true
-                }, {
-                    withCredentials: true
-                });
-                
-                // Refresh data
-                await loadTicket();
-                setTimeout(() => {
-                    if (timelineRef.current && timelineRef.current.refresh) {
-                        timelineRef.current.refresh();
-                    }
-                }, 500);
-            } else {
-                alert(`Failed to send email: ${response.data.message}`);
+        // Refresh the timeline to show new audit logs (with small delay to ensure audit log creation)
+        setTimeout(() => {
+            if (timelineRef.current && timelineRef.current.refresh) {
+                timelineRef.current.refresh();
             }
-        } catch (error) {
-            console.error('Error sending email:', error);
-            alert('Failed to send email');
-        } finally {
-            setSendingEmail(false);
-        }
-    };
+        }, 500);
+    }, [loadTicket]);
 
-
-
-    // Logic: Initialize email data when switching to email tab
-    const initializeEmailData = () => {
-        const contactEmail = ticket.contact?.email || '';
-        const defaultSubject = `Regarding Ticket ${ticket.ticketNumber}: ${ticket.title}`;
-        const defaultContent = `
-            <p>Dear ${ticket.contact ? `${ticket.contact.firstName} ${ticket.contact.lastName}` : 'Customer'},</p>
-            
-            <p>We are writing regarding your ticket <strong>${ticket.ticketNumber}</strong>: ${ticket.title}</p>
-            
-            <p>Please let us know if you have any questions or need further assistance.</p>
-            
-            <p>Best regards,<br>
-            ${user.username}<br>
-            Support Team</p>
-        `;
-        
-        setEmailData({
-            to: contactEmail,
-            subject: defaultSubject,
-            htmlContent: defaultContent
-        });
-    };
-
-    // Logic: Handle tab change
-    const handleTabChange = (tab) => {
-        setActiveTab(tab);
-        if (tab === 'email') {
-            initializeEmailData();
-        }
-    };
+    const handleEmailSentFromTabs = useCallback(async () => {
+        // Refresh data
+        await loadTicket();
+        setTimeout(() => {
+            if (timelineRef.current && timelineRef.current.refresh) {
+                timelineRef.current.refresh();
+            }
+        }, 500);
+    }, [loadTicket]);
 
     // Logic: Handle status change
     const handleStatusChange = async (newStatus) => {
@@ -648,157 +581,19 @@ const TicketProfileWidget = ({ ticketId }) => {
 
             {/* Quick Actions Section */}
             <div className="px-6 py-4 bg-gray-50 border-t border-gray-200">
-                {/* Merged Email and Comment Section */}
-                <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-                    {/* Tab Navigation */}
-                    <div className="flex border-b border-gray-200">
-                        <button
-                            onClick={() => handleTabChange('comment')}
-                            className={`flex-1 px-4 py-3 text-sm font-medium text-center transition-colors ${
-                                activeTab === 'comment'
-                                    ? 'bg-blue-50 text-blue-700 border-b-2 border-blue-700'
-                                    : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
-                            }`}
-                        >
-                            <svg className="w-4 h-4 mx-auto mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-3.582 8-8 8a8.955 8.955 0 01-2.172-.268l-5.562 2.067a1 1 0 01-1.295-1.295l2.067-5.562A8.955 8.955 0 014 12c0-4.418 3.582-8 8-8s8 3.582 8 8z" />
-                            </svg>
-                            Add Comment
-                        </button>
-                        <button
-                            onClick={() => handleTabChange('email')}
-                            className={`flex-1 px-4 py-3 text-sm font-medium text-center transition-colors ${
-                                activeTab === 'email'
-                                    ? 'bg-green-50 text-green-700 border-b-2 border-green-700'
-                                    : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
-                            }`}
-                            disabled={!ticket.contact?.email}
-                            title={!ticket.contact?.email ? 'No contact email available' : 'Send email to contact'}
-                        >
-                            <svg className="w-4 h-4 mx-auto mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                            </svg>
-                            Send Email
-                        </button>
-                    </div>
-
-                    {/* Tab Content */}
-                    <div className="p-4">
-                        {/* Comment Tab */}
-                        {activeTab === 'comment' && (
-                            <div className="space-y-3">
-                                <textarea
-                                    value={newComment}
-                                    onChange={(e) => setNewComment(e.target.value)}
-                                    placeholder="Type your comment here..."
-                                    rows={3}
-                                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                />
-                                <div className="flex items-center justify-between">
-                                    <div className="flex items-center">
-                                        <input
-                                            type="checkbox"
-                                            id="quickInternal"
-                                            checked={isInternalComment}
-                                            onChange={(e) => setIsInternalComment(e.target.checked)}
-                                            className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                                        />
-                                        <label htmlFor="quickInternal" className="ml-2 text-xs text-gray-600">
-                                            Internal comment
-                                        </label>
-                                    </div>
-                                    <button
-                                        onClick={handleAddComment}
-                                        disabled={addingComment || !newComment.trim()}
-                                        className="px-4 py-2 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
-                                    >
-                                        {addingComment ? 'Adding...' : 'Add Comment'}
-                                    </button>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Email Tab */}
-                        {activeTab === 'email' && (
-                            <div className="space-y-4">
-                                {ticket.contact?.email ? (
-                                    <>
-                                        <div className="bg-blue-50 p-3 rounded-lg">
-                                            <p className="text-sm text-blue-800">
-                                                <strong>Note:</strong> This email will be sent using your company's Microsoft 365 configuration.
-                                                A record of this email will be added to the ticket comments.
-                                            </p>
-                                        </div>
-                                        
-                                        <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                                To *
-                                            </label>
-                                            <input
-                                                type="email"
-                                                value={emailData.to}
-                                                onChange={(e) => setEmailData(prev => ({ ...prev, to: e.target.value }))}
-                                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
-                                                placeholder="recipient@example.com"
-                                            />
-                                        </div>
-
-                                        <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                                Subject *
-                                            </label>
-                                            <input
-                                                type="text"
-                                                value={emailData.subject}
-                                                onChange={(e) => setEmailData(prev => ({ ...prev, subject: e.target.value }))}
-                                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
-                                                placeholder="Email subject"
-                                            />
-                                        </div>
-
-                                        <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                                Message *
-                                            </label>
-                                            <textarea
-                                                value={emailData.htmlContent}
-                                                onChange={(e) => setEmailData(prev => ({ ...prev, htmlContent: e.target.value }))}
-                                                rows={6}
-                                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
-                                                placeholder="Type your message here... (HTML is supported)"
-                                            />
-                                            <p className="text-xs text-gray-500 mt-1">
-                                                You can use HTML tags for formatting (e.g., &lt;p&gt;, &lt;br&gt;, &lt;strong&gt;, &lt;em&gt;)
-                                            </p>
-                                        </div>
-
-                                        <div className="flex justify-end">
-                                            <button
-                                                onClick={handleSendEmail}
-                                                disabled={sendingEmail || !emailData.to || !emailData.subject || !emailData.htmlContent}
-                                                className="px-4 py-2 text-sm bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
-                                            >
-                                                {sendingEmail ? 'Sending...' : 'Send Email'}
-                                            </button>
-                                        </div>
-                                    </>
-                                ) : (
-                                    <div className="text-center py-6">
-                                        <svg className="w-12 h-12 mx-auto text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                                        </svg>
-                                        <p className="text-sm text-gray-500 mb-2">
-                                            No contact email available
-                                        </p>
-                                        <p className="text-xs text-gray-400">
-                                            Please assign a contact with an email address to send emails.
-                                        </p>
-                                    </div>
-                                )}
-                            </div>
-                        )}
-                    </div>
-                </div>
+                <CommentEmailTabs
+                    entityType="ticket"
+                    entityId={ticketId}
+                    entityData={{
+                        title: ticket.title,
+                        number: ticket.ticketNumber,
+                        id: ticket.id
+                    }}
+                    contactEmail={ticket.contact?.email}
+                    contactName={ticket.contact ? `${ticket.contact.firstName} ${ticket.contact.lastName}` : null}
+                    onCommentAdded={handleCommentAddedFromTabs}
+                    onEmailSent={handleEmailSentFromTabs}
+                />
             </div>
 
             {/* Timeline with Comments - Enhanced Ticket View */}
