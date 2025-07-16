@@ -401,8 +401,8 @@ const TicketProfileWidget = ({ ticketId }) => {
 
             {/* Content */}
             <div className="px-6 py-4">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    {/* Left Column - Details */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    {/* Left Column - Ticket Details */}
                     <div className="space-y-6">
                         {/* Description */}
                         <div>
@@ -415,7 +415,7 @@ const TicketProfileWidget = ({ ticketId }) => {
                         {/* Details */}
                         <div>
                             <h3 className="text-sm font-medium text-gray-900 mb-3">Details</h3>
-                            <dl className="grid grid-cols-1 gap-x-4 gap-y-3 sm:grid-cols-2">
+                            <dl className="space-y-3">
                                 <div>
                                     <dt className="text-sm font-medium text-gray-500">Contact</dt>
                                     <dd className="text-sm text-gray-900">
@@ -507,9 +507,77 @@ const TicketProfileWidget = ({ ticketId }) => {
                                 </div>
                             </div>
                         )}
+
+                        {/* Quick Actions */}
+                        <div className="pt-4 border-t border-gray-200">
+                            <h3 className="text-sm font-medium text-gray-900 mb-3">Quick Actions</h3>
+                            <div className="flex flex-col space-y-2">
+                                {ticket.status !== 'resolved' && ticket.status !== 'closed' && (
+                                    <button
+                                        onClick={() => handleStatusChange('resolved')}
+                                        className="px-3 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700"
+                                    >
+                                        Mark Resolved
+                                    </button>
+                                )}
+                                {ticket.status !== 'closed' && (
+                                    <button
+                                        onClick={() => handleStatusChange('closed')}
+                                        className="px-3 py-1 text-sm bg-gray-600 text-white rounded hover:bg-gray-700"
+                                    >
+                                        Close Ticket
+                                    </button>
+                                )}
+                                {ticket.status === 'closed' && (
+                                    <button
+                                        onClick={() => handleStatusChange('open')}
+                                        className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
+                                    >
+                                        Reopen Ticket
+                                    </button>
+                                )}
+                            </div>
+                        </div>
                     </div>
 
-                    {/* Right Column - Comments */}
+                    {/* Central Column - Comments and Timeline */}
+                    <div className="space-y-6">
+                        {/* CommentEmailTabs */}
+                        <div className="bg-gray-50 p-4 rounded-lg">
+                            <CommentEmailTabs
+                                entityType="ticket"
+                                entityId={ticketId}
+                                entityData={{
+                                    title: ticket.title,
+                                    number: ticket.ticketNumber,
+                                    id: ticket.id
+                                }}
+                                contactEmail={ticket.contact?.email}
+                                contactName={ticket.contact ? `${ticket.contact.firstName} ${ticket.contact.lastName}` : null}
+                                onCommentAdded={handleCommentAddedFromTabs}
+                                onEmailSent={handleEmailSentFromTabs}
+                            />
+                        </div>
+
+                        {/* Timeline with Comments */}
+                        {memoizedTicketData && (
+                            <div className="bg-white border border-gray-200 rounded-lg">
+                                <TimelineWithComments
+                                    ref={timelineRef}
+                                    entityType="ticket"
+                                    entityId={memoizedTicketData.id}
+                                    entityData={memoizedTicketData}
+                                    userRole={user?.role}
+                                    showAddComment={true}
+                                    showFilters={false}
+                                    maxHeight="h-96"
+                                    className="w-full"
+                                />
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Right Column - Comments List */}
                     <div>
                         <h3 className="text-sm font-medium text-gray-900 mb-3">
                             Comments ({ticket.comments?.length || 0})
@@ -546,72 +614,7 @@ const TicketProfileWidget = ({ ticketId }) => {
                         </div>
                     </div>
                 </div>
-
-                {/* Quick Actions */}
-                <div className="mt-6 pt-4 border-t border-gray-200">
-                    <h3 className="text-sm font-medium text-gray-900 mb-3">Quick Actions</h3>
-                    <div className="flex space-x-2">
-                        {ticket.status !== 'resolved' && ticket.status !== 'closed' && (
-                            <button
-                                onClick={() => handleStatusChange('resolved')}
-                                className="px-3 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700"
-                            >
-                                Mark Resolved
-                            </button>
-                        )}
-                        {ticket.status !== 'closed' && (
-                            <button
-                                onClick={() => handleStatusChange('closed')}
-                                className="px-3 py-1 text-sm bg-gray-600 text-white rounded hover:bg-gray-700"
-                            >
-                                Close Ticket
-                            </button>
-                        )}
-                        {ticket.status === 'closed' && (
-                            <button
-                                onClick={() => handleStatusChange('open')}
-                                className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
-                            >
-                                Reopen Ticket
-                            </button>
-                        )}
-                    </div>
-                </div>
             </div>
-
-            {/* Quick Actions Section */}
-            <div className="px-6 py-4 bg-gray-50 border-t border-gray-200">
-                <CommentEmailTabs
-                    entityType="ticket"
-                    entityId={ticketId}
-                    entityData={{
-                        title: ticket.title,
-                        number: ticket.ticketNumber,
-                        id: ticket.id
-                    }}
-                    contactEmail={ticket.contact?.email}
-                    contactName={ticket.contact ? `${ticket.contact.firstName} ${ticket.contact.lastName}` : null}
-                    onCommentAdded={handleCommentAddedFromTabs}
-                    onEmailSent={handleEmailSentFromTabs}
-                />
-            </div>
-
-            {/* Timeline with Comments - Enhanced Ticket View */}
-            {memoizedTicketData && (
-                <div className="mt-6">
-                    <TimelineWithComments
-                        ref={timelineRef}
-                        entityType="ticket"
-                        entityId={memoizedTicketData.id}
-                        entityData={memoizedTicketData}
-                        userRole={user?.role}
-                        showAddComment={true}
-                        showFilters={false}
-                        maxHeight="h-full"
-                        className="w-full"
-                    />
-                </div>
-            )}
 
             {/* Comment Modal */}
             {showCommentModal && createPortal(
