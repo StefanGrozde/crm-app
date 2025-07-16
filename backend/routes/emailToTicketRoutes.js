@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { protect } = require('../middleware/protect');
+const { protect } = require('../middleware/authMiddleware');
 const EmailToTicketService = require('../services/EmailToTicketService');
 const EmailConfiguration = require('../models/EmailConfiguration');
 const EmailProcessing = require('../models/EmailProcessing');
