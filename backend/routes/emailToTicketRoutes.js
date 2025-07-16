@@ -54,6 +54,7 @@ const validateWebhook = (req, res, next) => {
  */
 router.post('/webhook', validateWebhook, async (req, res) => {
   try {
+    console.log('🔔 Email Received');
     console.log('[EMAIL-WEBHOOK] Received webhook notification:', JSON.stringify(req.body, null, 2));
     
     const notifications = req.body.value || [];
