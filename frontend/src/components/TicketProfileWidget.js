@@ -4,6 +4,7 @@ import { AuthContext } from '../context/AuthContext';
 import { createPortal } from 'react-dom';
 import TimelineWithComments from './TimelineWithComments';
 import CommentEmailTabs from './CommentEmailTabs';
+import TicketInformationPanel from './TicketInformationPanel';
 
 const API_URL = process.env.REACT_APP_API_URL;
 
@@ -404,6 +405,9 @@ const TicketProfileWidget = ({ ticketId }) => {
                 <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
                     {/* Left Column - Ticket Details */}
                     <div className="space-y-6">
+                        {/* Ticket Information Panel */}
+                        <TicketInformationPanel ticket={ticket} />
+                        
                         {/* Description */}
                         <div>
                             <h3 className="text-sm font-medium text-gray-900 mb-2">Description</h3>
