@@ -7,6 +7,15 @@ const TicketComment = require('../models/TicketComment');
 const Contact = require('../models/Contact');
 const Company = require('../models/Company');
 
+// Set up model associations
+EmailConfiguration.belongsTo(Company, { foreignKey: 'companyId' });
+EmailProcessing.belongsTo(EmailConfiguration, { foreignKey: 'emailConfigId' });
+EmailProcessing.belongsTo(Company, { foreignKey: 'companyId' });
+EmailProcessing.belongsTo(Ticket, { foreignKey: 'ticketId', required: false });
+EmailProcessing.belongsTo(Contact, { foreignKey: 'contactId', required: false });
+Ticket.hasMany(TicketComment, { foreignKey: 'ticketId' });
+TicketComment.belongsTo(Ticket, { foreignKey: 'ticketId' });
+
 class EmailToTicketService {
   /**
    * Process an email webhook notification from Microsoft Graph

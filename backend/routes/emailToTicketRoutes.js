@@ -5,7 +5,16 @@ const EmailToTicketService = require('../services/EmailToTicketService');
 const EmailConfiguration = require('../models/EmailConfiguration');
 const EmailProcessing = require('../models/EmailProcessing');
 const Company = require('../models/Company');
+const Ticket = require('../models/Ticket');
+const Contact = require('../models/Contact');
 const crypto = require('crypto');
+
+// Set up model associations
+EmailConfiguration.belongsTo(Company, { foreignKey: 'companyId' });
+EmailProcessing.belongsTo(EmailConfiguration, { foreignKey: 'emailConfigId' });
+EmailProcessing.belongsTo(Company, { foreignKey: 'companyId' });
+EmailProcessing.belongsTo(Ticket, { foreignKey: 'ticketId', required: false });
+EmailProcessing.belongsTo(Contact, { foreignKey: 'contactId', required: false });
 
 // Middleware to validate webhook requests
 const validateWebhook = (req, res, next) => {
