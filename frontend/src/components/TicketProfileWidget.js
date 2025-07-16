@@ -217,7 +217,6 @@ const TicketProfileWidget = ({ ticketId }) => {
             if (response.data.success) {
                 alert('Email sent successfully!');
                 setEmailData({ to: '', subject: '', htmlContent: '' });
-                setShowEmailModal(false);
                 
                 // Add a comment to the ticket indicating an email was sent
                 await axios.post(`${API_URL}/api/tickets/${ticketId}/comments`, {
