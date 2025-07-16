@@ -64,7 +64,7 @@ CREATE TABLE email_processing (
     
     -- Conversation threading
     in_reply_to VARCHAR(500),
-    references TEXT,
+    email_references TEXT,
     parent_ticket_id INTEGER REFERENCES tickets(id) ON DELETE SET NULL,
     
     -- Email content (for debugging/audit)
@@ -151,7 +151,7 @@ COMMENT ON COLUMN email_processing.message_id IS 'Microsoft Graph message ID';
 COMMENT ON COLUMN email_processing.internet_message_id IS 'Email Message-ID header for conversation threading';
 COMMENT ON COLUMN email_processing.conversation_id IS 'Microsoft Graph conversation ID';
 COMMENT ON COLUMN email_processing.in_reply_to IS 'In-Reply-To header for conversation threading';
-COMMENT ON COLUMN email_processing.references IS 'References header for conversation threading';
+COMMENT ON COLUMN email_processing.email_references IS 'References header for conversation threading';
 COMMENT ON COLUMN email_processing.email_body IS 'Email body content for debugging';
 COMMENT ON COLUMN email_processing.webhook_data IS 'Raw webhook notification data';
 

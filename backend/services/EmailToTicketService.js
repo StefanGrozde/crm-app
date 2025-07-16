@@ -101,7 +101,7 @@ class EmailToTicketService {
         subject: emailDetails.subject,
         receivedDateTime: new Date(emailDetails.receivedDateTime),
         inReplyTo: emailDetails.inReplyTo,
-        references: emailDetails.references,
+        emailReferences: emailDetails.references,
         emailBody: emailDetails.body,
         isHtml: emailDetails.isHtml,
         webhookData: notification,

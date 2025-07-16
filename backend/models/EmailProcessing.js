@@ -117,8 +117,9 @@ const EmailProcessing = sequelize.define('EmailProcessing', {
     allowNull: true,
     comment: 'In-Reply-To header for conversation threading'
   },
-  references: {
+  emailReferences: {
     type: DataTypes.TEXT,
+    field: 'email_references',
     allowNull: true,
     comment: 'References header for conversation threading'
   },
