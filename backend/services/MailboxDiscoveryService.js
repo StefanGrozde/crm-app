@@ -92,34 +92,23 @@ class MailboxDiscoveryService {
           console.log('[MAILBOX-DISCOVERY] No calendar permissions found');
         }
 
-        // Try to get all mailboxes from the organization that the user can access
+        // Try to get shared mailboxes from the organization
         try {
-          console.log('[MAILBOX-DISCOVERY] Scanning organization for accessible mailboxes...');
+          console.log('[MAILBOX-DISCOVERY] Scanning organization for shared mailboxes...');
           
           // Get all users in the organization
-          const allUsers = await graphClient.api('/users').select('mail,displayName,accountEnabled').filter('accountEnabled eq true').get();
+          const allUsers = await graphClient.api('/users').select('mail,displayName,accountEnabled,userType').filter('accountEnabled eq true').get();
           console.log('[MAILBOX-DISCOVERY] Found', allUsers.value?.length || 0, 'active users in organization');
           
           if (allUsers.value) {
             const userDomain = userEmail.split('@')[1];
             
-            // Get the user's sendAs permissions once
-            let userSendAsPermissions = [];
-            try {
-              const sendAsResponse = await graphClient.api(`/users/${userEmail}/sendAs`).get();
-              userSendAsPermissions = sendAsResponse.value || [];
-            } catch (sendAsError) {
-              console.log('[MAILBOX-DISCOVERY] Could not get send-as permissions for bulk check');
-            }
-            
             for (const user of allUsers.value) {
               if (user.mail && user.mail.includes(userDomain) && user.mail !== userEmail) {
-                // Check if user has send-as permission for this mailbox
-                const hasPermission = userSendAsPermissions.some(perm => 
-                  perm.emailAddress?.address === user.mail
-                );
+                // Check if this might be a shared mailbox
+                const isSharedMailbox = await this.checkIfSharedMailbox(graphClient, user.mail, userDomain);
                 
-                if (hasPermission && !discoveredMailboxes.find(mb => mb.email === user.mail)) {
+                if (isSharedMailbox && !discoveredMailboxes.find(mb => mb.email === user.mail)) {
                   const emailPrefix = user.mail.split('@')[0].toLowerCase();
                   discoveredMailboxes.push({
                     email: user.mail,
@@ -128,7 +117,7 @@ class MailboxDiscoveryService {
                     isActive: true,
                     type: 'shared'
                   });
-                  console.log('[MAILBOX-DISCOVERY] Added accessible mailbox:', user.mail);
+                  console.log('[MAILBOX-DISCOVERY] Added shared mailbox:', user.mail);
                 }
               }
             }
@@ -149,72 +138,8 @@ class MailboxDiscoveryService {
         console.log('[MAILBOX-DISCOVERY] Error checking shared mailboxes:', settingsError.message);
       }
 
-      // Method 3: Simplified approach - only use sendAs permissions that were found in Method 2
-      // Don't scan the entire organization, focus only on what we already discovered
-      console.log('[MAILBOX-DISCOVERY] Skipping organization-wide scan - using only explicit send-as permissions and well-known mailboxes');
-
-      // Method 4: Check specific well-known mailboxes for the domain (but only test send-as capability)
-      const userDomain = userEmail.split('@')[1];
-      const wellKnownMailboxes = [
-        'info',
-        'support', 
-        'help',
-        'sales',
-        'marketing',
-        'admin',
-        'contact',
-        'booking',
-        'reservations'
-      ];
-
-      console.log('[MAILBOX-DISCOVERY] Testing well-known mailboxes for send-as permissions...');
-      for (const prefix of wellKnownMailboxes) {
-        const testEmail = `${prefix}@${userDomain}`;
-        if (!discoveredMailboxes.find(mb => mb.email === testEmail)) {
-          try {
-            // Test if this mailbox exists and we can send from it by checking the sendMail endpoint availability
-            // We'll do a simple API test without actually sending
-            const testEndpoint = `/users/${testEmail}/sendMail`;
-            
-            // If we can access this endpoint structure, the mailbox likely exists and we might have permission
-            // This is safer than trying to access mailbox settings which might give false positives
-            try {
-              // Just check if the user exists first
-              const userCheck = await graphClient.api(`/users/${testEmail}`).select('mail,displayName').get();
-              if (userCheck && userCheck.mail) {
-                console.log('[MAILBOX-DISCOVERY] Well-known mailbox exists:', testEmail);
-                
-                // Now test if we can actually send from it by trying to access sendAs permissions
-                try {
-                  const userSendAs = await graphClient.api(`/users/${userEmail}/sendAs`).get();
-                  const hasSendAsPermission = userSendAs.value?.some(permission => 
-                    permission.emailAddress?.address === testEmail
-                  );
-                  
-                  if (hasSendAsPermission) {
-                    discoveredMailboxes.push({
-                      email: testEmail,
-                      displayName: userCheck.displayName || (prefix.charAt(0).toUpperCase() + prefix.slice(1)),
-                      isDefault: false,
-                      isActive: true,
-                      type: 'shared'
-                    });
-                    console.log('[MAILBOX-DISCOVERY] Added well-known mailbox with send-as permission:', testEmail);
-                  } else {
-                    console.log('[MAILBOX-DISCOVERY] Well-known mailbox exists but no send-as permission:', testEmail);
-                  }
-                } catch (sendAsCheckError) {
-                  console.log('[MAILBOX-DISCOVERY] Could not check send-as permissions for:', testEmail);
-                }
-              }
-            } catch (userCheckError) {
-              console.log('[MAILBOX-DISCOVERY] Well-known mailbox does not exist:', testEmail);
-            }
-          } catch (testError) {
-            console.log('[MAILBOX-DISCOVERY] Error testing well-known mailbox:', testEmail, testError.message);
-          }
-        }
-      }
+      // Method 3: All shared mailboxes are now discovered above
+      console.log('[MAILBOX-DISCOVERY] Shared mailbox discovery complete');
 
       console.log('[MAILBOX-DISCOVERY] Discovery complete. Found', discoveredMailboxes.length, 'mailboxes');
       return discoveredMailboxes;
@@ -234,6 +159,65 @@ class MailboxDiscoveryService {
       }
       
       return [];
+    }
+  }
+
+  /**
+   * Check if a mailbox is a shared mailbox by examining its properties
+   * @param {Object} graphClient - Initialized Graph client
+   * @param {string} mailboxEmail - Email address to check
+   * @param {string} userDomain - Domain to filter by
+   * @returns {Promise<boolean>} - Whether this is a shared mailbox
+   */
+  static async checkIfSharedMailbox(graphClient, mailboxEmail, userDomain) {
+    try {
+      // Method 1: Check mailbox settings to see if it's shared
+      try {
+        const mailboxSettings = await graphClient.api(`/users/${mailboxEmail}/mailboxSettings`).get();
+        console.log('[MAILBOX-DISCOVERY] Mailbox settings for', mailboxEmail, ':', mailboxSettings.userPurpose || 'none');
+        
+        // If userPurpose is 'shared', it's a shared mailbox
+        if (mailboxSettings.userPurpose === 'shared') {
+          return true;
+        }
+      } catch (settingsError) {
+        console.log('[MAILBOX-DISCOVERY] Could not get mailbox settings for', mailboxEmail);
+      }
+
+      // Method 2: Check common patterns for shared mailboxes
+      const emailPrefix = mailboxEmail.split('@')[0].toLowerCase();
+      const commonSharedPatterns = [
+        'info', 'support', 'help', 'sales', 'marketing', 'admin', 'contact',
+        'booking', 'reservations', 'billing', 'accounts', 'hr', 'finance',
+        'service', 'customer', 'orders', 'noreply', 'no-reply'
+      ];
+
+      const isCommonSharedName = commonSharedPatterns.some(pattern => 
+        emailPrefix === pattern || emailPrefix.includes(pattern)
+      );
+
+      if (isCommonSharedName) {
+        console.log('[MAILBOX-DISCOVERY] Identified as shared mailbox by pattern:', mailboxEmail);
+        return true;
+      }
+
+      // Method 3: Check if it's a resource mailbox (room, equipment, etc.)
+      try {
+        const userDetails = await graphClient.api(`/users/${mailboxEmail}`).select('userType,assignedLicenses').get();
+        
+        // Check if it has no licenses (typical for shared mailboxes)
+        if (userDetails.assignedLicenses && userDetails.assignedLicenses.length === 0) {
+          console.log('[MAILBOX-DISCOVERY] Identified as shared mailbox by license status:', mailboxEmail);
+          return true;
+        }
+      } catch (userError) {
+        console.log('[MAILBOX-DISCOVERY] Could not get user details for', mailboxEmail);
+      }
+
+      return false;
+    } catch (error) {
+      console.log('[MAILBOX-DISCOVERY] Error checking shared mailbox status for', mailboxEmail, ':', error.message);
+      return false;
     }
   }
 
