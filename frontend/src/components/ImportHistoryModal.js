@@ -63,7 +63,7 @@ const ImportHistoryModal = ({ isOpen, onClose, onViewResults }) => {
   };
 
   const handleDeleteImport = async (importId) => {
-    if (!confirm('Are you sure you want to delete this import? This action cannot be undone.')) {
+    if (!window.confirm('Are you sure you want to delete this import? This action cannot be undone.')) {
       return;
     }
 
