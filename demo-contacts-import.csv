@@ -1,0 +1,21 @@
+First Name,Last Name,Email,Phone,Mobile,Job Title,Company,Department,Address,City,State,ZIP Code,Country,Notes,Tags,Status,Source
+John,Doe,john.doe@techcorp.com,555-0123,555-0124,Software Engineer,TechCorp Inc,Engineering,123 Main St,San Francisco,CA,94102,USA,Experienced developer with 5+ years in React,developer;react;frontend,active,website
+Jane,Smith,jane.smith@innovate.co,555-0125,555-0126,Marketing Manager,Innovate Solutions,Marketing,456 Oak Ave,New York,NY,10001,USA,Leads digital marketing campaigns,marketing;manager;digital,active,referral
+Mike,Johnson,mike.j@startup.io,555-0127,555-0128,CEO,StartupIO,Executive,789 Pine Rd,Austin,TX,73301,USA,Serial entrepreneur and startup founder,ceo;entrepreneur;startup,active,conference
+Sarah,Williams,sarah.w@design.studio,555-0129,555-0130,UX Designer,Design Studio,Design,321 Elm St,Seattle,WA,98101,USA,Specializes in mobile app design,designer;ux;mobile,active,linkedin
+David,Brown,david.brown@sales.com,555-0131,555-0132,Sales Director,SalesCorp,Sales,654 Maple Dr,Chicago,IL,60601,USA,20+ years in B2B sales,sales;director;b2b,active,cold_call
+Lisa,Davis,lisa.davis@hr.company,555-0133,555-0134,HR Manager,HR Company,Human Resources,987 Birch Ln,Miami,FL,33101,USA,Expert in talent acquisition,hr;recruiting;talent,active,website
+Tom,Wilson,tom.wilson@finance.biz,555-0135,555-0136,CFO,FinanceBiz,Finance,147 Cedar St,Denver,CO,80201,USA,CPA with 15 years experience,finance;cfo;cpa,active,referral
+Emily,Miller,emily.m@consulting.pro,555-0137,555-0138,Senior Consultant,ConsultingPro,Consulting,258 Spruce Ave,Boston,MA,02101,USA,Management consulting specialist,consultant;management;strategy,active,linkedin
+Chris,Anderson,chris.anderson@tech.dev,555-0139,555-0140,DevOps Engineer,TechDev Solutions,IT,369 Willow Rd,Portland,OR,97201,USA,Cloud infrastructure expert,devops;cloud;aws,active,github
+Amy,Taylor,amy.taylor@marketing.hub,555-0141,555-0142,Content Creator,Marketing Hub,Marketing,741 Aspen Way,Nashville,TN,37201,USA,Creates engaging content for social media,content;social;creative,active,social_media
+Robert,Thomas,robert.thomas@legal.firm,555-0143,555-0144,Attorney,Legal Firm LLC,Legal,852 Hickory St,Phoenix,AZ,85001,USA,Corporate law specialist,legal;attorney;corporate,active,referral
+Jennifer,Jackson,jen.jackson@data.analytics,555-0145,555-0146,Data Scientist,Data Analytics Co,Analytics,963 Walnut Blvd,San Diego,CA,92101,USA,Machine learning and AI expert,data;ai;ml;scientist,active,university
+Kevin,White,kevin.white@operations.inc,555-0147,555-0148,Operations Manager,Operations Inc,Operations,159 Chestnut Dr,Atlanta,GA,30301,USA,Process optimization specialist,operations;process;efficiency,active,website
+Michelle,Harris,michelle.h@product.design,555-0149,555-0150,Product Manager,ProductDesign Labs,Product,357 Sycamore St,Las Vegas,NV,89101,USA,Product strategy and roadmap planning,product;strategy;roadmap,active,conference
+Daniel,Martin,daniel.martin@support.help,555-0151,555-0152,Customer Success,SupportHelp Inc,Customer Service,468 Dogwood Ave,Orlando,FL,32801,USA,Ensures customer satisfaction and retention,support;success;retention,active,website
+Rachel,Thompson,rachel.t@business.dev,555-0153,555-0154,Business Developer,BusinessDev Corp,Business Development,579 Redwood Ln,Sacramento,CA,95814,USA,Identifies new business opportunities,business;development;growth,active,cold_call
+Andrew,Garcia,andrew.garcia@security.pro,555-0155,555-0156,Security Analyst,SecurityPro Services,Security,680 Poplar St,Richmond,VA,23220,USA,Cybersecurity and risk assessment,security;cyber;risk,active,linkedin
+Laura,Martinez,laura.martinez@training.edu,555-0157,555-0158,Training Coordinator,Training Education,Training,791 Magnolia Dr,Kansas City,MO,64101,USA,Corporate training and development,training;education;development,active,website
+Brian,Robinson,brian.robinson@logistics.move,555-0159,555-0160,Logistics Manager,LogisticsMove Inc,Logistics,802 Oakwood Rd,Detroit,MI,48201,USA,Supply chain and distribution expert,logistics;supply;distribution,active,trade_show
+Jessica,Clark,jessica.clark@creative.agency,555-0161,555-0162,Creative Director,Creative Agency,Creative,913 Pinewood Ave,Columbus,OH,43201,USA,Award-winning creative campaigns,creative;director;campaigns,active,referral
