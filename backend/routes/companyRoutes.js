@@ -41,6 +41,7 @@ router.get('/:id/mailboxes', protect, async (req, res) => {
     const userMailboxes = await MailboxDiscoveryService.discoverUserMailboxes(company, userEmail);
     
     console.log('[MAILBOX-API] Discovered', userMailboxes.length, 'mailboxes for user');
+    console.log('[MAILBOX-API] Available mailboxes:', userMailboxes.map(mb => `${mb.email} (${mb.type})`));
     
     res.json(userMailboxes);
   } catch (error) {

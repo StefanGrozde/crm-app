@@ -13,6 +13,7 @@ A comprehensive Customer Relationship Management (CRM) system built with React 1
 - **File Management**: Secure file uploads and attachments
 - **Dashboard Customization**: Drag-and-drop widget arrangement
 - **Task & Ticket Management**: Integrated project management
+- **Email-to-Ticket System**: Automated ticket creation and reply handling
 - **Advanced Analytics**: Business intelligence and reporting
 
 ## 📋 Table of Contents
@@ -22,10 +23,11 @@ A comprehensive Customer Relationship Management (CRM) system built with React 1
 3. [Widget System](#widget-system)
 4. [Authentication & Security](#authentication--security)
 5. [Database Architecture](#database-architecture)
-6. [API Documentation](#api-documentation)
-7. [Deployment Guide](#deployment-guide)
-8. [Development Guidelines](#development-guidelines)
-9. [Troubleshooting](#troubleshooting)
+6. [Email-to-Ticket System](#email-to-ticket-system)
+7. [API Documentation](#api-documentation)
+8. [Deployment Guide](#deployment-guide)
+9. [Development Guidelines](#development-guidelines)
+10. [Troubleshooting](#troubleshooting)
 
 ## 🏃‍♂️ Quick Start
 
@@ -474,6 +476,364 @@ node backend/scripts/run-dashboard-migration.js
 - **Constraint Validation**: Comprehensive data integrity checks
 - **Connection Pooling**: Optimized for high concurrency
 
+## 📧 Email-to-Ticket System
+
+The CRM features a comprehensive Email-to-Ticket system that automatically converts emails into support tickets and handles email replies intelligently. This system integrates with Microsoft 365 Graph API for real-time email processing.
+
+### System Architecture
+
+```mermaid
+graph TD
+    A[Incoming Email] --> B[Microsoft Graph Webhook]
+    B --> C[EmailToTicketService]
+    C --> D[Email Processing]
+    D --> E[Ticket Number Detection]
+    E --> F{Ticket Number Found?}
+    F -->|Yes| G[Find Existing Ticket]
+    F -->|No| H[Subject/Header Matching]
+    G --> I[Add Comment to Ticket]
+    H --> J{Parent Ticket Found?}
+    J -->|Yes| I
+    J -->|No| K[Create New Ticket]
+    I --> L[Reopen Ticket if Closed]
+    K --> M[Generate Ticket Number]
+    M --> N[Send Confirmation Email]
+```
+
+### Core Features
+
+#### 1. **Intelligent Email Processing**
+- **Microsoft Graph Integration**: Real-time webhook processing
+- **Automatic Ticket Creation**: Converts emails to tickets with proper categorization
+- **Reply Detection**: Identifies email replies and adds them as comments
+- **Email Threading**: Maintains conversation context across email chains
+
+#### 2. **Advanced Ticket Matching**
+- **Ticket Number Recognition**: Matches emails containing ticket numbers (e.g., `SVE-2025-000013`)
+- **Subject Line Parsing**: Handles various reply formats (`Re:`, `Fwd:`, etc.)
+- **Header Analysis**: Uses email headers (`In-Reply-To`, `References`) for threading
+- **Conversation Tracking**: Groups related emails using Microsoft Graph conversation IDs
+
+#### 3. **Smart Reply Handling**
+- **Automatic Comment Addition**: Converts email replies to ticket comments
+- **Ticket Reopening**: Reopens closed tickets when new emails arrive
+- **Status Management**: Updates ticket status based on email content
+- **Priority Assignment**: Configurable priority based on email content
+
+### Configuration
+
+#### Microsoft 365 Setup
+
+1. **Azure App Registration**:
+   ```json
+   {
+     "clientId": "your-azure-client-id",
+     "clientSecret": "your-azure-client-secret",
+     "tenantId": "your-azure-tenant-id",
+     "permissions": [
+       "Mail.ReadWrite",
+       "User.Read.All",
+       "Group.ReadWrite.All"
+     ]
+   }
+   ```
+
+2. **Required Permissions**:
+   - `Mail.ReadWrite`: Read and send emails
+   - `User.Read.All`: Access user profiles
+   - `Group.ReadWrite.All`: Access shared mailboxes
+
+#### Email Configuration
+
+**Database Tables**:
+```sql
+-- Email configurations per company
+email_configurations (
+    id SERIAL PRIMARY KEY,
+    company_id INTEGER REFERENCES companies(id),
+    email_address VARCHAR(255) NOT NULL,
+    is_active BOOLEAN DEFAULT true,
+    auto_create_contacts BOOLEAN DEFAULT true,
+    default_assigned_to INTEGER REFERENCES users(id),
+    default_ticket_priority VARCHAR(20) DEFAULT 'medium',
+    webhook_subscription_id VARCHAR(255),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Email processing tracking
+email_processing (
+    id SERIAL PRIMARY KEY,
+    company_id INTEGER REFERENCES companies(id),
+    email_config_id INTEGER REFERENCES email_configurations(id),
+    message_id VARCHAR(255) NOT NULL,
+    ticket_id INTEGER REFERENCES tickets(id),
+    processing_status VARCHAR(50) DEFAULT 'pending',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+#### Configuration Options
+
+```javascript
+// Email configuration object
+{
+    emailAddress: 'support@company.com',
+    isActive: true,
+    autoCreateContacts: true,
+    createTicketsForInternalEmails: false,
+    requireContactMatch: false,
+    defaultTicketPriority: 'medium',
+    defaultTicketType: 'support',
+    defaultAssignedTo: 1,
+    subjectPrefix: '[SUPPORT]',
+    ignoredSenders: ['noreply@company.com'],
+    autoResolveKeywords: ['resolved', 'fixed', 'closed']
+}
+```
+
+### Email Processing Workflow
+
+#### 1. **Webhook Reception**
+```javascript
+// Webhook endpoint: /api/email-to-ticket/webhook
+app.post('/webhook', async (req, res) => {
+    const { value: notifications } = req.body;
+    
+    for (const notification of notifications) {
+        await EmailToTicketService.processEmailWebhook(
+            notification, 
+            req.query.subscription_id
+        );
+    }
+    
+    res.status(200).send('OK');
+});
+```
+
+#### 2. **Email Analysis**
+```javascript
+// Email processing service
+class EmailToTicketService {
+    static async processEmail(emailDetails, emailConfig, company) {
+        const { subject, from, body, inReplyTo, references } = emailDetails;
+        
+        // 1. Find parent ticket using ticket number
+        const parentTicket = await this.findParentTicket(
+            inReplyTo, 
+            references, 
+            subject, 
+            company.id
+        );
+        
+        if (parentTicket) {
+            // Add comment to existing ticket
+            return await this.handleTicketReply(parentTicket, emailDetails);
+        } else {
+            // Create new ticket
+            return await this.createNewTicket(emailDetails, emailConfig);
+        }
+    }
+}
+```
+
+#### 3. **Ticket Number Matching**
+```javascript
+// Enhanced ticket matching with number recognition
+static async findParentTicket(inReplyTo, references, subject, companyId) {
+    // Priority 1: Look for ticket numbers in subject
+    if (subject) {
+        const ticketNumberMatch = subject.match(/\[?([A-Z]{2,4}-\d{4}-\d{6})\]?/i);
+        
+        if (ticketNumberMatch) {
+            const ticketNumber = ticketNumberMatch[1].toUpperCase();
+            
+            const ticket = await Ticket.findOne({
+                where: { 
+                    ticketNumber, 
+                    companyId, 
+                    archived: false 
+                }
+            });
+            
+            if (ticket) return ticket;
+        }
+    }
+    
+    // Priority 2: Subject line matching
+    // Priority 3: Email header analysis
+    // ... fallback methods
+}
+```
+
+### Ticket Number Integration
+
+#### 1. **Automatic Ticket Number Generation**
+```javascript
+// Ticket creation with company-specific numbering
+Ticket.beforeCreate(async (ticket, options) => {
+    if (!ticket.ticketNumber) {
+        const company = await Company.findByPk(ticket.companyId);
+        const companyPrefix = company.name.substring(0, 3).toUpperCase();
+        const currentYear = new Date().getFullYear();
+        
+        // Generate: COMPANY-YYYY-NNNNNN
+        ticket.ticketNumber = `${companyPrefix}-${currentYear}-${nextNumber}`;
+    }
+});
+```
+
+#### 2. **Email Subject Enhancement**
+```javascript
+// EmailService with ticket number integration
+class EmailService {
+    static async sendTicketEmail(company, emailData, ticket = null) {
+        // Automatically add ticket number to subject
+        if (ticket && ticket.ticketNumber) {
+            emailData.ticketNumber = ticket.ticketNumber;
+        }
+        
+        return await this.sendEmail(company, emailData);
+    }
+    
+    static async sendEmail(company, emailData) {
+        let subject = emailData.subject;
+        
+        // Add ticket number to subject if provided
+        if (emailData.ticketNumber) {
+            if (!subject.includes(emailData.ticketNumber)) {
+                subject = `[${emailData.ticketNumber}] ${subject}`;
+            }
+        }
+        
+        // ... send email logic
+    }
+}
+```
+
+### Advanced Features
+
+#### 1. **Contact Management**
+- **Auto-Creation**: Automatically creates contacts from email senders
+- **Contact Matching**: Links emails to existing contacts
+- **Company Association**: Assigns contacts to appropriate companies
+
+#### 2. **Email Content Processing**
+- **HTML Cleaning**: Removes HTML tags and formatting
+- **Content Truncation**: Limits email content length
+- **Attachment Handling**: Processes email attachments
+- **Signature Removal**: Removes email signatures (planned)
+
+#### 3. **Security & Validation**
+- **Sender Validation**: Validates email sender authenticity
+- **Content Filtering**: Filters spam and malicious content
+- **Rate Limiting**: Prevents email flooding
+- **Audit Logging**: Tracks all email processing activities
+
+### Monitoring & Troubleshooting
+
+#### 1. **Email Processing Status**
+```javascript
+// Check email processing status
+GET /api/email-to-ticket/processing-history?page=1&limit=20
+
+// Response
+{
+    "items": [
+        {
+            "id": 1,
+            "messageId": "msg_12345",
+            "fromEmail": "customer@example.com",
+            "subject": "Support Request",
+            "processingStatus": "completed",
+            "ticketId": 12345,
+            "actionTaken": "ticket_created",
+            "createdAt": "2025-01-17T10:30:00Z"
+        }
+    ],
+    "pagination": { ... }
+}
+```
+
+#### 2. **Webhook Health Monitoring**
+```javascript
+// Test webhook subscription
+POST /api/email-to-ticket/test-webhook
+
+// Response
+{
+    "success": true,
+    "subscriptionId": "sub_12345",
+    "expirationDateTime": "2025-01-20T10:30:00Z",
+    "status": "active"
+}
+```
+
+#### 3. **Common Issues**
+
+**Email Not Creating Tickets**:
+- Check Microsoft 365 permissions
+- Verify webhook subscription is active
+- Review email configuration settings
+- Check processing logs for errors
+
+**Replies Creating New Tickets**:
+- Ensure ticket numbers are in email subjects
+- Check email client compatibility
+- Verify subject line parsing logic
+- Review email threading headers
+
+**Missing Attachments**:
+- Check file size limits
+- Verify attachment processing settings
+- Review Microsoft Graph API limits
+- Check file type restrictions
+
+### Performance Considerations
+
+#### 1. **Webhook Processing**
+- **Async Processing**: Webhooks processed asynchronously
+- **Batch Processing**: Multiple notifications processed in batches
+- **Error Handling**: Comprehensive error handling and retry logic
+- **Rate Limiting**: Respects Microsoft Graph API limits
+
+#### 2. **Database Optimization**
+- **Indexing**: Proper indexes on email processing tables
+- **Archiving**: Automatic archiving of old email records
+- **Cleanup**: Regular cleanup of processed webhook data
+- **Monitoring**: Performance monitoring for email processing
+
+#### 3. **Scalability**
+- **Queue System**: Background job processing for high volume
+- **Caching**: Caching of frequently accessed data
+- **Connection Pooling**: Optimized database connections
+- **Load Balancing**: Distributed webhook processing
+
+### API Endpoints
+
+#### Email Configuration
+- `GET /api/email-to-ticket/configurations` - List email configurations
+- `POST /api/email-to-ticket/configurations` - Create email configuration
+- `PUT /api/email-to-ticket/configurations/:id` - Update configuration
+- `DELETE /api/email-to-ticket/configurations/:id` - Delete configuration
+
+#### Webhook Management
+- `POST /api/email-to-ticket/webhook` - Process webhook notifications
+- `POST /api/email-to-ticket/create-subscription` - Create webhook subscription
+- `POST /api/email-to-ticket/renew-subscription` - Renew webhook subscription
+- `DELETE /api/email-to-ticket/delete-subscription` - Delete webhook subscription
+
+#### Processing History
+- `GET /api/email-to-ticket/processing-history` - View email processing history
+- `GET /api/email-to-ticket/processing-history/:id` - Get specific processing record
+- `POST /api/email-to-ticket/reprocess/:id` - Reprocess failed email
+
+#### Testing & Diagnostics
+- `POST /api/email-to-ticket/test-permissions` - Test Microsoft Graph permissions
+- `POST /api/email-to-ticket/test-webhook` - Test webhook connectivity
+- `GET /api/email-to-ticket/subscription-status` - Check subscription status
+
+---
+
 ## 📡 API Documentation
 
 ### RESTful Architecture
@@ -794,6 +1154,30 @@ router.get('/', protect, async (req, res) => {
 2. Verify search terms are properly escaped
 3. Test search directly on database
 4. Rebuild search indexes if necessary
+
+#### Email-to-Ticket Issues
+**Problem**: Emails not converting to tickets
+**Solution**:
+1. Check Microsoft 365 webhook subscription status
+2. Verify Azure app permissions (Mail.ReadWrite, User.Read.All)
+3. Test webhook endpoint: `POST /api/email-to-ticket/test-webhook`
+4. Review email configuration settings
+5. Check processing logs: `GET /api/email-to-ticket/processing-history`
+
+**Problem**: Email replies creating new tickets instead of comments
+**Solution**:
+1. Ensure outgoing emails include ticket numbers in subject: `[SVE-2025-000013]`
+2. Check email client preserves subject line
+3. Verify ticket number pattern matching: `/\[?([A-Z]{2,4}-\d{4}-\d{6})\]?/i`
+4. Review email threading headers (In-Reply-To, References)
+5. Test with manual reply to confirm pattern matching
+
+**Problem**: Webhook subscription expiring
+**Solution**:
+1. Set up automatic renewal: `POST /api/email-to-ticket/renew-subscription`
+2. Monitor subscription status: `GET /api/email-to-ticket/subscription-status`
+3. Check Azure app registration permissions
+4. Verify webhook notification URL is accessible
 
 ### Performance Issues
 

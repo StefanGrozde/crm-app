@@ -58,6 +58,26 @@ class MailboxDiscoveryService {
         console.warn('[MAILBOX-DISCOVERY] Could not access user mailbox:', userError.message);
       }
 
+      // Method 1.5: Always include company default email as an option
+      if (company.ms365EmailFrom && !discoveredMailboxes.find(mb => mb.email === company.ms365EmailFrom)) {
+        try {
+          // Test if we can access this mailbox
+          const companyMailbox = await graphClient.api(`/users/${company.ms365EmailFrom}`).get();
+          if (companyMailbox) {
+            discoveredMailboxes.push({
+              email: company.ms365EmailFrom,
+              displayName: companyMailbox.displayName || 'Company Default',
+              isDefault: userEmail === company.ms365EmailFrom, // Only default if it's the user's own email
+              isActive: true,
+              type: 'company'
+            });
+            console.log('[MAILBOX-DISCOVERY] Added company default mailbox:', company.ms365EmailFrom);
+          }
+        } catch (companyError) {
+          console.warn('[MAILBOX-DISCOVERY] Could not access company default mailbox:', companyError.message);
+        }
+      }
+
       // Method 2: Discover shared mailboxes user has access to
       try {
         // Try to get shared mailboxes using the mailFolders endpoint
@@ -72,29 +92,49 @@ class MailboxDiscoveryService {
           console.log('[MAILBOX-DISCOVERY] No calendar permissions found');
         }
 
-        // Try to get send-as permissions
+        // Try to get all mailboxes from the organization that the user can access
         try {
-          const sendAsPermissions = await graphClient.api(`/users/${userEmail}/sendAs`).get();
-          if (sendAsPermissions && sendAsPermissions.value) {
-            console.log('[MAILBOX-DISCOVERY] Found', sendAsPermissions.value.length, 'send-as permissions');
-            for (const permission of sendAsPermissions.value) {
-              if (permission.emailAddress && permission.emailAddress.address) {
-                const sendAsEmail = permission.emailAddress.address;
-                if (sendAsEmail !== userEmail && !discoveredMailboxes.find(mb => mb.email === sendAsEmail)) {
+          console.log('[MAILBOX-DISCOVERY] Scanning organization for accessible mailboxes...');
+          
+          // Get all users in the organization
+          const allUsers = await graphClient.api('/users').select('mail,displayName,accountEnabled').filter('accountEnabled eq true').get();
+          console.log('[MAILBOX-DISCOVERY] Found', allUsers.value?.length || 0, 'active users in organization');
+          
+          if (allUsers.value) {
+            const userDomain = userEmail.split('@')[1];
+            
+            // Get the user's sendAs permissions once
+            let userSendAsPermissions = [];
+            try {
+              const sendAsResponse = await graphClient.api(`/users/${userEmail}/sendAs`).get();
+              userSendAsPermissions = sendAsResponse.value || [];
+            } catch (sendAsError) {
+              console.log('[MAILBOX-DISCOVERY] Could not get send-as permissions for bulk check');
+            }
+            
+            for (const user of allUsers.value) {
+              if (user.mail && user.mail.includes(userDomain) && user.mail !== userEmail) {
+                // Check if user has send-as permission for this mailbox
+                const hasPermission = userSendAsPermissions.some(perm => 
+                  perm.emailAddress?.address === user.mail
+                );
+                
+                if (hasPermission && !discoveredMailboxes.find(mb => mb.email === user.mail)) {
+                  const emailPrefix = user.mail.split('@')[0].toLowerCase();
                   discoveredMailboxes.push({
-                    email: sendAsEmail,
-                    displayName: permission.emailAddress.name || sendAsEmail.split('@')[0],
+                    email: user.mail,
+                    displayName: user.displayName || emailPrefix.charAt(0).toUpperCase() + emailPrefix.slice(1),
                     isDefault: false,
                     isActive: true,
                     type: 'shared'
                   });
-                  console.log('[MAILBOX-DISCOVERY] Added send-as mailbox:', sendAsEmail);
+                  console.log('[MAILBOX-DISCOVERY] Added accessible mailbox:', user.mail);
                 }
               }
             }
           }
-        } catch (sendAsError) {
-          console.log('[MAILBOX-DISCOVERY] No send-as permissions found:', sendAsError.message);
+        } catch (usersError) {
+          console.log('[MAILBOX-DISCOVERY] Could not scan organization users:', usersError.message);
         }
 
         // Try to get delegate permissions
