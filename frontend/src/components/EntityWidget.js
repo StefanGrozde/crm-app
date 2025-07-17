@@ -573,9 +573,10 @@ const EntityWidget = ({
     return (
         <div className="h-full overflow-hidden">
             {/* Header */}
-            <div className="flex justify-between items-center mb-4">
-                <h2 className="text-lg font-semibold text-gray-900">{config.title}</h2>
-                <div className="flex space-x-2">
+            {!config.hideHeader && (
+                <div className="flex justify-between items-center mb-4">
+                    <h2 className="text-lg font-semibold text-gray-900">{config.title}</h2>
+                    <div className="flex space-x-2">
                     {config.features?.filtering && (
                         <button
                             onClick={() => setShowFilterModal(true)}
@@ -619,7 +620,8 @@ const EntityWidget = ({
                         <span>Add</span>
                     </button>
                 </div>
-            </div>
+                </div>
+            )}
             
             {/* List Manager */}
             {config.features?.listManagement && (
