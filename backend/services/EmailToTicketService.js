@@ -320,7 +320,7 @@ class EmailToTicketService {
   }
 
   /**
-   * Find parent ticket based on email headers, conversation threading, and subject matching
+   * Find parent ticket based on ticket number in subject, email headers, and conversation threading
    * @param {string} inReplyTo - In-Reply-To header
    * @param {string} references - References header
    * @param {string} subject - Email subject
@@ -331,22 +331,95 @@ class EmailToTicketService {
     try {
       console.log('[EMAIL-TO-TICKET] Finding parent ticket for subject:', subject);
       
-      // Normalize the subject for comparison
+      const { Op } = require('sequelize');
+
+      // Method 1: Look for ticket number in subject (most reliable)
+      if (subject) {
+        console.log('[EMAIL-TO-TICKET] Searching for ticket number in subject...');
+        
+        // Look for ticket number patterns: COMPANY-YYYY-NNNNNN (e.g., SVE-2025-000013)
+        // Can be in brackets [SVE-2025-000013] or plain text
+        const ticketNumberMatch = subject.match(/\[?([A-Z]{2,4}-\d{4}-\d{6})\]?/i);
+        
+        if (ticketNumberMatch) {
+          const ticketNumber = ticketNumberMatch[1].toUpperCase();
+          console.log('[EMAIL-TO-TICKET] Found ticket number in subject:', ticketNumber);
+          
+          const ticket = await Ticket.findOne({
+            where: {
+              ticketNumber: ticketNumber,
+              companyId,
+              archived: false
+            }
+          });
+
+          if (ticket) {
+            console.log('[EMAIL-TO-TICKET] Found parent ticket via ticket number:', ticket.id);
+            return ticket;
+          } else {
+            console.log('[EMAIL-TO-TICKET] Ticket number found but no matching ticket:', ticketNumber);
+          }
+        }
+      }
+
+      // Method 2: Normalize subject and try subject matching (fallback)
       const normalizedSubject = this.normalizeEmailSubject(subject);
       console.log('[EMAIL-TO-TICKET] Normalized subject:', normalizedSubject);
       
-      // If we don't have meaningful subject, this is likely a new ticket
-      if (!normalizedSubject) {
-        console.log('[EMAIL-TO-TICKET] No meaningful subject - treating as new ticket');
-        return null;
-      }
-      
-      // If we don't have headers but have a subject, still try subject matching
-      if (!inReplyTo && !references) {
-        console.log('[EMAIL-TO-TICKET] No message headers, but have subject - trying subject matching only');
+      if (normalizedSubject) {
+        console.log('[EMAIL-TO-TICKET] Searching for tickets with matching subject...');
+        
+        // Search within the last 90 days (increased from 30 days)
+        const ninetyDaysAgo = new Date();
+        ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+        
+        // First, try to find tickets created from emails with matching subjects
+        const emailProcessingBySubject = await EmailProcessing.findAll({
+          where: {
+            companyId,
+            ticketId: { [Op.ne]: null },
+            createdAt: { [Op.gte]: ninetyDaysAgo }
+          },
+          include: [{ model: Ticket }],
+          order: [['createdAt', 'DESC']],
+          limit: 100
+        });
+
+        for (const processing of emailProcessingBySubject) {
+          if (processing.Ticket && processing.subject) {
+            const ticketNormalizedSubject = this.normalizeEmailSubject(processing.subject);
+            if (ticketNormalizedSubject === normalizedSubject) {
+              console.log('[EMAIL-TO-TICKET] Found parent ticket via subject matching:', processing.Ticket.id);
+              return processing.Ticket;
+            }
+          }
+        }
+
+        // Search ticket titles with case-insensitive pattern matching
+        const searchPatterns = [
+          `%${normalizedSubject}%`,
+          `%${normalizedSubject.charAt(0).toUpperCase() + normalizedSubject.slice(1)}%`
+        ];
+
+        for (const pattern of searchPatterns) {
+          const directTitleMatch = await Ticket.findOne({
+            where: {
+              companyId,
+              archived: false,
+              createdAt: { [Op.gte]: ninetyDaysAgo },
+              title: { [Op.iLike]: pattern }
+            },
+            order: [['createdAt', 'DESC']]
+          });
+
+          if (directTitleMatch) {
+            console.log('[EMAIL-TO-TICKET] Found parent ticket via title search:', directTitleMatch.id);
+            return directTitleMatch;
+          }
+        }
       }
 
-      // Collect all possible message IDs to search for
+      // Method 3: Email headers and message ID matching
       const searchIds = [];
       if (inReplyTo) {
         searchIds.push(inReplyTo.trim());
@@ -356,90 +429,6 @@ class EmailToTicketService {
         searchIds.push(...refIds);
       }
 
-      const { Op } = require('sequelize');
-
-      // Method 1: Subject line matching - prioritize this for better reliability
-      if (normalizedSubject) {
-        console.log('[EMAIL-TO-TICKET] Searching for tickets with matching subject...');
-        
-        // Only search within the last 30 days to avoid false positives from old tickets
-        const thirtyDaysAgo = new Date();
-        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-        
-        // First, try to find tickets created from emails with matching subjects
-        const emailProcessingBySubject = await EmailProcessing.findAll({
-          where: {
-            companyId,
-            ticketId: { [Op.ne]: null },
-            createdAt: { [Op.gte]: thirtyDaysAgo } // Only look at recent tickets
-          },
-          include: [{ model: Ticket }],
-          order: [['createdAt', 'DESC']],
-          limit: 50 // Reduced limit since we're filtering by date
-        });
-
-        for (const processing of emailProcessingBySubject) {
-          if (processing.Ticket && processing.subject) {
-            const ticketNormalizedSubject = this.normalizeEmailSubject(processing.subject);
-            if (ticketNormalizedSubject === normalizedSubject) {
-              console.log('[EMAIL-TO-TICKET] Found parent ticket via subject matching:', processing.Ticket.id);
-              console.log('[EMAIL-TO-TICKET] Subject match:', ticketNormalizedSubject, '===', normalizedSubject);
-              return processing.Ticket;
-            }
-          }
-        }
-
-        // Search ticket titles with case-insensitive pattern matching
-        // Try multiple variations to find the best match
-        const searchPatterns = [
-          normalizedSubject,                                    // "test unassigned"
-          normalizedSubject.charAt(0).toUpperCase() + normalizedSubject.slice(1), // "Test unassigned"
-          normalizedSubject.split(' ').map(word => 
-            word.charAt(0).toUpperCase() + word.slice(1)).join(' ')  // "Test Unassigned"
-        ];
-
-        for (const pattern of searchPatterns) {
-          const directTitleMatch = await Ticket.findOne({
-            where: {
-              companyId,
-              archived: false,
-              createdAt: { [Op.gte]: thirtyDaysAgo },
-              // Use case-insensitive search with ILIKE (PostgreSQL)
-              title: { [Op.iLike]: pattern }
-            },
-            order: [['createdAt', 'DESC']]
-          });
-
-          if (directTitleMatch) {
-            console.log('[EMAIL-TO-TICKET] Found parent ticket via direct title search:', directTitleMatch.id);
-            console.log('[EMAIL-TO-TICKET] Direct match pattern:', pattern, '→', directTitleMatch.title);
-            return directTitleMatch;
-          }
-        }
-
-        // Fallback: Normalize each title manually for complex cases
-        const ticketsByTitle = await Ticket.findAll({
-          where: {
-            companyId,
-            archived: false,
-            createdAt: { [Op.gte]: thirtyDaysAgo } // Only look at recent tickets
-          },
-          order: [['createdAt', 'DESC']],
-          limit: 50
-        });
-
-        for (const ticket of ticketsByTitle) {
-          const ticketNormalizedTitle = this.normalizeEmailSubject(ticket.title);
-          console.log('[EMAIL-TO-TICKET] Comparing ticket', ticket.id, ':', ticketNormalizedTitle, 'vs', normalizedSubject);
-          if (ticketNormalizedTitle === normalizedSubject) {
-            console.log('[EMAIL-TO-TICKET] Found parent ticket via normalized title matching:', ticket.id);
-            console.log('[EMAIL-TO-TICKET] Title match:', ticketNormalizedTitle, '===', normalizedSubject);
-            return ticket;
-          }
-        }
-      }
-
-      // Method 2: Find email processing record with matching internet message ID
       if (searchIds.length > 0) {
         console.log('[EMAIL-TO-TICKET] Searching for parent ticket with message IDs:', searchIds);
         
@@ -450,75 +439,12 @@ class EmailToTicketService {
             ticketId: { [Op.ne]: null }
           },
           include: [{ model: Ticket }],
-          order: [['createdAt', 'DESC']] // Get the most recent match
+          order: [['createdAt', 'DESC']]
         });
 
         if (emailProcessing?.Ticket) {
           console.log('[EMAIL-TO-TICKET] Found parent ticket via email processing:', emailProcessing.Ticket.id);
           return emailProcessing.Ticket;
-        }
-
-        // Method 3: Search for conversation ID matches (more reliable for email chains)
-        const conversationProcessing = await EmailProcessing.findOne({
-          where: {
-            conversationId: { [Op.ne]: null },
-            companyId,
-            ticketId: { [Op.ne]: null }
-          },
-          include: [{ model: Ticket }],
-          order: [['createdAt', 'DESC']]
-        });
-
-        if (conversationProcessing?.Ticket) {
-          // Check if any of the search IDs match the conversation
-          const processingIds = [
-            conversationProcessing.internetMessageId,
-            conversationProcessing.inReplyTo,
-            conversationProcessing.emailReferences
-          ].filter(Boolean);
-
-          const hasMatch = searchIds.some(searchId => 
-            processingIds.some(procId => procId && procId.includes(searchId))
-          );
-
-          if (hasMatch) {
-            console.log('[EMAIL-TO-TICKET] Found parent ticket via conversation threading:', conversationProcessing.Ticket.id);
-            return conversationProcessing.Ticket;
-          }
-        }
-      }
-
-      // Method 4: Content-based search (for message ID references)
-      if (searchIds.length > 0) {
-        console.log('[EMAIL-TO-TICKET] Falling back to content-based search...');
-        
-        const tickets = await Ticket.findAll({
-          where: { companyId, archived: false },
-          include: [{ 
-            model: TicketComment,
-            required: false
-          }],
-          limit: 50, // Limit search to recent tickets for performance
-          order: [['createdAt', 'DESC']]
-        });
-
-        for (const ticket of tickets) {
-          const ticketContent = [
-            ticket.description,
-            ...(ticket.TicketComments || []).map(c => c.comment)
-          ].join(' ');
-
-          // Look for any of the search IDs in the ticket content
-          const hasMessageIdMatch = searchIds.some(id => {
-            // Clean the ID for searching (remove angle brackets if present)
-            const cleanId = id.replace(/[<>]/g, '');
-            return ticketContent.includes(cleanId) || ticketContent.includes(id);
-          });
-
-          if (hasMessageIdMatch) {
-            console.log('[EMAIL-TO-TICKET] Found parent ticket via content search:', ticket.id);
-            return ticket;
-          }
         }
       }
 
@@ -549,7 +475,7 @@ class EmailToTicketService {
       const comment = await TicketComment.create({
         ticketId: parentTicket.id,
         userId: contact ? contact.createdBy : (emailConfig.defaultAssignedTo || 1),
-        comment: `📧 Email from ${emailDetails.from.emailAddress.name} (${emailDetails.from.emailAddress.address}):\n\nSubject: ${emailDetails.subject}\n\n${cleanEmailBody}`,
+        comment: `📧 Email from ${emailDetails.from.emailAddress.name} (${emailDetails.from.emailAddress.address}):\n\nSubject: ${emailDetails.subject}\nTicket: ${parentTicket.ticketNumber}\n\n${cleanEmailBody}`,
         isInternal: false
       });
 

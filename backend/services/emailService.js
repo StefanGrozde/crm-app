@@ -13,6 +13,7 @@ class EmailService {
    * @param {Array} emailData.bcc - BCC recipients (optional)
    * @param {Array} emailData.attachments - Email attachments (optional)
    * @param {string} emailData.sendFrom - Send from mailbox (optional, defaults to company.ms365EmailFrom)
+   * @param {string} emailData.ticketNumber - Ticket number to include in subject (optional)
    * @returns {Promise<Object>} - Result of email sending
    */
   static async sendEmail(company, emailData) {
@@ -53,10 +54,19 @@ class EmailService {
         },
       });
 
+      // Prepare email subject with ticket number if provided
+      let subject = emailData.subject;
+      if (emailData.ticketNumber) {
+        // Only add ticket number if it's not already in the subject
+        if (!subject.includes(emailData.ticketNumber)) {
+          subject = `[${emailData.ticketNumber}] ${subject}`;
+        }
+      }
+
       // Prepare email message
       const mail = {
         message: {
-          subject: emailData.subject,
+          subject: subject,
           body: {
             contentType: 'HTML',
             content: emailData.htmlContent,
@@ -276,6 +286,31 @@ class EmailService {
       return {
         success: false,
         message: errorMessage,
+      };
+    }
+  }
+
+  /**
+   * Send email related to a ticket (automatically includes ticket number in subject)
+   * @param {Object} company - Company object with MS365 configuration
+   * @param {Object} emailData - Email data object
+   * @param {Object} ticket - Ticket object (optional)
+   * @returns {Promise<Object>} - Result of email sending
+   */
+  static async sendTicketEmail(company, emailData, ticket = null) {
+    try {
+      // If ticket is provided, automatically add ticket number to subject
+      if (ticket && ticket.ticketNumber) {
+        emailData.ticketNumber = ticket.ticketNumber;
+      }
+
+      return await this.sendEmail(company, emailData);
+    } catch (error) {
+      console.error('[EMAIL SERVICE] Error sending ticket email:', error);
+      return {
+        success: false,
+        message: error.message || 'Failed to send ticket email',
+        timestamp: new Date().toISOString(),
       };
     }
   }
