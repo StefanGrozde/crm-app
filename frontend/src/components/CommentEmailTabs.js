@@ -54,20 +54,31 @@ const CommentEmailTabs = ({
     const [loadingMailboxes, setLoadingMailboxes] = useState(false);
 
     // Check if user has SSO access (logged in with Windows/Microsoft credentials)
-    const hasSSO = user?.authMethod === 'microsoft' || user?.email?.includes('@'); // Basic SSO detection
+    // Generic SSO detection - any user with a valid email address is considered SSO
+    const hasSSO = user?.authMethod === 'microsoft' || 
+                   user?.authMethod === 'sso' ||
+                   (user?.email && user.email.includes('@')); // Generic email-based SSO detection
 
     // Fetch available mailboxes for send-from selection
     const fetchAvailableMailboxes = async () => {
-        if (!hasSSO) return; // Only for SSO users
+        console.log('SSO Check:', { hasSSO, userEmail: user?.email, authMethod: user?.authMethod });
+        if (!hasSSO) {
+            console.log('User does not have SSO access, skipping mailbox fetch');
+            return; // Only for SSO users
+        }
         
         try {
             setLoadingMailboxes(true);
+            console.log('Fetching mailboxes for company:', user.companyId);
             const response = await axios.get(`${API_URL}/api/companies/${user.companyId}/mailboxes`, {
                 withCredentials: true
             });
             
+            console.log('Mailboxes response:', response.data);
             if (response.data && Array.isArray(response.data)) {
-                setAvailableMailboxes(response.data.filter(mailbox => mailbox.isActive));
+                const activeMailboxes = response.data.filter(mailbox => mailbox.isActive);
+                console.log('Active mailboxes:', activeMailboxes);
+                setAvailableMailboxes(activeMailboxes);
             }
         } catch (error) {
             console.error('Error fetching mailboxes:', error);

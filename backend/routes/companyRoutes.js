@@ -3,11 +3,12 @@ const router = express.Router();
 const Company = require('../models/Company');
 const User = require('../models/User');
 const EmailService = require('../services/emailService');
+const MailboxDiscoveryService = require('../services/MailboxDiscoveryService');
 const { protect, authorize } = require('../middleware/authMiddleware');
 
 /**
  * GET /api/companies/:id/mailboxes
- * Get available mailboxes for send-from selection
+ * Get available mailboxes for the current user's send-from selection
  */
 router.get('/:id/mailboxes', protect, async (req, res) => {
   try {
@@ -22,27 +23,32 @@ router.get('/:id/mailboxes', protect, async (req, res) => {
     if (!company) {
       return res.status(404).json({ message: 'Company not found' });
     }
-    
-    // Return available mailboxes or fallback to single default
-    let mailboxes = company.availableMailboxes || [];
-    
-    // If no mailboxes configured but has ms365EmailFrom, create default entry
-    if (mailboxes.length === 0 && company.ms365EmailFrom) {
-      mailboxes = [{
-        email: company.ms365EmailFrom,
-        displayName: 'Default',
-        isDefault: true,
-        isActive: true
-      }];
+
+    // Check if company has Microsoft 365 configuration
+    if (!company.ms365ClientId || !company.ms365ClientSecret || !company.ms365TenantId) {
+      return res.status(400).json({ message: 'Microsoft 365 not configured for this company' });
     }
+
+    // Get user's email for mailbox discovery
+    const userEmail = req.user.email;
+    if (!userEmail || !userEmail.includes('@')) {
+      return res.status(400).json({ message: 'User email not available for mailbox discovery' });
+    }
+
+    console.log('[MAILBOX-API] Discovering mailboxes for user:', userEmail);
+
+    // Discover mailboxes the user has access to
+    const userMailboxes = await MailboxDiscoveryService.discoverUserMailboxes(company, userEmail);
     
-    // Only return active mailboxes
-    const activeMailboxes = mailboxes.filter(mailbox => mailbox.isActive);
+    console.log('[MAILBOX-API] Discovered', userMailboxes.length, 'mailboxes for user');
     
-    res.json(activeMailboxes);
+    res.json(userMailboxes);
   } catch (error) {
-    console.error('Error fetching mailboxes:', error);
-    res.status(500).json({ message: 'Failed to fetch mailboxes' });
+    console.error('Error fetching user mailboxes:', error);
+    res.status(500).json({ 
+      message: 'Failed to fetch mailboxes',
+      error: error.message 
+    });
   }
 });
 

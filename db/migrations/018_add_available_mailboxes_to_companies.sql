@@ -25,23 +25,10 @@ WHERE ms365_email_from IS NOT NULL
   AND ms365_email_from != ''
   AND (available_mailboxes IS NULL OR available_mailboxes = '[]'::jsonb);
 
--- Add validation constraint to ensure valid email format in mailboxes
+-- Add simple validation constraint to ensure it's a valid JSONB array
 ALTER TABLE companies 
 ADD CONSTRAINT check_available_mailboxes_format 
 CHECK (
     available_mailboxes IS NULL OR
-    (
-        jsonb_typeof(available_mailboxes) = 'array' AND
-        -- Ensure each item in array has required fields
-        NOT EXISTS (
-            SELECT 1 
-            FROM jsonb_array_elements(available_mailboxes) AS mailbox
-            WHERE NOT (
-                mailbox ? 'email' AND 
-                mailbox ? 'displayName' AND
-                mailbox ? 'isDefault' AND
-                mailbox ? 'isActive'
-            )
-        )
-    )
+    jsonb_typeof(available_mailboxes) = 'array'
 );
