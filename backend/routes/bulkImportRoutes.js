@@ -2,7 +2,7 @@ const express = require('express');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs').promises;
-const authMiddleware = require('../middleware/authMiddleware');
+const { protect } = require('../middleware/authMiddleware');
 const BulkImportService = require('../services/BulkImportService');
 const FileProcessingService = require('../services/FileProcessingService');
 const JobQueue = require('../services/JobQueue');
@@ -50,7 +50,7 @@ const upload = multer({
 });
 
 // Apply authentication middleware to all routes
-router.use(authMiddleware);
+router.use(protect);
 
 /**
  * POST /api/bulk-import/upload
