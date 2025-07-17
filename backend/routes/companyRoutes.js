@@ -5,6 +5,47 @@ const User = require('../models/User');
 const EmailService = require('../services/emailService');
 const { protect, authorize } = require('../middleware/authMiddleware');
 
+/**
+ * GET /api/companies/:id/mailboxes
+ * Get available mailboxes for send-from selection
+ */
+router.get('/:id/mailboxes', protect, async (req, res) => {
+  try {
+    const companyId = parseInt(req.params.id, 10);
+    
+    // Security check - users can only access their own company's mailboxes
+    if (req.user.companyId !== companyId) {
+      return res.status(403).json({ message: 'Access denied' });
+    }
+    
+    const company = await Company.findByPk(companyId);
+    if (!company) {
+      return res.status(404).json({ message: 'Company not found' });
+    }
+    
+    // Return available mailboxes or fallback to single default
+    let mailboxes = company.availableMailboxes || [];
+    
+    // If no mailboxes configured but has ms365EmailFrom, create default entry
+    if (mailboxes.length === 0 && company.ms365EmailFrom) {
+      mailboxes = [{
+        email: company.ms365EmailFrom,
+        displayName: 'Default',
+        isDefault: true,
+        isActive: true
+      }];
+    }
+    
+    // Only return active mailboxes
+    const activeMailboxes = mailboxes.filter(mailbox => mailbox.isActive);
+    
+    res.json(activeMailboxes);
+  } catch (error) {
+    console.error('Error fetching mailboxes:', error);
+    res.status(500).json({ message: 'Failed to fetch mailboxes' });
+  }
+});
+
 // @desc    Get all companies (for dropdowns)
 // @route   GET /api/companies
 // @access  Private

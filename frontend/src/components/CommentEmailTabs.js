@@ -46,12 +46,43 @@ const CommentEmailTabs = ({
     const [emailData, setEmailData] = useState({
         to: '',
         subject: '',
-        htmlContent: ''
+        htmlContent: '',
+        sendFrom: '' // New field for send-from selection
     });
     const [sendingEmail, setSendingEmail] = useState(false);
+    const [availableMailboxes, setAvailableMailboxes] = useState([]);
+    const [loadingMailboxes, setLoadingMailboxes] = useState(false);
+
+    // Check if user has SSO access (logged in with Windows/Microsoft credentials)
+    const hasSSO = user?.authMethod === 'microsoft' || user?.email?.includes('@'); // Basic SSO detection
+
+    // Fetch available mailboxes for send-from selection
+    const fetchAvailableMailboxes = async () => {
+        if (!hasSSO) return; // Only for SSO users
+        
+        try {
+            setLoadingMailboxes(true);
+            const response = await axios.get(`${API_URL}/api/companies/${user.companyId}/mailboxes`, {
+                withCredentials: true
+            });
+            
+            if (response.data && Array.isArray(response.data)) {
+                setAvailableMailboxes(response.data.filter(mailbox => mailbox.isActive));
+            }
+        } catch (error) {
+            console.error('Error fetching mailboxes:', error);
+            // Fallback to default mailbox if available
+            setAvailableMailboxes([]);
+        } finally {
+            setLoadingMailboxes(false);
+        }
+    };
 
     // Initialize email data when switching to email tab
     const initializeEmailData = () => {
+        // Find default mailbox
+        const defaultMailbox = availableMailboxes.find(mb => mb.isDefault) || availableMailboxes[0];
+        
         const defaults = {
             to: contactEmail || defaultEmailData.to || '',
             subject: defaultEmailData.subject || `Regarding ${entityType} ${entityData.number || entityData.id}: ${entityData.title || ''}`,
@@ -65,16 +96,21 @@ const CommentEmailTabs = ({
                 <p>Best regards,<br>
                 ${user.username}<br>
                 Support Team</p>
-            `
+            `,
+            sendFrom: defaultMailbox?.email || defaultEmailData.sendFrom || ''
         };
         
         setEmailData(defaults);
     };
 
     // Handle tab change
-    const handleTabChange = (tab) => {
+    const handleTabChange = async (tab) => {
         setActiveTab(tab);
         if (tab === 'email') {
+            // Fetch mailboxes first for SSO users, then initialize email data
+            if (hasSSO && availableMailboxes.length === 0) {
+                await fetchAvailableMailboxes();
+            }
             initializeEmailData();
         }
     };
@@ -126,7 +162,8 @@ const CommentEmailTabs = ({
             const response = await axios.post(`${API_URL}/api/companies/${user.companyId}/send-email`, {
                 to: emailData.to,
                 subject: emailData.subject,
-                htmlContent: emailData.htmlContent
+                htmlContent: emailData.htmlContent,
+                sendFrom: emailData.sendFrom // Include send-from selection
             }, {
                 withCredentials: true
             });
@@ -246,6 +283,38 @@ const CommentEmailTabs = ({
                                         A record of this email will be added to the {entityType} comments.
                                     </p>
                                 </div>
+
+                                {/* Send From Selection for SSO Users */}
+                                {hasSSO && availableMailboxes.length > 0 && (
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                                            Send From *
+                                        </label>
+                                        <select
+                                            value={emailData.sendFrom}
+                                            onChange={(e) => setEmailData(prev => ({ ...prev, sendFrom: e.target.value }))}
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                                            disabled={loadingMailboxes}
+                                        >
+                                            {loadingMailboxes ? (
+                                                <option>Loading mailboxes...</option>
+                                            ) : (
+                                                <>
+                                                    <option value="">Select mailbox</option>
+                                                    {availableMailboxes.map((mailbox, index) => (
+                                                        <option key={index} value={mailbox.email}>
+                                                            {mailbox.displayName} ({mailbox.email})
+                                                            {mailbox.isDefault ? ' - Default' : ''}
+                                                        </option>
+                                                    ))}
+                                                </>
+                                            )}
+                                        </select>
+                                        <p className="text-xs text-gray-500 mt-1">
+                                            Choose which mailbox to send from
+                                        </p>
+                                    </div>
+                                )}
                                 
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -292,8 +361,19 @@ const CommentEmailTabs = ({
                                 <div className="flex justify-end">
                                     <button
                                         onClick={handleSendEmail}
-                                        disabled={sendingEmail || !emailData.to || !emailData.subject || !emailData.htmlContent}
+                                        disabled={
+                                            sendingEmail || 
+                                            !emailData.to || 
+                                            !emailData.subject || 
+                                            !emailData.htmlContent ||
+                                            (hasSSO && availableMailboxes.length > 0 && !emailData.sendFrom)
+                                        }
                                         className="px-4 py-2 text-sm bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
+                                        title={
+                                            hasSSO && availableMailboxes.length > 0 && !emailData.sendFrom 
+                                                ? 'Please select a mailbox to send from' 
+                                                : ''
+                                        }
                                     >
                                         {sendingEmail ? 'Sending...' : 'Send Email'}
                                     </button>

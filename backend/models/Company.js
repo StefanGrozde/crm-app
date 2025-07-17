@@ -53,6 +53,22 @@ const Company = sequelize.define('Company', {
     defaultValue: false,
     field: 'email_enabled',
   },
+  // Available mailboxes for send-from selection
+  availableMailboxes: {
+    type: DataTypes.JSON,
+    allowNull: true,
+    defaultValue: [],
+    field: 'available_mailboxes',
+    comment: 'Array of available mailboxes for sending emails'
+    // Format: [
+    //   { 
+    //     email: "support@company.com", 
+    //     displayName: "Support", 
+    //     isDefault: true,
+    //     isActive: true
+    //   }
+    // ]
+  },
 }, {
     tableName: 'companies',
     timestamps: true,
