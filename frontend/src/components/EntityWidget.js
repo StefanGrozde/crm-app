@@ -607,6 +607,32 @@ const EntityWidget = ({
                             <span>Invite</span>
                         </button>
                     )}
+                    {/* Header Custom Actions */}
+                    {config.customActions && config.customActions
+                        .filter(action => action.position === 'header')
+                        .map(action => (
+                            <button
+                                key={action.key}
+                                onClick={() => onCustomAction && onCustomAction(action.key)}
+                                className={`px-3 py-1 text-sm rounded hover:opacity-80 flex items-center space-x-1 mr-2 ${
+                                    action.variant === 'secondary' 
+                                        ? 'bg-gray-100 text-gray-700 border border-gray-300' 
+                                        : 'bg-blue-600 text-white'
+                                }`}
+                            >
+                                {action.icon === 'upload' && (
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                                    </svg>
+                                )}
+                                {action.icon === 'history' && (
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                )}
+                                <span>{action.label}</span>
+                            </button>
+                        ))}
                     <button
                         onClick={() => {
                             resetForm();
