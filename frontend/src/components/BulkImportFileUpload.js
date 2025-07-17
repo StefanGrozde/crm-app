@@ -1,4 +1,5 @@
 import React, { useState, useCallback } from 'react';
+import { useDropzone } from 'react-dropzone';
 import { Upload, FileText, AlertCircle, X, CheckCircle, File } from 'lucide-react';
 
 const BulkImportFileUpload = ({ onUploadComplete }) => {
@@ -6,61 +7,43 @@ const BulkImportFileUpload = ({ onUploadComplete }) => {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [errorMessage, setErrorMessage] = useState('');
   const [selectedFile, setSelectedFile] = useState(null);
-  const [dragActive, setDragActive] = useState(false);
 
-  const validateFile = (file) => {
-    const maxSize = 10 * 1024 * 1024; // 10MB
-    const allowedTypes = ['text/csv', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/vnd.ms-excel'];
-    
-    if (file.size > maxSize) {
-      return 'File size must be less than 10MB';
-    }
-    
-    if (!allowedTypes.includes(file.type)) {
-      return 'Only CSV and Excel files are supported';
-    }
-    
-    return null;
-  };
-
-  const handleFileSelect = (file) => {
-    const error = validateFile(file);
-    if (error) {
-      setErrorMessage(error);
+  const onDrop = useCallback((acceptedFiles, rejectedFiles) => {
+    if (rejectedFiles.length > 0) {
+      const rejection = rejectedFiles[0];
+      const error = rejection.errors[0];
+      
+      let errorMessage = 'File upload failed';
+      if (error.code === 'file-too-large') {
+        errorMessage = 'File size must be less than 10MB';
+      } else if (error.code === 'file-invalid-type') {
+        errorMessage = 'Only CSV and Excel files are supported';
+      } else {
+        errorMessage = error.message || 'Invalid file';
+      }
+      
+      setErrorMessage(errorMessage);
       setUploadStatus('error');
       return;
     }
-    
-    setSelectedFile(file);
-    handleUpload(file);
-  };
 
-  const handleFileInput = (e) => {
-    const file = e.target.files[0];
+    const file = acceptedFiles[0];
     if (file) {
-      handleFileSelect(file);
+      setSelectedFile(file);
+      handleUpload(file);
     }
-  };
+  }, []);
 
-  const handleDragOver = (e) => {
-    e.preventDefault();
-    setDragActive(true);
-  };
-
-  const handleDragLeave = (e) => {
-    e.preventDefault();
-    setDragActive(false);
-  };
-
-  const handleDrop = (e) => {
-    e.preventDefault();
-    setDragActive(false);
-    
-    const file = e.dataTransfer.files[0];
-    if (file) {
-      handleFileSelect(file);
-    }
-  };
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop,
+    accept: {
+      'text/csv': ['.csv'],
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'],
+      'application/vnd.ms-excel': ['.xls']
+    },
+    maxSize: 10 * 1024 * 1024, // 10MB
+    multiple: false
+  });
 
   const handleUpload = async (file) => {
     setUploadStatus('uploading');
@@ -150,31 +133,21 @@ const BulkImportFileUpload = ({ onUploadComplete }) => {
       {/* Upload Area */}
       {uploadStatus === 'idle' && (
         <div
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
-          onDrop={handleDrop}
+          {...getRootProps()}
           className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${
-            dragActive
+            isDragActive
               ? 'border-blue-500 bg-blue-50'
               : 'border-gray-300 hover:border-gray-400'
           }`}
         >
-          <input
-            type="file"
-            onChange={handleFileInput}
-            accept=".csv,.xlsx,.xls"
-            className="hidden"
-            id="bulk-import-file"
-          />
+          <input {...getInputProps()} />
           <Upload className="mx-auto mb-4 text-gray-400" size={48} />
-          <label htmlFor="bulk-import-file" className="block">
-            <p className="text-lg font-medium text-gray-700 mb-2">
-              {dragActive ? 'Drop your file here' : 'Drag & drop your file here'}
-            </p>
-            <p className="text-sm text-gray-500 mb-4">
-              or click to browse and select a file
-            </p>
-          </label>
+          <p className="text-lg font-medium text-gray-700 mb-2">
+            {isDragActive ? 'Drop your file here' : 'Drag & drop your file here'}
+          </p>
+          <p className="text-sm text-gray-500 mb-4">
+            or click to browse and select a file
+          </p>
           <div className="flex justify-center space-x-4 text-xs text-gray-400">
             <span>• CSV files</span>
             <span>• Excel files (.xlsx, .xls)</span>
