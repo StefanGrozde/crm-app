@@ -97,17 +97,15 @@ const CommentEmailTabs = ({
         const defaults = {
             to: contactEmail || defaultEmailData.to || '',
             subject: defaultEmailData.subject || `Regarding ${entityType} ${entityData.number || entityData.id}: ${entityData.title || ''}`,
-            htmlContent: defaultEmailData.htmlContent || `
-                <p>Dear ${contactName || 'Customer'},</p>
-                
-                <p>We are writing regarding your ${entityType} <strong>${entityData.number || entityData.id}</strong>: ${entityData.title || ''}</p>
-                
-                <p>Please let us know if you have any questions or need further assistance.</p>
-                
-                <p>Best regards,<br>
-                ${user.username}<br>
-                Support Team</p>
-            `,
+            htmlContent: defaultEmailData.htmlContent || `Dear ${contactName || 'Customer'},
+
+We are writing regarding your ${entityType} ${entityData.number || entityData.id}: ${entityData.title || ''}
+
+Please let us know if you have any questions or need further assistance.
+
+Best regards,
+${user.username}
+Support Team`,
             sendFrom: defaultMailbox?.email || defaultEmailData.sendFrom || ''
         };
         
