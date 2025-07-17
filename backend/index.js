@@ -26,6 +26,7 @@ const notificationRoutes = require('./routes/notificationRoutes');
 const auditRoutes = require('./routes/auditRoutes');
 const messengerRoutes = require('./routes/messengerRoutes');
 const emailToTicketRoutes = require('./routes/emailToTicketRoutes');
+const bulkImportRoutes = require('./routes/bulkImportRoutes');
 const path = require('path');
 
 console.log("Application starting...");
@@ -102,6 +103,7 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/audit-logs', auditRoutes);
 app.use('/api/messenger', messengerRoutes);
 app.use('/api/email-to-ticket', emailToTicketRoutes);
+app.use('/api/bulk-import', bulkImportRoutes);
 app.use('/api/widgets/buildin', express.static(path.join(__dirname, 'widgets', 'buildin')));
 app.use('/api/widgets/custom', express.static(path.join(__dirname, 'widgets', 'custom')));
 // Test Route to check DB connection
@@ -154,6 +156,11 @@ const startServer = async () => {
     const Notification = require('./models/Notification');
     const AuditLog = require('./models/AuditLog');
     const UserSession = require('./models/UserSession');
+    const Job = require('./models/Job');
+    const BulkImport = require('./models/BulkImport');
+    const BulkImportError = require('./models/BulkImportError');
+    const BulkImportSuccess = require('./models/BulkImportSuccess');
+    const BulkImportStats = require('./models/BulkImportStats');
     
     // Define associations
     // Company associations
@@ -324,6 +331,27 @@ const startServer = async () => {
     User.hasMany(UserSession, { foreignKey: 'userId', as: 'sessions' });
     UserSession.belongsTo(Company, { foreignKey: 'companyId', as: 'company' });
     Company.hasMany(UserSession, { foreignKey: 'companyId', as: 'sessions' });
+    
+    // Bulk Import associations
+    BulkImport.belongsTo(User, { foreignKey: 'userId', as: 'user' });
+    BulkImport.belongsTo(Company, { foreignKey: 'companyId', as: 'company' });
+    BulkImport.hasMany(BulkImportError, { foreignKey: 'bulkImportId', as: 'errors' });
+    BulkImport.hasMany(BulkImportSuccess, { foreignKey: 'bulkImportId', as: 'successes' });
+    BulkImport.hasMany(BulkImportStats, { foreignKey: 'bulkImportId', as: 'stats' });
+    
+    BulkImportError.belongsTo(BulkImport, { foreignKey: 'bulkImportId', as: 'bulkImport' });
+    BulkImportSuccess.belongsTo(BulkImport, { foreignKey: 'bulkImportId', as: 'bulkImport' });
+    BulkImportSuccess.belongsTo(Contact, { foreignKey: 'contactId', as: 'contact' });
+    BulkImportStats.belongsTo(BulkImport, { foreignKey: 'bulkImportId', as: 'bulkImport' });
+    
+    // Company associations for Bulk Import
+    Company.hasMany(BulkImport, { foreignKey: 'companyId' });
+    
+    // User associations for Bulk Import
+    User.hasMany(BulkImport, { foreignKey: 'userId', as: 'bulkImports' });
+    
+    // Contact associations for Bulk Import
+    Contact.hasMany(BulkImportSuccess, { foreignKey: 'contactId', as: 'bulkImportSuccesses' });
     
     // Sync all models
     // Use { force: true } only in development to drop and re-create tables
