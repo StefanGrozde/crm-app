@@ -1,4 +1,4 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import axios from 'axios';
 import { AuthContext } from '../context/AuthContext';
 
@@ -112,16 +112,36 @@ Support Team`,
         setEmailData(defaults);
     };
 
-    // Handle tab change
-    const handleTabChange = async (tab) => {
-        setActiveTab(tab);
-        if (tab === 'email') {
-            // Fetch mailboxes first for SSO users, then initialize email data
-            if (hasSSO && availableMailboxes.length === 0) {
+    // Initialize data when component loads
+    useEffect(() => {
+        const initializeComponent = async () => {
+            // Fetch mailboxes for SSO users on component load
+            if (hasSSO) {
                 await fetchAvailableMailboxes();
             }
+        };
+        
+        initializeComponent();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [hasSSO]); // Only run when SSO status changes
+
+    // Initialize email data when key props change
+    useEffect(() => {
+        initializeEmailData();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [contactEmail, contactName, entityType, entityData.number, entityData.id, entityData.title, user?.username]);
+
+    // Update email data when available mailboxes change
+    useEffect(() => {
+        if (availableMailboxes.length > 0) {
             initializeEmailData();
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [availableMailboxes]);
+
+    // Handle tab change (simplified since data is already initialized)
+    const handleTabChange = (tab) => {
+        setActiveTab(tab);
     };
 
     // Add comment
@@ -180,8 +200,8 @@ Support Team`,
             if (response.data.success) {
                 alert('Email sent successfully!');
                 
-                // Clear email form
-                setEmailData({ to: '', subject: '', htmlContent: '' });
+                // Reset email form to defaults instead of clearing completely
+                initializeEmailData();
                 
                 // Add a comment to record the email was sent
                 try {
@@ -360,10 +380,10 @@ Support Team`,
                                         onChange={(e) => setEmailData(prev => ({ ...prev, htmlContent: e.target.value }))}
                                         rows={6}
                                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
-                                        placeholder="Type your message here... (HTML is supported)"
+                                        placeholder="Type your message here..."
                                     />
                                     <p className="text-xs text-gray-500 mt-1">
-                                        You can use HTML tags for formatting (e.g., &lt;p&gt;, &lt;br&gt;, &lt;strong&gt;, &lt;em&gt;)
+                                        Your message will be sent as formatted text
                                     </p>
                                 </div>
 
