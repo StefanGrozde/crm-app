@@ -63,8 +63,31 @@ const CommentEmailTabs = ({
     const fetchAvailableMailboxes = async () => {
         console.log('SSO Check:', { hasSSO, userEmail: user?.email, authMethod: user?.authMethod });
         if (!hasSSO) {
-            console.log('User does not have SSO access, skipping mailbox fetch');
-            return; // Only for SSO users
+            console.log('User does not have SSO access, using company default email');
+            // For non-SSO users, fetch the company's default email from the Edit Company page
+            try {
+                const response = await axios.get(`${API_URL}/api/companies/${user.companyId}`, {
+                    withCredentials: true
+                });
+                
+                if (response.data && response.data.ms365EmailFrom) {
+                    setAvailableMailboxes([{
+                        email: response.data.ms365EmailFrom,
+                        displayName: 'Company Email',
+                        isDefault: true,
+                        isActive: true,
+                        type: 'company'
+                    }]);
+                    console.log('Using company default email:', response.data.ms365EmailFrom);
+                } else {
+                    console.log('No company default email configured');
+                    setAvailableMailboxes([]);
+                }
+            } catch (error) {
+                console.error('Error fetching company email config:', error);
+                setAvailableMailboxes([]);
+            }
+            return;
         }
         
         try {
@@ -115,15 +138,13 @@ Support Team`,
     // Initialize data when component loads
     useEffect(() => {
         const initializeComponent = async () => {
-            // Fetch mailboxes for SSO users on component load
-            if (hasSSO) {
-                await fetchAvailableMailboxes();
-            }
+            // Fetch mailboxes for all users on component load
+            await fetchAvailableMailboxes();
         };
         
         initializeComponent();
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [hasSSO]); // Only run when SSO status changes
+    }, [hasSSO, user?.email]); // Run when SSO status or user email changes
 
     // Initialize email data when key props change
     useEffect(() => {
@@ -313,8 +334,8 @@ Support Team`,
                                     </p>
                                 </div>
 
-                                {/* Send From Selection for SSO Users */}
-                                {hasSSO && availableMailboxes.length > 0 && (
+                                {/* Send From Selection for All Users */}
+                                {availableMailboxes.length > 0 && (
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-1">
                                             Send From *
@@ -340,7 +361,7 @@ Support Team`,
                                             )}
                                         </select>
                                         <p className="text-xs text-gray-500 mt-1">
-                                            Choose which mailbox to send from
+                                            {hasSSO ? 'Choose which mailbox to send from' : 'Company default email will be used to send'}
                                         </p>
                                     </div>
                                 )}
@@ -395,11 +416,11 @@ Support Team`,
                                             !emailData.to || 
                                             !emailData.subject || 
                                             !emailData.htmlContent ||
-                                            (hasSSO && availableMailboxes.length > 0 && !emailData.sendFrom)
+                                            (availableMailboxes.length > 0 && !emailData.sendFrom)
                                         }
                                         className="px-4 py-2 text-sm bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
                                         title={
-                                            hasSSO && availableMailboxes.length > 0 && !emailData.sendFrom 
+                                            availableMailboxes.length > 0 && !emailData.sendFrom 
                                                 ? 'Please select a mailbox to send from' 
                                                 : ''
                                         }
