@@ -14,24 +14,47 @@ class BulkImportService {
   static MAX_DUPLICATE_THRESHOLD = 0.8; // 80% similarity threshold
 
   /**
+   * Determine file type from filename
+   * @param {string} filename - File name
+   * @returns {string} File type
+   */
+  static getFileTypeFromName(filename) {
+    const extension = filename.toLowerCase().split('.').pop();
+    
+    switch (extension) {
+      case 'csv':
+        return 'csv';
+      case 'xlsx':
+      case 'xls':
+        return 'xlsx';
+      case 'json':
+        return 'json';
+      default:
+        return 'csv'; // Default fallback
+    }
+  }
+
+  /**
    * Create a new bulk import record
    * @param {Object} importData - Import configuration
    * @returns {Promise<BulkImport>} Created bulk import record
    */
   static async createImport(importData) {
     try {
+      // Determine file type from filename
+      const fileType = this.getFileTypeFromName(importData.originalFileName || importData.fileName);
+      
       const bulkImport = await BulkImport.create({
-        fileName: importData.fileName,
-        originalFileName: importData.originalFileName,
+        fileName: importData.originalFileName || importData.fileName, // Use original filename as the display name
         filePath: importData.filePath,
         fileSize: importData.fileSize,
+        fileType: fileType,
         userId: importData.userId,
         companyId: importData.companyId,
         status: 'pending',
-        totalRows: importData.totalRows || 0,
-        configuration: importData.configuration || {},
-        duplicateHandling: importData.duplicateHandling || 'skip',
-        fieldMappings: importData.fieldMappings || {}
+        totalRecords: importData.totalRows || 0,
+        importSettings: importData.configuration || {},
+        duplicateHandling: importData.duplicateHandling || 'skip'
       });
 
       console.log(`📋 Bulk import created: ${bulkImport.id} (${importData.fileName})`);
