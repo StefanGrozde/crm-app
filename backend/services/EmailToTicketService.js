@@ -297,7 +297,7 @@ class EmailToTicketService {
   }
 
   /**
-   * Find parent ticket based on email headers
+   * Find parent ticket based on email headers and conversation threading
    * @param {string} inReplyTo - In-Reply-To header
    * @param {string} references - References header
    * @param {number} companyId - Company ID
@@ -307,9 +307,11 @@ class EmailToTicketService {
     try {
       if (!inReplyTo && !references) return null;
 
-      // Search for existing email processing records with matching message IDs
+      // Collect all possible message IDs to search for
       const searchIds = [];
-      if (inReplyTo) searchIds.push(inReplyTo);
+      if (inReplyTo) {
+        searchIds.push(inReplyTo.trim());
+      }
       if (references) {
         const refIds = references.split(/\s+/).filter(id => id.trim());
         searchIds.push(...refIds);
@@ -317,34 +319,86 @@ class EmailToTicketService {
 
       if (searchIds.length === 0) return null;
 
-      // Find email processing record with matching internet message ID
+      console.log('[EMAIL-TO-TICKET] Searching for parent ticket with message IDs:', searchIds);
+
+      // Method 1: Find email processing record with matching internet message ID
+      const { Op } = require('sequelize');
       const emailProcessing = await EmailProcessing.findOne({
         where: {
-          internetMessageId: searchIds,
+          internetMessageId: { [Op.in]: searchIds },
           companyId,
-          ticketId: { [require('sequelize').Op.ne]: null }
+          ticketId: { [Op.ne]: null }
         },
-        include: [{ model: Ticket }]
+        include: [{ model: Ticket }],
+        order: [['createdAt', 'DESC']] // Get the most recent match
       });
 
       if (emailProcessing?.Ticket) {
+        console.log('[EMAIL-TO-TICKET] Found parent ticket via email processing:', emailProcessing.Ticket.id);
         return emailProcessing.Ticket;
       }
 
-      // Alternative: search for ticket with matching ID in description or comments
-      // This is a fallback for edge cases
+      // Method 2: Search for conversation ID matches (more reliable for email chains)
+      const conversationProcessing = await EmailProcessing.findOne({
+        where: {
+          conversationId: { [Op.ne]: null },
+          companyId,
+          ticketId: { [Op.ne]: null }
+        },
+        include: [{ model: Ticket }],
+        order: [['createdAt', 'DESC']]
+      });
+
+      if (conversationProcessing?.Ticket) {
+        // Check if any of the search IDs match the conversation
+        const processingIds = [
+          conversationProcessing.internetMessageId,
+          conversationProcessing.inReplyTo,
+          conversationProcessing.emailReferences
+        ].filter(Boolean);
+
+        const hasMatch = searchIds.some(searchId => 
+          processingIds.some(procId => procId && procId.includes(searchId))
+        );
+
+        if (hasMatch) {
+          console.log('[EMAIL-TO-TICKET] Found parent ticket via conversation threading:', conversationProcessing.Ticket.id);
+          return conversationProcessing.Ticket;
+        }
+      }
+
+      // Method 3: Search ticket descriptions and comments for message ID references
+      // This is a fallback for edge cases where headers don't match perfectly
       const tickets = await Ticket.findAll({
         where: { companyId },
-        include: [{ model: TicketComment }]
+        include: [{ 
+          model: TicketComment,
+          required: false
+        }],
+        limit: 50, // Limit search to recent tickets for performance
+        order: [['createdAt', 'DESC']]
       });
 
       for (const ticket of tickets) {
-        const ticketText = `${ticket.description} ${ticket.TicketComments?.map(c => c.comment).join(' ')}`;
-        if (searchIds.some(id => ticketText.includes(id))) {
+        const ticketContent = [
+          ticket.description,
+          ...(ticket.TicketComments || []).map(c => c.comment)
+        ].join(' ');
+
+        // Look for any of the search IDs in the ticket content
+        const hasMessageIdMatch = searchIds.some(id => {
+          // Clean the ID for searching (remove angle brackets if present)
+          const cleanId = id.replace(/[<>]/g, '');
+          return ticketContent.includes(cleanId) || ticketContent.includes(id);
+        });
+
+        if (hasMessageIdMatch) {
+          console.log('[EMAIL-TO-TICKET] Found parent ticket via content search:', ticket.id);
           return ticket;
         }
       }
 
+      console.log('[EMAIL-TO-TICKET] No parent ticket found for conversation');
       return null;
 
     } catch (error) {
@@ -364,27 +418,28 @@ class EmailToTicketService {
    */
   static async handleTicketReply(parentTicket, emailDetails, contact, emailConfig, emailProcessing) {
     try {
-      // Add comment to existing ticket
+      // Clean email body for better display in timeline
+      const cleanEmailBody = this.cleanEmailBody(emailDetails.body, emailDetails.isHtml);
+      
+      // Add comment to existing ticket with cleaned email content
       const comment = await TicketComment.create({
         ticketId: parentTicket.id,
         userId: contact ? contact.createdBy : (emailConfig.defaultAssignedTo || 1),
-        comment: `Email from ${emailDetails.from.emailAddress.name} (${emailDetails.from.emailAddress.address}):\n\n${emailDetails.body}`,
+        comment: `📧 Email from ${emailDetails.from.emailAddress.name} (${emailDetails.from.emailAddress.address}):\n\nSubject: ${emailDetails.subject}\n\n${cleanEmailBody}`,
         isInternal: false
       });
 
-      // Check if ticket should be reopened
+      // Always update ticket status to 'open' when a new email arrives (unless it has resolve keywords)
       let actionTaken = 'comment_added';
-      if (parentTicket.status === 'closed' || parentTicket.status === 'resolved') {
-        // Check for auto-resolve keywords
-        const hasResolveKeywords = emailConfig.autoResolveKeywords?.some(keyword => 
-          emailDetails.subject.toLowerCase().includes(keyword.toLowerCase()) ||
-          emailDetails.body.toLowerCase().includes(keyword.toLowerCase())
-        );
+      const hasResolveKeywords = emailConfig.autoResolveKeywords?.some(keyword => 
+        emailDetails.subject.toLowerCase().includes(keyword.toLowerCase()) ||
+        emailDetails.body.toLowerCase().includes(keyword.toLowerCase())
+      );
 
-        if (!hasResolveKeywords) {
-          await parentTicket.update({ status: 'open' });
-          actionTaken = 'ticket_reopened';
-        }
+      if (!hasResolveKeywords && parentTicket.status !== 'open') {
+        await parentTicket.update({ status: 'open' });
+        actionTaken = 'ticket_reopened';
+        console.log('[EMAIL-TO-TICKET] Ticket status updated to open for ticket:', parentTicket.id);
       }
 
       // Update email processing record
@@ -396,7 +451,8 @@ class EmailToTicketService {
         message: `${actionTaken === 'ticket_reopened' ? 'Ticket reopened and comment added' : 'Comment added to ticket'}`,
         ticketId: parentTicket.id,
         contactId: contact?.id,
-        actionTaken
+        actionTaken,
+        commentId: comment.id
       };
 
     } catch (error) {
@@ -415,16 +471,19 @@ class EmailToTicketService {
    */
   static async createNewTicket(emailDetails, contact, emailConfig, company) {
     try {
+      // Clean email body for better display
+      const cleanEmailBody = this.cleanEmailBody(emailDetails.body, emailDetails.isHtml);
+      
       // Prepare ticket title
       let title = emailDetails.subject;
       if (emailConfig.subjectPrefix) {
         title = `${emailConfig.subjectPrefix} ${title}`;
       }
 
-      // Create ticket
+      // Create ticket with cleaned email content
       const ticket = await Ticket.create({
         title,
-        description: `Email from ${emailDetails.from.emailAddress.name} (${emailDetails.from.emailAddress.address}):\n\n${emailDetails.body}`,
+        description: `📧 Email from ${emailDetails.from.emailAddress.name} (${emailDetails.from.emailAddress.address}):\n\n${cleanEmailBody}`,
         status: 'open',
         priority: emailConfig.defaultTicketPriority,
         type: emailConfig.defaultTicketType,
@@ -435,18 +494,69 @@ class EmailToTicketService {
         tags: ['email', 'auto-created']
       });
 
+      // Add initial comment with email content to timeline
+      const initialComment = await TicketComment.create({
+        ticketId: ticket.id,
+        userId: emailConfig.defaultAssignedTo || 1,
+        comment: `📧 Initial email content:\n\nFrom: ${emailDetails.from.emailAddress.name} (${emailDetails.from.emailAddress.address})\nSubject: ${emailDetails.subject}\nReceived: ${new Date(emailDetails.receivedDateTime).toLocaleString()}\n\n${cleanEmailBody}`,
+        isInternal: false
+      });
+
+      console.log('[EMAIL-TO-TICKET] Created ticket with initial comment:', ticket.id, 'comment:', initialComment.id);
+
       return {
         success: true,
         message: 'Ticket created successfully',
         ticketId: ticket.id,
         contactId: contact?.id,
-        actionTaken: 'ticket_created'
+        actionTaken: 'ticket_created',
+        commentId: initialComment.id
       };
 
     } catch (error) {
       console.error('[EMAIL-TO-TICKET] Error creating ticket:', error);
       return { success: false, message: error.message };
     }
+  }
+
+  /**
+   * Clean email body for better display in timeline
+   * @param {string} emailBody - Raw email body content
+   * @param {boolean} isHtml - Whether the email is HTML format
+   * @returns {string} - Cleaned email body
+   */
+  static cleanEmailBody(emailBody, isHtml = false) {
+    if (!emailBody) return 'No content';
+    
+    let cleanBody = emailBody;
+    
+    if (isHtml) {
+      // Remove HTML tags and decode entities
+      cleanBody = cleanBody
+        .replace(/<style[^>]*>.*?<\/style>/gis, '') // Remove style blocks
+        .replace(/<script[^>]*>.*?<\/script>/gis, '') // Remove script blocks
+        .replace(/<[^>]*>/g, '') // Remove all HTML tags
+        .replace(/&nbsp;/g, ' ') // Replace non-breaking spaces
+        .replace(/&lt;/g, '<') // Decode HTML entities
+        .replace(/&gt;/g, '>')
+        .replace(/&amp;/g, '&')
+        .replace(/&quot;/g, '"')
+        .replace(/&#39;/g, "'");
+    }
+    
+    // Clean up whitespace and formatting
+    cleanBody = cleanBody
+      .replace(/\r\n/g, '\n') // Normalize line endings
+      .replace(/\r/g, '\n') // Handle old Mac line endings
+      .replace(/\n{3,}/g, '\n\n') // Limit consecutive newlines
+      .trim(); // Remove leading/trailing whitespace
+    
+    // Truncate if too long (keep first 2000 characters)
+    if (cleanBody.length > 2000) {
+      cleanBody = cleanBody.substring(0, 2000) + '\n\n[Email content truncated...]';
+    }
+    
+    return cleanBody;
   }
 
   /**

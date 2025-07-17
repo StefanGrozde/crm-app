@@ -189,13 +189,24 @@ const TimelineWithComments = React.memo(forwardRef(({
 
   // Render comment timeline item
   const renderCommentItem = (comment) => {
+    // Check if this is an email-generated comment
+    const isEmailComment = comment.comment.startsWith('📧');
+    
     return (
-      <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200 w-full max-w-2xl mx-auto">
+      <div className={`bg-white rounded-lg p-6 shadow-sm border w-full max-w-2xl mx-auto ${
+        isEmailComment ? 'border-blue-200 bg-blue-50' : 'border-gray-200'
+      }`}>
         <div className="flex items-start justify-between mb-3">
           <div className="flex items-center space-x-3">
             <span className="font-medium text-gray-900">{comment.user?.username || 'Unknown User'}</span>
-            <span className="text-xs text-blue-600 bg-blue-100 px-2 py-1 rounded">
-              {comment.isInternal ? 'Internal Note' : 'Comment'}
+            <span className={`text-xs px-2 py-1 rounded ${
+              isEmailComment 
+                ? 'text-blue-700 bg-blue-200' 
+                : comment.isInternal 
+                  ? 'text-purple-700 bg-purple-100' 
+                  : 'text-blue-600 bg-blue-100'
+            }`}>
+              {isEmailComment ? 'Email' : comment.isInternal ? 'Internal Note' : 'Comment'}
             </span>
           </div>
           <span className="text-xs text-gray-500">
@@ -205,6 +216,19 @@ const TimelineWithComments = React.memo(forwardRef(({
         <div className="text-sm text-gray-700 whitespace-pre-wrap">
           {comment.comment}
         </div>
+        
+        {/* Email indicator for email-generated comments */}
+        {isEmailComment && (
+          <div className="mt-3 pt-3 border-t border-blue-200">
+            <div className="flex items-center text-xs text-blue-600">
+              <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z"/>
+                <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z"/>
+              </svg>
+              Auto-generated from email
+            </div>
+          </div>
+        )}
       </div>
     );
   };
