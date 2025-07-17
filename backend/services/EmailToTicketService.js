@@ -430,8 +430,8 @@ class EmailToTicketService {
         type: emailConfig.defaultTicketType,
         companyId: company.id,
         contactId: contact?.id,
-        assignedTo: emailConfig.defaultAssignedTo,
-        createdBy: emailConfig.defaultAssignedTo || 1, // System user
+        assignedTo: emailConfig.defaultAssignedTo, // Can be null for unassigned tickets
+        createdBy: emailConfig.defaultAssignedTo || 1, // Default to system user if unassigned
         tags: ['email', 'auto-created']
       });
 

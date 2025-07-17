@@ -88,6 +88,13 @@ const EmailConfigurationModal = ({ isOpen, onClose, configuration, onSave }) => 
     setError('');
 
     try {
+      // Prepare form data for submission - convert empty strings to null for optional fields
+      const submitData = {
+        ...formData,
+        defaultAssignedTo: formData.defaultAssignedTo === '' ? null : formData.defaultAssignedTo,
+        subjectPrefix: formData.subjectPrefix === '' ? null : formData.subjectPrefix
+      };
+
       const method = configuration ? 'PUT' : 'POST';
       const url = configuration 
         ? `${process.env.REACT_APP_API_URL}/api/email-to-ticket/configurations/${configuration.id}`
@@ -99,7 +106,7 @@ const EmailConfigurationModal = ({ isOpen, onClose, configuration, onSave }) => 
           'Content-Type': 'application/json',
         },
         credentials: 'include',
-        body: JSON.stringify(formData)
+        body: JSON.stringify(submitData)
       });
 
       if (response.ok) {
