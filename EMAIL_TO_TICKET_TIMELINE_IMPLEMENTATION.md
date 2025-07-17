@@ -2,6 +2,15 @@
 
 ## Summary of Changes
 
+### ✅ Latest Update: Subject Line Matching & Re: Prefix Handling
+
+**Enhanced Email Threading**:
+- **Subject Normalization**: Automatically removes "Re:", "Fw:", and international prefixes
+- **Smart Title Creation**: Tickets created from "Re: Subject" will have title "Subject" (normalized)
+- **Robust Matching**: Emails with same normalized subject are threaded together
+- **Time-Based Filtering**: Only searches tickets within last 30 days for better accuracy
+- **Priority Matching**: Subject matching takes priority over message headers
+
 ### ✅ Completed Features
 
 1. **Email Content Added to Timeline**

@@ -335,10 +335,15 @@ class EmailToTicketService {
       const normalizedSubject = this.normalizeEmailSubject(subject);
       console.log('[EMAIL-TO-TICKET] Normalized subject:', normalizedSubject);
       
-      // If we don't have headers AND no meaningful subject, this is likely a new ticket
-      if (!inReplyTo && !references && !normalizedSubject) {
-        console.log('[EMAIL-TO-TICKET] No headers or subject - treating as new ticket');
+      // If we don't have meaningful subject, this is likely a new ticket
+      if (!normalizedSubject) {
+        console.log('[EMAIL-TO-TICKET] No meaningful subject - treating as new ticket');
         return null;
+      }
+      
+      // If we don't have headers but have a subject, still try subject matching
+      if (!inReplyTo && !references) {
+        console.log('[EMAIL-TO-TICKET] No message headers, but have subject - trying subject matching only');
       }
 
       // Collect all possible message IDs to search for
@@ -397,6 +402,7 @@ class EmailToTicketService {
 
         for (const ticket of ticketsByTitle) {
           const ticketNormalizedTitle = this.normalizeEmailSubject(ticket.title);
+          console.log('[EMAIL-TO-TICKET] Comparing ticket', ticket.id, ':', ticketNormalizedTitle, 'vs', normalizedSubject);
           if (ticketNormalizedTitle === normalizedSubject) {
             console.log('[EMAIL-TO-TICKET] Found parent ticket via title matching:', ticket.id);
             console.log('[EMAIL-TO-TICKET] Title match:', ticketNormalizedTitle, '===', normalizedSubject);
@@ -564,8 +570,17 @@ class EmailToTicketService {
       // Clean email body for better display
       const cleanEmailBody = this.cleanEmailBody(emailDetails.body, emailDetails.isHtml);
       
-      // Prepare ticket title
+      // Prepare ticket title - normalize the subject to remove Re: prefixes
       let title = emailDetails.subject;
+      
+      // If this looks like a reply (has Re: prefix), normalize it for the title
+      if (title && /^(re:|fw:|fwd:|aw:|tr:|rv:|ref:|回复:|回覆:|答复:|转发:|轉發:)\s*/gi.test(title)) {
+        title = this.normalizeEmailSubject(title);
+        // Capitalize first letter for better display
+        title = title.charAt(0).toUpperCase() + title.slice(1);
+        console.log('[EMAIL-TO-TICKET] Normalized ticket title from:', emailDetails.subject, 'to:', title);
+      }
+      
       if (emailConfig.subjectPrefix) {
         title = `${emailConfig.subjectPrefix} ${title}`;
       }
