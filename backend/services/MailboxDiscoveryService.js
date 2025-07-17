@@ -109,81 +109,11 @@ class MailboxDiscoveryService {
         console.log('[MAILBOX-DISCOVERY] Error checking shared mailboxes:', settingsError.message);
       }
 
-      // Method 3: Check for shared mailboxes in the organization
-      try {
-        // List users/mailboxes in the organization, including shared mailboxes
-        const orgUsers = await graphClient.api('/users')
-          .select('id,mail,displayName,userType,accountEnabled,recipientType,exchangeGuid')
-          .filter('accountEnabled eq true')
-          .top(100)
-          .get();
+      // Method 3: Simplified approach - only use sendAs permissions that were found in Method 2
+      // Don't scan the entire organization, focus only on what we already discovered
+      console.log('[MAILBOX-DISCOVERY] Skipping organization-wide scan - using only explicit send-as permissions and well-known mailboxes');
 
-        console.log('[MAILBOX-DISCOVERY] Found', orgUsers.value.length, 'users in organization');
-
-        // Check each user/mailbox to see if the current user has send-as or full access permissions
-        for (const orgUser of orgUsers.value) {
-          if (orgUser.mail && orgUser.mail !== userEmail) {
-            try {
-              // Try different approaches to check access
-              let hasAccess = false;
-              
-              // Approach 1: Try to access mailbox settings
-              try {
-                await graphClient.api(`/users/${orgUser.mail}/mailboxSettings`).get();
-                hasAccess = true;
-                console.log('[MAILBOX-DISCOVERY] Can access mailbox settings for:', orgUser.mail);
-              } catch (settingsError) {
-                // Try approach 2: Check if we can list mail folders
-                try {
-                  const folders = await graphClient.api(`/users/${orgUser.mail}/mailFolders`).get();
-                  if (folders && folders.value) {
-                    hasAccess = true;
-                    console.log('[MAILBOX-DISCOVERY] Can access mail folders for:', orgUser.mail);
-                  }
-                } catch (folderError) {
-                  // Try approach 3: Check if we can get the user as a delegate
-                  try {
-                    const userInfo = await graphClient.api(`/users/${orgUser.mail}`).get();
-                    if (userInfo && userInfo.mail) {
-                      hasAccess = true;
-                      console.log('[MAILBOX-DISCOVERY] Can access user info for:', orgUser.mail);
-                    }
-                  } catch (userInfoError) {
-                    console.log('[MAILBOX-DISCOVERY] No access to mailbox:', orgUser.mail);
-                  }
-                }
-              }
-              
-              // If we have access and it's not already in the list, add it
-              if (hasAccess && !discoveredMailboxes.find(mb => mb.email === orgUser.mail)) {
-                // Determine mailbox type
-                let mailboxType = 'user';
-                if (orgUser.recipientType === 'SharedMailbox' || 
-                    orgUser.userType === 'Guest' || 
-                    orgUser.displayName?.toLowerCase().includes('shared')) {
-                  mailboxType = 'shared';
-                }
-                
-                discoveredMailboxes.push({
-                  email: orgUser.mail,
-                  displayName: orgUser.displayName || orgUser.mail.split('@')[0],
-                  isDefault: false,
-                  isActive: true,
-                  type: mailboxType
-                });
-                console.log('[MAILBOX-DISCOVERY] Added accessible mailbox:', orgUser.mail, 'type:', mailboxType);
-              }
-              
-            } catch (accessError) {
-              console.log('[MAILBOX-DISCOVERY] Error checking access to:', orgUser.mail, accessError.message);
-            }
-          }
-        }
-      } catch (orgError) {
-        console.warn('[MAILBOX-DISCOVERY] Could not enumerate organization mailboxes:', orgError.message);
-      }
-
-      // Method 4: Check specific well-known mailboxes for the domain
+      // Method 4: Check specific well-known mailboxes for the domain (but only test send-as capability)
       const userDomain = userEmail.split('@')[1];
       const wellKnownMailboxes = [
         'info',
@@ -197,24 +127,51 @@ class MailboxDiscoveryService {
         'reservations'
       ];
 
+      console.log('[MAILBOX-DISCOVERY] Testing well-known mailboxes for send-as permissions...');
       for (const prefix of wellKnownMailboxes) {
         const testEmail = `${prefix}@${userDomain}`;
         if (!discoveredMailboxes.find(mb => mb.email === testEmail)) {
           try {
-            // Try to get mailbox settings to see if it exists and is accessible
-            await graphClient.api(`/users/${testEmail}/mailboxSettings`).get();
+            // Test if this mailbox exists and we can send from it by checking the sendMail endpoint availability
+            // We'll do a simple API test without actually sending
+            const testEndpoint = `/users/${testEmail}/sendMail`;
             
-            discoveredMailboxes.push({
-              email: testEmail,
-              displayName: prefix.charAt(0).toUpperCase() + prefix.slice(1),
-              isDefault: false,
-              isActive: true,
-              type: 'shared'
-            });
-            console.log('[MAILBOX-DISCOVERY] Added well-known mailbox:', testEmail);
+            // If we can access this endpoint structure, the mailbox likely exists and we might have permission
+            // This is safer than trying to access mailbox settings which might give false positives
+            try {
+              // Just check if the user exists first
+              const userCheck = await graphClient.api(`/users/${testEmail}`).select('mail,displayName').get();
+              if (userCheck && userCheck.mail) {
+                console.log('[MAILBOX-DISCOVERY] Well-known mailbox exists:', testEmail);
+                
+                // Now test if we can actually send from it by trying to access sendAs permissions
+                try {
+                  const userSendAs = await graphClient.api(`/users/${userEmail}/sendAs`).get();
+                  const hasSendAsPermission = userSendAs.value?.some(permission => 
+                    permission.emailAddress?.address === testEmail
+                  );
+                  
+                  if (hasSendAsPermission) {
+                    discoveredMailboxes.push({
+                      email: testEmail,
+                      displayName: userCheck.displayName || (prefix.charAt(0).toUpperCase() + prefix.slice(1)),
+                      isDefault: false,
+                      isActive: true,
+                      type: 'shared'
+                    });
+                    console.log('[MAILBOX-DISCOVERY] Added well-known mailbox with send-as permission:', testEmail);
+                  } else {
+                    console.log('[MAILBOX-DISCOVERY] Well-known mailbox exists but no send-as permission:', testEmail);
+                  }
+                } catch (sendAsCheckError) {
+                  console.log('[MAILBOX-DISCOVERY] Could not check send-as permissions for:', testEmail);
+                }
+              }
+            } catch (userCheckError) {
+              console.log('[MAILBOX-DISCOVERY] Well-known mailbox does not exist:', testEmail);
+            }
           } catch (testError) {
-            // Mailbox doesn't exist or user doesn't have access
-            console.log('[MAILBOX-DISCOVERY] Well-known mailbox not accessible:', testEmail);
+            console.log('[MAILBOX-DISCOVERY] Error testing well-known mailbox:', testEmail, testError.message);
           }
         }
       }
