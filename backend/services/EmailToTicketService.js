@@ -389,7 +389,35 @@ class EmailToTicketService {
           }
         }
 
-        // Fallback: Search ticket titles directly (for tickets created manually or via other means)
+        // Search ticket titles with case-insensitive pattern matching
+        // Try multiple variations to find the best match
+        const searchPatterns = [
+          normalizedSubject,                                    // "test unassigned"
+          normalizedSubject.charAt(0).toUpperCase() + normalizedSubject.slice(1), // "Test unassigned"
+          normalizedSubject.split(' ').map(word => 
+            word.charAt(0).toUpperCase() + word.slice(1)).join(' ')  // "Test Unassigned"
+        ];
+
+        for (const pattern of searchPatterns) {
+          const directTitleMatch = await Ticket.findOne({
+            where: {
+              companyId,
+              archived: false,
+              createdAt: { [Op.gte]: thirtyDaysAgo },
+              // Use case-insensitive search with ILIKE (PostgreSQL)
+              title: { [Op.iLike]: pattern }
+            },
+            order: [['createdAt', 'DESC']]
+          });
+
+          if (directTitleMatch) {
+            console.log('[EMAIL-TO-TICKET] Found parent ticket via direct title search:', directTitleMatch.id);
+            console.log('[EMAIL-TO-TICKET] Direct match pattern:', pattern, '→', directTitleMatch.title);
+            return directTitleMatch;
+          }
+        }
+
+        // Fallback: Normalize each title manually for complex cases
         const ticketsByTitle = await Ticket.findAll({
           where: {
             companyId,
@@ -404,7 +432,7 @@ class EmailToTicketService {
           const ticketNormalizedTitle = this.normalizeEmailSubject(ticket.title);
           console.log('[EMAIL-TO-TICKET] Comparing ticket', ticket.id, ':', ticketNormalizedTitle, 'vs', normalizedSubject);
           if (ticketNormalizedTitle === normalizedSubject) {
-            console.log('[EMAIL-TO-TICKET] Found parent ticket via title matching:', ticket.id);
+            console.log('[EMAIL-TO-TICKET] Found parent ticket via normalized title matching:', ticket.id);
             console.log('[EMAIL-TO-TICKET] Title match:', ticketNormalizedTitle, '===', normalizedSubject);
             return ticket;
           }
@@ -570,15 +598,14 @@ class EmailToTicketService {
       // Clean email body for better display
       const cleanEmailBody = this.cleanEmailBody(emailDetails.body, emailDetails.isHtml);
       
-      // Prepare ticket title - normalize the subject to remove Re: prefixes
+      // Prepare ticket title - remove Re: prefixes but preserve original casing
       let title = emailDetails.subject;
       
-      // If this looks like a reply (has Re: prefix), normalize it for the title
+      // If this looks like a reply (has Re: prefix), remove the prefix but preserve the rest
       if (title && /^(re:|fw:|fwd:|aw:|tr:|rv:|ref:|回复:|回覆:|答复:|转发:|轉發:)\s*/gi.test(title)) {
-        title = this.normalizeEmailSubject(title);
-        // Capitalize first letter for better display
-        title = title.charAt(0).toUpperCase() + title.slice(1);
-        console.log('[EMAIL-TO-TICKET] Normalized ticket title from:', emailDetails.subject, 'to:', title);
+        // Remove just the prefix, keep original casing of the subject
+        title = title.replace(/^(re:|fw:|fwd:|aw:|tr:|rv:|ref:|回复:|回覆:|答复:|转发:|轉發:)\s*/gi, '').trim();
+        console.log('[EMAIL-TO-TICKET] Removed prefix from ticket title:', emailDetails.subject, '→', title);
       }
       
       if (emailConfig.subjectPrefix) {
