@@ -60,47 +60,122 @@ class MailboxDiscoveryService {
 
       // Method 2: Discover shared mailboxes user has access to
       try {
-        // Get mailboxes user has permission to send from
-        const mailboxSettings = await graphClient.api(`/users/${userEmail}/mailboxSettings`).get();
+        // Try to get shared mailboxes using the mailFolders endpoint
+        const sharedMailFolders = await graphClient.api(`/users/${userEmail}/mailFolders`).get();
+        console.log('[MAILBOX-DISCOVERY] Found', sharedMailFolders.value?.length || 0, 'mail folders');
         
-        if (mailboxSettings && mailboxSettings.delegateMeetingMessageDeliveryOptions) {
-          console.log('[MAILBOX-DISCOVERY] Found mailbox settings');
+        // Try to get delegated permissions for the user
+        try {
+          const permissions = await graphClient.api(`/users/${userEmail}/calendar/calendarPermissions`).get();
+          console.log('[MAILBOX-DISCOVERY] Found calendar permissions');
+        } catch (permError) {
+          console.log('[MAILBOX-DISCOVERY] No calendar permissions found');
         }
+
+        // Try to get send-as permissions
+        try {
+          const sendAsPermissions = await graphClient.api(`/users/${userEmail}/sendAs`).get();
+          if (sendAsPermissions && sendAsPermissions.value) {
+            console.log('[MAILBOX-DISCOVERY] Found', sendAsPermissions.value.length, 'send-as permissions');
+            for (const permission of sendAsPermissions.value) {
+              if (permission.emailAddress && permission.emailAddress.address) {
+                const sendAsEmail = permission.emailAddress.address;
+                if (sendAsEmail !== userEmail && !discoveredMailboxes.find(mb => mb.email === sendAsEmail)) {
+                  discoveredMailboxes.push({
+                    email: sendAsEmail,
+                    displayName: permission.emailAddress.name || sendAsEmail.split('@')[0],
+                    isDefault: false,
+                    isActive: true,
+                    type: 'shared'
+                  });
+                  console.log('[MAILBOX-DISCOVERY] Added send-as mailbox:', sendAsEmail);
+                }
+              }
+            }
+          }
+        } catch (sendAsError) {
+          console.log('[MAILBOX-DISCOVERY] No send-as permissions found:', sendAsError.message);
+        }
+
+        // Try to get delegate permissions
+        try {
+          const delegatePermissions = await graphClient.api(`/users/${userEmail}/mailFolders/inbox/messageRules`).get();
+          console.log('[MAILBOX-DISCOVERY] Found message rules');
+        } catch (delegateError) {
+          console.log('[MAILBOX-DISCOVERY] No delegate permissions found');
+        }
+
       } catch (settingsError) {
-        console.log('[MAILBOX-DISCOVERY] No special mailbox settings found');
+        console.log('[MAILBOX-DISCOVERY] Error checking shared mailboxes:', settingsError.message);
       }
 
       // Method 3: Check for shared mailboxes in the organization
       try {
-        // List users/mailboxes in the organization that might be shared mailboxes
+        // List users/mailboxes in the organization, including shared mailboxes
         const orgUsers = await graphClient.api('/users')
-          .select('id,mail,displayName,userType,accountEnabled')
+          .select('id,mail,displayName,userType,accountEnabled,recipientType,exchangeGuid')
           .filter('accountEnabled eq true')
           .top(100)
           .get();
 
         console.log('[MAILBOX-DISCOVERY] Found', orgUsers.value.length, 'users in organization');
 
+        // Check each user/mailbox to see if the current user has send-as or full access permissions
         for (const orgUser of orgUsers.value) {
           if (orgUser.mail && orgUser.mail !== userEmail) {
-            // Check if user has send-as permissions for this mailbox
             try {
-              await graphClient.api(`/users/${orgUser.mail}/mailboxSettings`).get();
+              // Try different approaches to check access
+              let hasAccess = false;
               
-              // If we can access it, add it to the list
-              if (!discoveredMailboxes.find(mb => mb.email === orgUser.mail)) {
+              // Approach 1: Try to access mailbox settings
+              try {
+                await graphClient.api(`/users/${orgUser.mail}/mailboxSettings`).get();
+                hasAccess = true;
+                console.log('[MAILBOX-DISCOVERY] Can access mailbox settings for:', orgUser.mail);
+              } catch (settingsError) {
+                // Try approach 2: Check if we can list mail folders
+                try {
+                  const folders = await graphClient.api(`/users/${orgUser.mail}/mailFolders`).get();
+                  if (folders && folders.value) {
+                    hasAccess = true;
+                    console.log('[MAILBOX-DISCOVERY] Can access mail folders for:', orgUser.mail);
+                  }
+                } catch (folderError) {
+                  // Try approach 3: Check if we can get the user as a delegate
+                  try {
+                    const userInfo = await graphClient.api(`/users/${orgUser.mail}`).get();
+                    if (userInfo && userInfo.mail) {
+                      hasAccess = true;
+                      console.log('[MAILBOX-DISCOVERY] Can access user info for:', orgUser.mail);
+                    }
+                  } catch (userInfoError) {
+                    console.log('[MAILBOX-DISCOVERY] No access to mailbox:', orgUser.mail);
+                  }
+                }
+              }
+              
+              // If we have access and it's not already in the list, add it
+              if (hasAccess && !discoveredMailboxes.find(mb => mb.email === orgUser.mail)) {
+                // Determine mailbox type
+                let mailboxType = 'user';
+                if (orgUser.recipientType === 'SharedMailbox' || 
+                    orgUser.userType === 'Guest' || 
+                    orgUser.displayName?.toLowerCase().includes('shared')) {
+                  mailboxType = 'shared';
+                }
+                
                 discoveredMailboxes.push({
                   email: orgUser.mail,
                   displayName: orgUser.displayName || orgUser.mail.split('@')[0],
                   isDefault: false,
                   isActive: true,
-                  type: orgUser.userType === 'Member' ? 'shared' : 'user'
+                  type: mailboxType
                 });
-                console.log('[MAILBOX-DISCOVERY] Added accessible mailbox:', orgUser.mail);
+                console.log('[MAILBOX-DISCOVERY] Added accessible mailbox:', orgUser.mail, 'type:', mailboxType);
               }
+              
             } catch (accessError) {
-              // User doesn't have access to this mailbox, skip it
-              console.log('[MAILBOX-DISCOVERY] No access to mailbox:', orgUser.mail);
+              console.log('[MAILBOX-DISCOVERY] Error checking access to:', orgUser.mail, accessError.message);
             }
           }
         }

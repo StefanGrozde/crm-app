@@ -12,6 +12,7 @@ class EmailService {
    * @param {string} emailData.htmlContent - HTML content of the email
    * @param {Array} emailData.bcc - BCC recipients (optional)
    * @param {Array} emailData.attachments - Email attachments (optional)
+   * @param {string} emailData.sendFrom - Send from mailbox (optional, defaults to company.ms365EmailFrom)
    * @returns {Promise<Object>} - Result of email sending
    */
   static async sendEmail(company, emailData) {
@@ -84,8 +85,12 @@ class EmailService {
         mail.message.attachments = emailData.attachments;
       }
 
+      // Determine which mailbox to send from
+      const sendFromEmail = emailData.sendFrom || company.ms365EmailFrom;
+      console.log('[EMAIL SERVICE] Sending email from:', sendFromEmail);
+
       // Send email
-      await graphClient.api(`/users/${company.ms365EmailFrom}/sendMail`).post(mail);
+      await graphClient.api(`/users/${sendFromEmail}/sendMail`).post(mail);
 
       return {
         success: true,

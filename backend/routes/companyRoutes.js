@@ -352,7 +352,7 @@ router.post('/:id/send-test-email', protect, authorize('Administrator'), async (
 router.post('/:id/send-email', protect, async (req, res) => {
     try {
         const companyId = parseInt(req.params.id, 10);
-        const { to, subject, htmlContent, bcc, attachments } = req.body;
+        const { to, subject, htmlContent, bcc, attachments, sendFrom } = req.body;
 
         // Security Check: Ensure the user belongs to the company they are sending email for.
         if (req.user.companyId !== companyId) {
@@ -369,13 +369,16 @@ router.post('/:id/send-email', protect, async (req, res) => {
             return res.status(404).json({ message: 'Company not found' });
         }
 
+        console.log('[SEND-EMAIL] Sending email with sendFrom:', sendFrom || 'default');
+
         // Send email
         const emailResult = await EmailService.sendEmail(company, {
             to,
             subject,
             htmlContent,
             bcc,
-            attachments
+            attachments,
+            sendFrom // Pass the sendFrom parameter
         });
 
         res.json(emailResult);
