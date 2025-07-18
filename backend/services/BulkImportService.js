@@ -78,10 +78,6 @@ class BulkImportService {
       
       // Get bulk import record
       const bulkImport = await BulkImport.findByPk(bulkImportId, {
-        include: [
-          { model: User, as: 'user' },
-          { model: Company, as: 'company' }
-        ],
         transaction
       });
 
@@ -98,7 +94,7 @@ class BulkImportService {
       // Process the file
       const fileResult = await FileProcessingService.processFile(
         bulkImport.filePath,
-        bulkImport.originalFileName
+        bulkImport.fileName
       );
 
       // Update total rows
@@ -629,10 +625,10 @@ class BulkImportService {
         userId: bulkImport.userId,
         type: 'bulk_import_completed',
         title: 'Bulk Import Completed',
-        message: `Import "${bulkImport.originalFileName}" processed ${stats.successfulRows}/${stats.processedRows} contacts successfully`,
+        message: `Import "${bulkImport.fileName}" processed ${stats.successfulRows}/${stats.processedRows} contacts successfully`,
         data: {
           bulkImportId: bulkImport.id,
-          fileName: bulkImport.originalFileName,
+          fileName: bulkImport.fileName,
           stats: stats
         },
         actionUrl: `/contacts?import=${bulkImport.id}`
@@ -662,7 +658,7 @@ class BulkImportService {
       return {
         id: bulkImport.id,
         status: bulkImport.status,
-        fileName: bulkImport.originalFileName,
+        fileName: bulkImport.fileName,
         totalRows: bulkImport.totalRows,
         processedRows: bulkImport.processedRows,
         successfulRows: bulkImport.successfulRows,

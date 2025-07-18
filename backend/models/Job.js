@@ -105,7 +105,7 @@ Job.prototype.markAsFailed = function(errorMessage) {
   return this.update({
     status: canRetry ? 'pending' : 'failed',
     errorMessage,
-    scheduledAt: canRetry ? new Date(Date.now() + 60000) : null // retry in 1 minute
+    scheduledAt: canRetry ? new Date(Date.now() + 60000) : new Date() // retry in 1 minute or current time
   });
 };
 
