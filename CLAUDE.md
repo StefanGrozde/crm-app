@@ -6,11 +6,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ### Backend Development
 ```bash
-# Start backend server
+# Start backend server (workers start on-demand)
 cd backend && npm start
 
 # Test database connection
 curl http://localhost:8080/api/test-db
+
+# Manually start bulk import worker (if needed)
+node backend/workers/bulkImportWorker.js
 ```
 
 ### Frontend Development
@@ -230,6 +233,70 @@ Frontend origins configured in `backend/index.js`:
 - Check cookie settings for CORS issues
 - Ensure frontend API_URL points to correct backend
 - All frontend components use `process.env.REACT_APP_API_URL` consistently
+
+## Bulk Import System
+
+### Architecture
+The bulk import system uses an **on-demand worker pattern** for processing large files:
+
+- **Job Queue**: Database-backed queue system for reliable job processing
+- **On-Demand Workers**: Separate processes that spawn only when needed
+- **File Processing**: Supports CSV, Excel (.xlsx, .xls) file uploads up to 10MB
+- **Field Mapping**: Smart field detection and user-configurable mapping
+- **Duplicate Handling**: Skip, update, or merge strategies for existing contacts
+- **Progress Tracking**: Real-time progress updates with detailed statistics
+- **Error Handling**: Comprehensive error tracking and reporting
+
+### Key Features
+- **On-Demand Workers**: Workers start only when import is triggered, auto-shutdown after 2min idle
+- **Multi-step Wizard**: File upload → Field mapping → Processing → Results
+- **Real-time Progress**: Polling-based progress tracking with detailed stats
+- **Import History**: Complete audit trail with retry and delete capabilities
+- **Notification System**: Completion notifications for users
+- **Admin Monitoring**: Queue status and worker health monitoring
+- **Resource Efficient**: Zero overhead when not importing, minimal memory footprint
+
+### Database Tables
+- `job_queue`: Background job management
+- `bulk_imports`: Import session tracking
+- `bulk_import_errors`: Detailed error records
+- `bulk_import_successes`: Successfully imported contacts
+- `bulk_import_stats`: Field-level import statistics
+
+### API Endpoints
+- `POST /api/bulk-import/upload`: File upload and validation
+- `POST /api/bulk-import/start`: Start import process
+- `GET /api/bulk-import/:id/progress`: Get import progress
+- `GET /api/bulk-import/history`: Import history
+- `GET /api/bulk-import/:id/results`: Detailed results
+- `POST /api/bulk-import/:id/retry`: Retry failed imports
+- `DELETE /api/bulk-import/:id`: Delete import
+- `GET /api/bulk-import/queue/status`: Admin queue monitoring
+
+### Frontend Components
+- `BulkImportModal`: Main import wizard orchestrator
+- `BulkImportFileUpload`: Drag & drop file upload
+- `FieldMappingStep`: Smart field mapping with preview
+- `ImportProgressModal`: Real-time progress tracking
+- `ImportResultsModal`: Comprehensive results display
+- `ImportHistoryModal`: Import history management
+
+### Worker Management
+Workers are spawned on-demand when imports are triggered and automatically shutdown after 2 minutes of inactivity. This provides:
+
+- **Zero Memory Footprint**: No workers running when not needed
+- **Instant Startup**: Workers spawn in ~1 second when needed
+- **Auto Cleanup**: Workers automatically shutdown after idle timeout
+- **Process Isolation**: Each worker runs in its own process for stability
+
+For manual worker management:
+```bash
+# Workers start automatically when imports are triggered
+# No manual startup needed
+
+# Manual worker startup (if needed for debugging)
+node backend/workers/bulkImportWorker.js
+```
 
 ## Recent Changes
 

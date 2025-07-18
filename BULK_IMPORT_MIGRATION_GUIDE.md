@@ -277,10 +277,10 @@ After successful migration:
    - Add associations between models
    - Test model relationships
 
-3. **Set Up Background Worker**
-   ```bash
-   node backend/workers/background-worker.js
-   ```
+3. **Workers Start On-Demand**
+   - No background workers to start manually
+   - Workers spawn automatically when imports are triggered
+   - Auto-shutdown after 2 minutes of inactivity
 
 4. **Follow Implementation Plan**
    - Refer to `BULK_IMPORT_IMPLEMENTATION_PLAN.md`

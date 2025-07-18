@@ -10,6 +10,7 @@ const BulkImport = require('../models/BulkImport');
 const BulkImportError = require('../models/BulkImportError');
 const BulkImportSuccess = require('../models/BulkImportSuccess');
 const BulkImportStats = require('../models/BulkImportStats');
+const WorkerManager = require('../services/WorkerManager');
 
 const router = express.Router();
 
@@ -182,6 +183,12 @@ router.post('/start', async (req, res) => {
       bulkImportId: bulkImport.id
     }, 'high');
 
+    // Start worker on-demand to process the job
+    const workerStarted = await WorkerManager.triggerProcessing('bulk_import');
+    if (!workerStarted) {
+      console.warn('⚠️  Worker could not be started, job will remain queued');
+    }
+
     console.log(`🚀 Bulk import started: ${bulkImport.id} (${originalFileName})`);
 
     res.json({
@@ -268,7 +275,7 @@ router.get('/history', async (req, res) => {
 
     const { count, rows } = await BulkImport.findAndCountAll({
       where: whereConditions,
-      order: [['createdAt', 'DESC']],
+      order: [['created_at', 'DESC']],
       limit: parseInt(limit),
       offset: parseInt(offset),
       include: [
@@ -439,6 +446,12 @@ router.post('/:id/retry', async (req, res) => {
       bulkImportId: retryImport.id
     }, 'high');
 
+    // Start worker on-demand to process the retry
+    const workerStarted = await WorkerManager.triggerProcessing('bulk_import');
+    if (!workerStarted) {
+      console.warn('⚠️  Worker could not be started, retry will remain queued');
+    }
+
     res.json({
       success: true,
       message: 'Import queued for retry',
@@ -547,12 +560,16 @@ router.get('/queue/status', async (req, res) => {
     const recentJobs = await JobQueue.getJobsByStatus('processing', 5);
     const failedJobs = await JobQueue.getJobsByStatus('failed', 5);
 
+    // Get worker status from WorkerManager
+    const workerStatus = WorkerManager.getWorkerStatus();
+
     res.json({
       success: true,
       data: {
         queue: queueStats,
         recent: recentJobs,
-        failed: failedJobs
+        failed: failedJobs,
+        worker: workerStatus
       }
     });
 
@@ -571,21 +588,24 @@ router.get('/queue/status', async (req, res) => {
  */
 router.post('/queue/process', async (req, res) => {
   try {
-    // Only administrators can trigger queue processing
-    if (req.user.role !== 'Administrator') {
-      return res.status(403).json({
+    // Start worker on-demand to process all pending jobs
+    const workerStarted = await WorkerManager.triggerProcessing('bulk_import');
+    if (!workerStarted) {
+      return res.status(500).json({
         success: false,
-        message: 'Access denied'
+        message: 'Failed to start worker for processing'
       });
     }
 
-    const processedCount = await JobQueue.processAllPending();
+    // Get current queue stats
+    const queueStats = await JobQueue.getQueueStats();
 
     res.json({
       success: true,
-      message: `Processed ${processedCount} pending jobs`,
+      message: `Worker started to process ${queueStats.pending} pending jobs`,
       data: {
-        processedCount
+        pendingJobs: queueStats.pending,
+        workerStarted: true
       }
     });
 
@@ -626,7 +646,7 @@ router.get('/statistics', async (req, res) => {
 
     const whereConditions = {
       companyId: req.user.companyId,
-      createdAt: {
+      created_at: {
         [require('sequelize').Op.between]: [startDate, endDate]
       }
     };

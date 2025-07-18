@@ -51,7 +51,7 @@ Create models:
 - Contact validation and creation
 - Progress tracking and updates
 
-**File**: `backend/workers/background-worker.js`
+**File**: `backend/workers/bulkImportWorker.js`
 - Background worker implementation
 - Job queue processing loop
 - Graceful shutdown handling
@@ -203,7 +203,7 @@ Create models:
 
 ### **8.1 Deployment Tasks**
 - Database migration deployment
-- Background worker setup
+- On-demand worker configuration
 - File upload configuration
 - Error monitoring setup
 - Performance monitoring
@@ -228,7 +228,9 @@ backend/
 ├── routes/
 │   └── bulkImportRoutes.js
 ├── workers/
-│   └── background-worker.js
+│   └── bulkImportWorker.js
+├── services/
+│   └── WorkerManager.js
 └── models/
     ├── BulkImport.js
     ├── BulkImportError.js
@@ -252,11 +254,11 @@ frontend/
 - **Batch processing** for performance
 - **Soft delete** for history preservation
 - **Company-scoped data** for security
-- **Background processing** for user experience
+- **On-demand worker processing** for efficient resource usage
 
 ### **User Experience Flow**
 1. User uploads file via modal
-2. File queued for background processing
+2. File queued for processing, worker spawns automatically
 3. User receives notification on completion
 4. Click notification opens results modal
 5. View detailed results, errors, and statistics
@@ -275,7 +277,7 @@ frontend/
 - Batch processing
 - Database indexing
 - Pagination for large datasets
-- Background job processing
+- On-demand worker processing
 - Memory management for large files
 
 ---
