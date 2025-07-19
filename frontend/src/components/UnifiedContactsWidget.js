@@ -47,7 +47,7 @@ const UnifiedContactsWidget = ({ onOpenContactProfile }) => {
                     : field
             )
         },
-        // Add bulk import actions
+        // Add bulk import actions to existing ones
         customActions: [
             ...(entityConfigs.contacts.customActions || []),
             {

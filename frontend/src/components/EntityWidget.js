@@ -852,7 +852,9 @@ const EntityWidget = ({
                                 {config.features?.customActions && config.customActions && (
                                     <td className="px-4 py-3 whitespace-nowrap">
                                         <div className="flex space-x-1">
-                                            {config.customActions.map(action => (
+                                            {config.customActions
+                                                .filter(action => !action.position || action.position === 'row')
+                                                .map(action => (
                                                 <button
                                                     key={action.key}
                                                     onClick={() => onCustomAction && onCustomAction(action.key, item.id)}

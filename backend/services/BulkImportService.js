@@ -100,7 +100,7 @@ class BulkImportService {
 
       // Update total rows
       await bulkImport.update({
-        totalRows: fileResult.totalRows
+        totalRecords: fileResult.totalRows
       }, { transaction });
 
       // Process contacts in batches
@@ -116,11 +116,11 @@ class BulkImportService {
       // Update bulk import with results
       await bulkImport.update({
         status: finalStats.hasErrors ? 'completed_with_errors' : 'completed',
-        processedRows: finalStats.processedRows,
-        successfulRows: finalStats.successfulRows,
-        errorRows: finalStats.errorRows,
+        processedRecords: finalStats.processedRows,
+        successfulRecords: finalStats.successfulRows,
+        failedRecords: finalStats.errorRows,
         completedAt: new Date(),
-        processingTimeMs: Date.now() - new Date(bulkImport.processedAt).getTime()
+        processingTimeSeconds: Math.floor((Date.now() - new Date(bulkImport.startedAt).getTime()) / 1000)
       }, { transaction });
 
       // Create overall statistics
@@ -222,8 +222,7 @@ class BulkImportService {
       // Update progress
       const progressPercentage = Math.round(((i + batch.length) / contacts.length) * 100);
       await bulkImport.update({
-        processedRows: i + batch.length,
-        progressPercentage
+        processedRecords: i + batch.length
       }, { transaction });
     }
 
@@ -664,10 +663,10 @@ class BulkImportService {
         id: bulkImport.id,
         status: bulkImport.status,
         fileName: bulkImport.fileName,
-        totalRows: bulkImport.totalRows,
-        processedRows: bulkImport.processedRows,
-        successfulRows: bulkImport.successfulRows,
-        errorRows: bulkImport.errorRows,
+        totalRows: bulkImport.totalRecords,
+        processedRows: bulkImport.processedRecords,
+        successfulRows: bulkImport.successfulRecords,
+        errorRows: bulkImport.failedRecords,
         progressPercentage: bulkImport.getProgressPercentage(),
         isInProgress: bulkImport.isInProgress(),
         canRetry: bulkImport.canRetry(),

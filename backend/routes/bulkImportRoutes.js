@@ -379,10 +379,10 @@ router.get('/:id/results', async (req, res) => {
       data: {
         import: bulkImport,
         summary: {
-          total: bulkImport.totalRows,
-          processed: bulkImport.processedRows,
-          successful: bulkImport.successfulRows,
-          failed: bulkImport.errorRows,
+          total: bulkImport.totalRecords,
+          processed: bulkImport.processedRecords,
+          successful: bulkImport.successfulRecords,
+          failed: bulkImport.failedRecords,
           successRate: bulkImport.getSuccessRate(),
           progressPercentage: bulkImport.getProgressPercentage()
         },
@@ -662,9 +662,9 @@ router.get('/statistics', async (req, res) => {
       attributes: [
         'status',
         [require('sequelize').fn('COUNT', require('sequelize').col('id')), 'count'],
-        [require('sequelize').fn('SUM', require('sequelize').col('total_rows')), 'totalRows'],
-        [require('sequelize').fn('SUM', require('sequelize').col('successful_rows')), 'successfulRows'],
-        [require('sequelize').fn('SUM', require('sequelize').col('error_rows')), 'errorRows']
+        [require('sequelize').fn('SUM', require('sequelize').col('total_records')), 'totalRows'],
+        [require('sequelize').fn('SUM', require('sequelize').col('successful_records')), 'successfulRows'],
+        [require('sequelize').fn('SUM', require('sequelize').col('failed_records')), 'errorRows']
       ],
       group: ['status']
     });
