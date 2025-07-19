@@ -356,9 +356,12 @@ class FileProcessingService {
         cleanValue = cleanValue.replace(/[^\d+()-.\s]/g, '');
         break;
       case 'tags':
-        // Handle comma-separated tags
+        // Handle comma-separated tags, ensure always returns array
         if (cleanValue.includes(',')) {
           cleanValue = cleanValue.split(',').map(tag => tag.trim()).filter(tag => tag);
+        } else {
+          // Single tag - convert to array
+          cleanValue = [cleanValue.trim()].filter(tag => tag);
         }
         break;
       case 'zipCode':

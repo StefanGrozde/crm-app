@@ -350,7 +350,7 @@ class BulkImportService {
         zipCode: contactData.zipCode || null,
         country: contactData.country || null,
         notes: contactData.notes || null,
-        tags: contactData.tags || null,
+        tags: Array.isArray(contactData.tags) ? contactData.tags : (contactData.tags ? [contactData.tags] : null),
         status: contactData.status || 'active',
         source: contactData.source || 'bulk_import',
         companyId: bulkImport.companyId,
