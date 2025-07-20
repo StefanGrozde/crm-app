@@ -9,6 +9,7 @@ const Lead = require('../models/Lead');
 const Opportunity = require('../models/Opportunity');
 const ListMembership = require('../models/ListMembership');
 const { Op } = require('sequelize');
+const { getAuditContext } = require('../utils/auditHooks');
 
 // GET /api/sales - Get all sales with pagination and filtering
 router.get('/', protect, async (req, res) => {
@@ -378,7 +379,7 @@ router.post('/', protect, async (req, res) => {
             createdBy: req.user.id
         };
 
-        const sale = await Sale.create(sanitizedData);
+        const sale = await Sale.create(sanitizedData, getAuditContext(req));
 
         // Fetch the created sale with associations
         const createdSale = await Sale.findByPk(sale.id, {
@@ -493,7 +494,7 @@ router.put('/:id', protect, async (req, res) => {
             assignedTo: assignedTo && assignedTo !== '' ? parseInt(assignedTo) : null
         };
 
-        await sale.update(sanitizedData);
+        await sale.update(sanitizedData, getAuditContext(req));
 
         // Fetch the updated sale with associations
         const updatedSale = await Sale.findByPk(sale.id, {
@@ -549,7 +550,7 @@ router.delete('/:id', protect, async (req, res) => {
             return res.status(404).json({ message: 'Sale not found' });
         }
 
-        await sale.destroy();
+        await sale.destroy(getAuditContext(req));
 
         res.json({ message: 'Sale deleted successfully' });
     } catch (error) {

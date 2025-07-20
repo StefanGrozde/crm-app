@@ -6,6 +6,7 @@ const { protect } = require('../middleware/authMiddleware');
 const bcrypt = require('bcryptjs');
 const { sequelize } = require('../config/db');
 const { Op } = require('sequelize');
+const { getAuditContext } = require('../utils/auditHooks');
 
 // @desc    Get all users with pagination and filtering (Admin only)
 // @route   GET /api/users
@@ -177,7 +178,7 @@ router.post('/', protect, async (req, res) => {
             password, // Will be hashed by the beforeCreate hook
             role: role || 'Sales Representative',
             companyId: companyId || req.user.companyId
-        });
+        }, getAuditContext(req));
 
         // Return user without password
         const userResponse = {
@@ -243,7 +244,7 @@ router.put('/:id', protect, async (req, res) => {
         if (role) user.role = role;
         if (companyId !== undefined) user.companyId = companyId;
 
-        await user.save();
+        await user.save(getAuditContext(req));
 
         // Return updated user
         const userResponse = {
@@ -289,7 +290,7 @@ router.delete('/:id', protect, async (req, res) => {
             return res.status(404).json({ message: 'User not found' });
         }
 
-        await user.destroy();
+        await user.destroy(getAuditContext(req));
 
         res.json({ message: 'User deleted successfully' });
     } catch (error) {
@@ -314,7 +315,7 @@ router.put('/profile', protect, async (req, res) => {
             //     user.password = req.body.password; // The hook in User.js will hash it
             // }
 
-            const updatedUser = await user.save();
+            const updatedUser = await user.save(getAuditContext(req));
 
             res.json({
                 id: updatedUser.id,

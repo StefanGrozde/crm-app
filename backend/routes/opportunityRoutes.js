@@ -7,6 +7,7 @@ const User = require('../models/User');
 const Contact = require('../models/Contact');
 const ListMembership = require('../models/ListMembership');
 const { Op } = require('sequelize');
+const { getAuditContext } = require('../utils/auditHooks');
 
 // GET /api/opportunities - Get all opportunities with pagination and filtering
 router.get('/', protect, async (req, res) => {
@@ -231,7 +232,7 @@ router.post('/', protect, async (req, res) => {
             createdBy: req.user.id
         };
 
-        const opportunity = await Opportunity.create(sanitizedData);
+        const opportunity = await Opportunity.create(sanitizedData, getAuditContext(req));
 
         // Fetch the created opportunity with associations
         const createdOpportunity = await Opportunity.findByPk(opportunity.id, {
@@ -319,7 +320,7 @@ router.put('/:id', protect, async (req, res) => {
             assignedTo: assignedTo && assignedTo !== '' ? parseInt(assignedTo) : null
         };
 
-        await opportunity.update(sanitizedData);
+        await opportunity.update(sanitizedData, getAuditContext(req));
 
         // Fetch the updated opportunity with associations
         const updatedOpportunity = await Opportunity.findByPk(opportunity.id, {
@@ -365,7 +366,7 @@ router.delete('/:id', protect, async (req, res) => {
             return res.status(404).json({ message: 'Opportunity not found' });
         }
 
-        await opportunity.destroy();
+        await opportunity.destroy(getAuditContext(req));
 
         res.json({ message: 'Opportunity deleted successfully' });
     } catch (error) {
