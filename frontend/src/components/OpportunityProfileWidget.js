@@ -2,6 +2,7 @@ import React, { useState, useEffect, useContext, useCallback, memo } from 'react
 import { createPortal } from 'react-dom';
 import axios from 'axios';
 import { AuthContext } from '../context/AuthContext';
+import AuditTimeline from './AuditTimeline';
 
 const API_URL = process.env.REACT_APP_API_URL;
 
@@ -637,6 +638,20 @@ const OpportunityProfileWidget = ({ opportunityId }) => {
                 <div className="mt-6 bg-white rounded-lg border border-gray-200 p-6">
                     <h2 className="text-lg font-semibold text-gray-900 mb-4">Notes</h2>
                     <p className="text-sm text-gray-900 whitespace-pre-wrap">{opportunity.notes}</p>
+                </div>
+            )}
+
+            {/* Changes Section - Audit Timeline */}
+            {opportunity && (
+                <div className="mt-6 bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                    <AuditTimeline
+                        entityType="opportunity"
+                        entityId={opportunity.id}
+                        userRole={user?.role}
+                        className="w-full"
+                        showFilters={true}
+                        maxHeight="max-h-96"
+                    />
                 </div>
             )}
 
