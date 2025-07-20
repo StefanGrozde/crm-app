@@ -258,10 +258,10 @@ Support Team`,
             <div className="flex border-b border-gray-200">
                 <button
                     onClick={() => handleTabChange('comment')}
-                    className={`flex-1 px-4 py-3 text-sm font-medium text-center transition-colors ${
+                    className={`flex-1 px-4 py-3 text-sm font-medium text-center transition-all duration-200 relative ${
                         activeTab === 'comment'
-                            ? 'bg-blue-50 text-blue-700 border-b-2 border-blue-700'
-                            : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
+                            ? 'bg-white text-blue-700 border-2 border-blue-700 border-b-0 rounded-t-lg shadow-sm'
+                            : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50 border-2 border-transparent border-b-gray-200'
                     }`}
                 >
                     <svg className="w-4 h-4 mx-auto mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -271,10 +271,10 @@ Support Team`,
                 </button>
                 <button
                     onClick={() => handleTabChange('email')}
-                    className={`flex-1 px-4 py-3 text-sm font-medium text-center transition-colors ${
+                    className={`flex-1 px-4 py-3 text-sm font-medium text-center transition-all duration-200 relative ${
                         activeTab === 'email'
-                            ? 'bg-green-50 text-green-700 border-b-2 border-green-700'
-                            : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
+                            ? 'bg-white text-green-700 border-2 border-green-700 border-b-0 rounded-t-lg shadow-sm'
+                            : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50 border-2 border-transparent border-b-gray-200'
                     }`}
                     disabled={!contactEmail}
                     title={!contactEmail ? 'No contact email available' : 'Send email to contact'}

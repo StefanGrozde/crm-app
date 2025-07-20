@@ -187,10 +187,44 @@ const TimelineWithComments = React.memo(forwardRef(({
     }
   };
 
+  // Format email body content with proper line breaks
+  const formatEmailBody = (text) => {
+    if (!text) return '';
+    
+    // Remove HTML tags if present
+    const cleanText = text.replace(/<[^>]*>/g, '');
+    
+    // Convert common email patterns to proper line breaks
+    let formatted = cleanText
+      // Convert multiple spaces to single space
+      .replace(/\s+/g, ' ')
+      // Add line breaks before email signatures
+      .replace(/-- /g, '\n-- ')
+      // Add line breaks before email headers like "On [date] at [time]"
+      .replace(/On\s+\w+,\s+\w+\s+\d+,\s+\d+\s+at\s+\d+:\d+\s+(AM|PM)/gi, '\n\n$&')
+      // Add line breaks before "wrote:" patterns
+      .replace(/\s+wrote:\s*/gi, ' wrote:\n')
+      // Add line breaks before email addresses in angle brackets
+      .replace(/\s*<[\w\.-]+@[\w\.-]+>\s*wrote:/gi, ' $& wrote:\n')
+      // Add line breaks before common email footers
+      .replace(/(Travel Agency|www\.|Phone:|Tel:|\+\d{3,})/gi, '\n$1')
+      // Clean up multiple consecutive line breaks
+      .replace(/\n{3,}/g, '\n\n')
+      // Trim whitespace
+      .trim();
+    
+    return formatted;
+  };
+
   // Render comment timeline item
   const renderCommentItem = (comment) => {
     // Check if this is an email-generated comment
     const isEmailComment = comment.comment.startsWith('📧');
+    
+    // Format the comment content for better display
+    const displayContent = isEmailComment 
+      ? formatEmailBody(comment.comment.replace(/^📧\s*/, '')) // Remove email emoji prefix
+      : comment.comment;
     
     return (
       <div className={`bg-white rounded-lg p-6 shadow-sm border w-full max-w-2xl mx-auto ${
@@ -213,8 +247,8 @@ const TimelineWithComments = React.memo(forwardRef(({
             {formatTimestamp(comment.created_at || comment.createdAt)}
           </span>
         </div>
-        <div className="text-sm text-gray-700 whitespace-pre-wrap">
-          {comment.comment}
+        <div className="text-sm text-gray-700 whitespace-pre-wrap break-words">
+          {displayContent}
         </div>
         
         {/* Email indicator for email-generated comments */}
