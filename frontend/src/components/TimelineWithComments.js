@@ -194,8 +194,8 @@ const TimelineWithComments = React.memo(forwardRef(({
     // Remove HTML tags if present
     const cleanText = text.replace(/<[^>]*>/g, '');
     
-    // Split email by common email thread indicators
-    const emailSeparators = [
+    // Look for email thread separators
+    const threadSeparators = [
       /On\s+\w+,\s+\w+\s+\d+,\s+\d+\s+at\s+\d+:\d+\s+(AM|PM)[^:]*wrote:/gi,
       /From:[^@]+@[^\n]+/gi,
       /-----Original Message-----/gi,
@@ -205,55 +205,64 @@ const TimelineWithComments = React.memo(forwardRef(({
     let latestEmail = cleanText;
     let previousEmails = [];
     
-    // Find the first occurrence of any email separator
+    // Find the first occurrence of any thread separator
     let firstSeparatorIndex = -1;
-    let matchedSeparator = null;
     
-    for (const separator of emailSeparators) {
-      const match = cleanText.match(separator);
+    for (const separator of threadSeparators) {
+      separator.lastIndex = 0; // Reset regex lastIndex
+      const match = separator.exec(cleanText);
       if (match) {
-        const index = cleanText.indexOf(match[0]);
+        const index = match.index;
         if (firstSeparatorIndex === -1 || index < firstSeparatorIndex) {
           firstSeparatorIndex = index;
-          matchedSeparator = match[0];
         }
       }
     }
     
     if (firstSeparatorIndex !== -1) {
-      // Split at the first separator
+      // Extract the latest email (everything before the first separator)
       latestEmail = cleanText.substring(0, firstSeparatorIndex).trim();
-      const remainingContent = cleanText.substring(firstSeparatorIndex).trim();
       
-      if (remainingContent) {
-        // Further split the remaining content by similar separators
-        const threadParts = [remainingContent];
+      // Extract the thread history (everything after the first separator)
+      const threadContent = cleanText.substring(firstSeparatorIndex).trim();
+      
+      if (threadContent) {
+        // Split the thread content by additional "On ... wrote:" patterns to separate individual emails
+        const emailPattern = /On\s+\w+,\s+\w+\s+\d+,\s+\d+\s+at\s+\d+:\d+\s+(AM|PM)[^:]*wrote:/gi;
+        const matches = [];
+        let match;
         
-        // Try to split further by additional "On ... wrote:" patterns
-        for (let i = 0; i < threadParts.length; i++) {
-          const part = threadParts[i];
-          const furtherMatches = part.match(/On\s+\w+,\s+\w+\s+\d+,\s+\d+\s+at\s+\d+:\d+\s+(AM|PM)[^:]*wrote:/gi);
-          
-          if (furtherMatches && furtherMatches.length > 1) {
-            // Split by the second occurrence to separate multiple emails in the thread
-            let tempPart = part;
-            const splits = [];
-            
-            for (let j = 1; j < furtherMatches.length; j++) {
-              const splitIndex = tempPart.indexOf(furtherMatches[j]);
-              if (splitIndex > 0) {
-                splits.push(tempPart.substring(0, splitIndex).trim());
-                tempPart = tempPart.substring(splitIndex).trim();
-              }
-            }
-            if (tempPart) splits.push(tempPart);
-            
-            threadParts.splice(i, 1, ...splits);
-            break;
-          }
+        // Reset the regex
+        emailPattern.lastIndex = 0;
+        
+        // Find all "On ... wrote:" patterns in the thread content
+        while ((match = emailPattern.exec(threadContent)) !== null) {
+          matches.push({
+            index: match.index,
+            text: match[0]
+          });
         }
         
-        previousEmails = threadParts.filter(part => part.trim().length > 0);
+        if (matches.length > 0) {
+          // Split by each "On ... wrote:" pattern
+          let currentIndex = 0;
+          
+          for (let i = 0; i < matches.length; i++) {
+            const nextIndex = i < matches.length - 1 ? matches[i + 1].index : threadContent.length;
+            const emailSegment = threadContent.substring(currentIndex, nextIndex).trim();
+            
+            if (emailSegment && emailSegment.length > 50) { // Only include substantial content
+              previousEmails.push(emailSegment);
+            }
+            
+            currentIndex = matches[i].index;
+          }
+        } else {
+          // If no additional patterns found, treat the entire thread content as one previous email
+          if (threadContent.length > 50) {
+            previousEmails.push(threadContent);
+          }
+        }
       }
     }
     
