@@ -187,21 +187,92 @@ const TimelineWithComments = React.memo(forwardRef(({
     }
   };
 
-  // Format email body content with proper line breaks
-  const formatEmailBody = (text) => {
-    if (!text) return '';
+  // Parse email thread to separate latest email from previous ones
+  const parseEmailThread = (text) => {
+    if (!text) return { latestEmail: '', previousEmails: [] };
     
     // Remove HTML tags if present
     const cleanText = text.replace(/<[^>]*>/g, '');
     
+    // Split email by common email thread indicators
+    const emailSeparators = [
+      /On\s+\w+,\s+\w+\s+\d+,\s+\d+\s+at\s+\d+:\d+\s+(AM|PM)[^:]*wrote:/gi,
+      /From:[^@]+@[^\n]+/gi,
+      /-----Original Message-----/gi,
+      /-{3,}\s*Forwarded message\s*-{3,}/gi
+    ];
+    
+    let latestEmail = cleanText;
+    let previousEmails = [];
+    
+    // Find the first occurrence of any email separator
+    let firstSeparatorIndex = -1;
+    let matchedSeparator = null;
+    
+    for (const separator of emailSeparators) {
+      const match = cleanText.match(separator);
+      if (match) {
+        const index = cleanText.indexOf(match[0]);
+        if (firstSeparatorIndex === -1 || index < firstSeparatorIndex) {
+          firstSeparatorIndex = index;
+          matchedSeparator = match[0];
+        }
+      }
+    }
+    
+    if (firstSeparatorIndex !== -1) {
+      // Split at the first separator
+      latestEmail = cleanText.substring(0, firstSeparatorIndex).trim();
+      const remainingContent = cleanText.substring(firstSeparatorIndex).trim();
+      
+      if (remainingContent) {
+        // Further split the remaining content by similar separators
+        const threadParts = [remainingContent];
+        
+        // Try to split further by additional "On ... wrote:" patterns
+        for (let i = 0; i < threadParts.length; i++) {
+          const part = threadParts[i];
+          const furtherMatches = part.match(/On\s+\w+,\s+\w+\s+\d+,\s+\d+\s+at\s+\d+:\d+\s+(AM|PM)[^:]*wrote:/gi);
+          
+          if (furtherMatches && furtherMatches.length > 1) {
+            // Split by the second occurrence to separate multiple emails in the thread
+            let tempPart = part;
+            const splits = [];
+            
+            for (let j = 1; j < furtherMatches.length; j++) {
+              const splitIndex = tempPart.indexOf(furtherMatches[j]);
+              if (splitIndex > 0) {
+                splits.push(tempPart.substring(0, splitIndex).trim());
+                tempPart = tempPart.substring(splitIndex).trim();
+              }
+            }
+            if (tempPart) splits.push(tempPart);
+            
+            threadParts.splice(i, 1, ...splits);
+            break;
+          }
+        }
+        
+        previousEmails = threadParts.filter(part => part.trim().length > 0);
+      }
+    }
+    
+    return {
+      latestEmail: formatEmailContent(latestEmail),
+      previousEmails: previousEmails.map(email => formatEmailContent(email))
+    };
+  };
+
+  // Format individual email content with proper line breaks
+  const formatEmailContent = (text) => {
+    if (!text) return '';
+    
     // Convert common email patterns to proper line breaks
-    let formatted = cleanText
+    let formatted = text
       // Convert multiple spaces to single space
       .replace(/\s+/g, ' ')
       // Add line breaks before email signatures
       .replace(/-- /g, '\n-- ')
-      // Add line breaks before email headers like "On [date] at [time]"
-      .replace(/On\s+\w+,\s+\w+\s+\d+,\s+\d+\s+at\s+\d+:\d+\s+(AM|PM)/gi, '\n\n$&')
       // Add line breaks before "wrote:" patterns
       .replace(/\s+wrote:\s*/gi, ' wrote:\n')
       // Add line breaks before email addresses in angle brackets
@@ -216,15 +287,65 @@ const TimelineWithComments = React.memo(forwardRef(({
     return formatted;
   };
 
+  // Email Thread History Component (for collapsible previous emails)
+  const EmailThreadHistory = ({ previousEmails }) => {
+    const [isExpanded, setIsExpanded] = useState(false);
+    
+    if (!previousEmails || previousEmails.length === 0) return null;
+    
+    return (
+      <div className="mt-4 pt-4 border-t border-blue-200">
+        <button
+          onClick={() => setIsExpanded(!isExpanded)}
+          className="flex items-center text-xs text-blue-600 hover:text-blue-800 transition-colors"
+        >
+          <svg 
+            className={`w-4 h-4 mr-1 transition-transform ${isExpanded ? 'rotate-90' : ''}`} 
+            fill="currentColor" 
+            viewBox="0 0 20 20"
+          >
+            <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd"/>
+          </svg>
+          {isExpanded ? 'Hide' : 'Show'} previous emails in thread ({previousEmails.length})
+        </button>
+        
+        {isExpanded && (
+          <div className="mt-3 space-y-3">
+            {previousEmails.map((email, index) => (
+              <div 
+                key={index}
+                className="bg-gray-50 border border-gray-200 rounded p-3 text-xs"
+              >
+                <div className="text-gray-600 mb-2 font-medium">
+                  Previous Email #{previousEmails.length - index}
+                </div>
+                <div className="text-gray-700 whitespace-pre-wrap break-words">
+                  {email}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   // Render comment timeline item
   const renderCommentItem = (comment) => {
     // Check if this is an email-generated comment
     const isEmailComment = comment.comment.startsWith('📧');
     
-    // Format the comment content for better display
-    const displayContent = isEmailComment 
-      ? formatEmailBody(comment.comment.replace(/^📧\s*/, '')) // Remove email emoji prefix
-      : comment.comment;
+    let displayContent, previousEmails = [];
+    
+    if (isEmailComment) {
+      // Parse email thread to separate latest email from previous ones
+      const emailContent = comment.comment.replace(/^📧\s*/, ''); // Remove email emoji prefix
+      const parsed = parseEmailThread(emailContent);
+      displayContent = parsed.latestEmail;
+      previousEmails = parsed.previousEmails;
+    } else {
+      displayContent = comment.comment;
+    }
     
     return (
       <div className={`bg-white rounded-lg p-6 shadow-sm border w-full max-w-2xl mx-auto ${
@@ -247,6 +368,8 @@ const TimelineWithComments = React.memo(forwardRef(({
             {formatTimestamp(comment.created_at || comment.createdAt)}
           </span>
         </div>
+        
+        {/* Latest email content */}
         <div className="text-sm text-gray-700 whitespace-pre-wrap break-words">
           {displayContent}
         </div>
@@ -262,6 +385,11 @@ const TimelineWithComments = React.memo(forwardRef(({
               Auto-generated from email
             </div>
           </div>
+        )}
+        
+        {/* Previous emails in thread (collapsible) */}
+        {isEmailComment && previousEmails.length > 0 && (
+          <EmailThreadHistory previousEmails={previousEmails} />
         )}
       </div>
     );
