@@ -194,23 +194,32 @@ const TimelineWithComments = React.memo(forwardRef(({
     // Remove HTML tags if present
     const cleanText = text.replace(/<[^>]*>/g, '');
     
-    // Look for email thread separators
+    // Special handling for emails that start with headers (From:, Subject:, Received:)
+    let emailBody = cleanText;
+    
+    // If email starts with headers, extract the actual content after them
+    const headerPattern = /^(From:.*?\n)?(Subject:.*?\n)?(Received:.*?\n)?(.*)$/s;
+    const headerMatch = cleanText.match(headerPattern);
+    if (headerMatch && headerMatch[4]) {
+      emailBody = headerMatch[4].trim();
+    }
+    
+    // Look for email thread separators (excluding the header "From:" pattern)
     const threadSeparators = [
       /On\s+\w+,\s+\w+\s+\d+,\s+\d+\s+at\s+\d+:\d+\s+(AM|PM)[^:]*wrote:/gi,
-      /From:[^@]+@[^\n]+/gi,
       /-----Original Message-----/gi,
       /-{3,}\s*Forwarded message\s*-{3,}/gi
     ];
     
-    let latestEmail = cleanText;
+    let latestEmail = emailBody;
     let previousEmails = [];
     
-    // Find the first occurrence of any thread separator
+    // Find the first occurrence of thread separator (excluding initial headers)
     let firstSeparatorIndex = -1;
     
     for (const separator of threadSeparators) {
       separator.lastIndex = 0; // Reset regex lastIndex
-      const match = separator.exec(cleanText);
+      const match = separator.exec(emailBody);
       if (match) {
         const index = match.index;
         if (firstSeparatorIndex === -1 || index < firstSeparatorIndex) {
@@ -220,14 +229,14 @@ const TimelineWithComments = React.memo(forwardRef(({
     }
     
     if (firstSeparatorIndex !== -1) {
-      // Extract the latest email (everything before the first separator)
-      latestEmail = cleanText.substring(0, firstSeparatorIndex).trim();
+      // Extract the latest email (everything before the first thread separator)
+      latestEmail = emailBody.substring(0, firstSeparatorIndex).trim();
       
       // Extract the thread history (everything after the first separator)
-      const threadContent = cleanText.substring(firstSeparatorIndex).trim();
+      const threadContent = emailBody.substring(firstSeparatorIndex).trim();
       
       if (threadContent) {
-        // Split the thread content by additional "On ... wrote:" patterns to separate individual emails
+        // Split the thread content by "On ... wrote:" patterns to separate individual emails
         const emailPattern = /On\s+\w+,\s+\w+\s+\d+,\s+\d+\s+at\s+\d+:\d+\s+(AM|PM)[^:]*wrote:/gi;
         const matches = [];
         let match;
