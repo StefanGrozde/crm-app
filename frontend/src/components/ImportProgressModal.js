@@ -6,10 +6,12 @@ const ImportProgressModal = ({ isOpen, importId, onComplete, onClose }) => {
   const [error, setError] = useState(null);
   const [pollingInterval, setPollingInterval] = useState(null);
   const [startTime, setStartTime] = useState(null);
+  const [userClosed, setUserClosed] = useState(false);
 
   useEffect(() => {
     if (isOpen && importId) {
       setStartTime(Date.now());
+      setUserClosed(false); // Reset the flag when modal opens
       startPolling();
     }
     
@@ -85,9 +87,11 @@ const ImportProgressModal = ({ isOpen, importId, onComplete, onClose }) => {
       const result = await response.json();
       
       if (result.success) {
-        // Delay to show completion state
+        // Delay to show completion state, but only call onComplete if user hasn't closed the modal
         setTimeout(() => {
-          onComplete(result.data);
+          if (!userClosed) {
+            onComplete(result.data);
+          }
         }, 1500);
       } else {
         throw new Error(result.message || 'Failed to fetch results');
@@ -96,6 +100,15 @@ const ImportProgressModal = ({ isOpen, importId, onComplete, onClose }) => {
       console.error('Error fetching final results:', error);
       setError(error.message);
     }
+  };
+
+  const handleClose = () => {
+    setUserClosed(true);
+    if (pollingInterval) {
+      clearInterval(pollingInterval);
+      setPollingInterval(null);
+    }
+    onClose();
   };
 
   const getStatusColor = (status) => {
@@ -196,7 +209,7 @@ const ImportProgressModal = ({ isOpen, importId, onComplete, onClose }) => {
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-bold">Import Progress</h2>
             <button
-              onClick={onClose}
+              onClick={handleClose}
               className="text-white hover:text-gray-200 transition-colors"
             >
               <X size={20} />
@@ -211,7 +224,7 @@ const ImportProgressModal = ({ isOpen, importId, onComplete, onClose }) => {
               <AlertCircle className="mx-auto mb-4 text-red-500" size={48} />
               <p className="text-red-600 mb-4">{error}</p>
               <button
-                onClick={onClose}
+                onClick={handleClose}
                 className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
               >
                 Close
@@ -337,7 +350,7 @@ const ImportProgressModal = ({ isOpen, importId, onComplete, onClose }) => {
           <div className="bg-gray-50 px-6 py-4 border-t border-gray-200">
             <div className="flex justify-end space-x-3">
               <button
-                onClick={onClose}
+                onClick={handleClose}
                 className="px-4 py-2 text-gray-600 bg-gray-200 rounded hover:bg-gray-300 transition-colors"
               >
                 Close
