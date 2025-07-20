@@ -260,7 +260,7 @@ Support Team`,
                     onClick={() => handleTabChange('comment')}
                     className={`flex-1 px-4 py-3 text-sm font-medium text-center transition-all duration-200 relative ${
                         activeTab === 'comment'
-                            ? 'bg-white text-blue-700 border-2 border-blue-700 border-b-0 rounded-t-lg shadow-sm'
+                            ? 'bg-blue-50 text-blue-700 border-2 border-blue-700 border-b-0 rounded-t-lg shadow-sm'
                             : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50 border-2 border-transparent border-b-gray-200'
                     }`}
                 >
@@ -273,7 +273,7 @@ Support Team`,
                     onClick={() => handleTabChange('email')}
                     className={`flex-1 px-4 py-3 text-sm font-medium text-center transition-all duration-200 relative ${
                         activeTab === 'email'
-                            ? 'bg-white text-green-700 border-2 border-green-700 border-b-0 rounded-t-lg shadow-sm'
+                            ? 'bg-green-50 text-green-700 border-2 border-green-700 border-b-0 rounded-t-lg shadow-sm'
                             : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50 border-2 border-transparent border-b-gray-200'
                     }`}
                     disabled={!contactEmail}
