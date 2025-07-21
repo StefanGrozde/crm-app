@@ -89,7 +89,7 @@ class WebhookHealthMonitor {
 
       // Calculate webhook age and time until expiration
       const expirationTime = new Date(emailConfig.webhookExpirationDateTime);
-      const creationTime = new Date(emailConfig.webhookCreatedAt || emailConfig.updatedAt);
+      const creationTime = new Date(emailConfig.updatedAt); // Use updatedAt as proxy for webhook creation time
       const now = new Date();
       
       const hoursUntilExpiry = (expirationTime - now) / (1000 * 60 * 60);
