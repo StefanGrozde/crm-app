@@ -342,11 +342,24 @@ class WebhookMonitorService {
    * Get service status
    */
   getStatus() {
+    let nextRunTime = null;
+    
+    if (this.cronJob && this.isRunning) {
+      try {
+        // Use nextDate() method (singular) and handle potential errors
+        const nextDate = this.cronJob.nextDate();
+        nextRunTime = nextDate ? nextDate.toString() : null;
+      } catch (error) {
+        console.warn('[WEBHOOK-MONITOR] Could not get next run time:', error.message);
+        nextRunTime = 'Unknown';
+      }
+    }
+    
     return {
       isRunning: this.isRunning,
       lastRunTime: this.lastRunTime,
       lastRunResults: this.lastRunResults,
-      nextRunTime: this.cronJob ? this.cronJob.nextDates().toString() : null,
+      nextRunTime,
       schedule: 'Every 6 hours (00:00, 06:00, 12:00, 18:00 UTC)'
     };
   }
