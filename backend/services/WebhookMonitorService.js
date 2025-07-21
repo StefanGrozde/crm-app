@@ -87,16 +87,23 @@ class WebhookHealthMonitor {
         return;
       }
 
-      // Check if webhook is approaching expiration (within 12 hours)
+      // Calculate webhook age and time until expiration
       const expirationTime = new Date(emailConfig.webhookExpirationDateTime);
+      const creationTime = new Date(emailConfig.webhookCreatedAt || emailConfig.updatedAt);
       const now = new Date();
+      
       const hoursUntilExpiry = (expirationTime - now) / (1000 * 60 * 60);
+      const hoursOld = (now - creationTime) / (1000 * 60 * 60);
+      
+      console.log(`⏳ [WEBHOOK-MONITOR] Webhook age: ${hoursOld.toFixed(1)} hours, expires in: ${hoursUntilExpiry.toFixed(1)} hours`);
 
-      console.log(`⏳ [WEBHOOK-MONITOR] Hours until expiry: ${hoursUntilExpiry.toFixed(1)}`);
-
-      // If expired or expiring within 12 hours, try to renew first
-      if (hoursUntilExpiry <= 12) {
-        console.log('🔄 [WEBHOOK-MONITOR] Webhook expiring soon, attempting renewal...');
+      // Proactive renewal strategy: renew webhooks that are 72+ hours old or expiring within 24 hours
+      const shouldRenew = hoursOld >= 72 || hoursUntilExpiry <= 24;
+      
+      if (shouldRenew) {
+        const reason = hoursOld >= 72 ? 'scheduled 72-hour renewal' : 'approaching expiration';
+        console.log(`🔄 [WEBHOOK-MONITOR] Webhook renewal needed (${reason}), attempting renewal...`);
+        
         const renewed = await this.renewWebhook(emailConfig, company);
         
         if (renewed) {
@@ -118,8 +125,8 @@ class WebhookHealthMonitor {
         }
       }
 
-      // If not expiring soon, test if the webhook actually exists at Microsoft
-      console.log('🧪 [WEBHOOK-MONITOR] Testing webhook existence at Microsoft...');
+      // If webhook is still young and not expiring soon, verify it exists at Microsoft
+      console.log('🧪 [WEBHOOK-MONITOR] Webhook is current, verifying existence at Microsoft...');
       const exists = await this.testWebhookExists(emailConfig, company);
       
       if (exists) {
@@ -252,11 +259,12 @@ class WebhookMonitorService {
     }
 
     console.log('🚀 Starting Webhook Monitor Service...');
-    console.log('📅 Schedule: Every 6 hours (00:00, 06:00, 12:00, 18:00 UTC)');
+    console.log('📅 Schedule: Every 72 hours (3 days) at midnight UTC');
 
-    // Schedule the cron job - every 6 hours
+    // Schedule the cron job - every 3 days (72 hours) at midnight UTC
     // Format: minute hour day month dayOfWeek
-    this.cronJob = cron.schedule('0 */6 * * *', async () => {
+    // This runs every 3rd day starting from when the service starts
+    this.cronJob = cron.schedule('0 0 */3 * *', async () => {
       await this.runHealthCheck();
     }, {
       scheduled: false, // Don't start immediately
@@ -270,6 +278,7 @@ class WebhookMonitorService {
     console.log('✅ Webhook monitor service started successfully');
     
     // Run an initial check after 30 seconds to allow app to fully initialize
+    // This will check for any immediately needed renewals or repairs
     setTimeout(() => {
       this.runHealthCheck();
     }, 30000);
@@ -360,7 +369,7 @@ class WebhookMonitorService {
       lastRunTime: this.lastRunTime,
       lastRunResults: this.lastRunResults,
       nextRunTime,
-      schedule: 'Every 6 hours (00:00, 06:00, 12:00, 18:00 UTC)'
+      schedule: 'Every 72 hours (3 days) at midnight UTC'
     };
   }
 

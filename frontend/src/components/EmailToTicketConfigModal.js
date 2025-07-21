@@ -574,12 +574,14 @@ const EmailToTicketConfigModal = ({ isOpen, onClose }) => {
                       <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
                         <h4 className="font-medium text-blue-900 mb-2">About Webhook Monitor</h4>
                         <p className="text-sm text-blue-800">
-                          The webhook monitor automatically checks Microsoft Graph webhook subscriptions every 6 hours. 
-                          It will renew expiring subscriptions or recreate missing ones to ensure continuous email processing.
+                          The webhook monitor automatically renews Microsoft Graph webhook subscriptions every 72 hours (3 days) to prevent expiration. 
+                          It also checks for missing subscriptions and recreates them as needed.
                         </p>
                         <p className="text-sm text-blue-800 mt-2">
-                          <strong>🚨 Fix All Webhooks:</strong> Use this button if emails are not being processed. 
-                          It will recreate all webhook subscriptions immediately.
+                          <strong>🔄 Run Health Check:</strong> Manually check and renew webhooks that are 72+ hours old.
+                        </p>
+                        <p className="text-sm text-blue-800 mt-1">
+                          <strong>🚨 Fix All Webhooks:</strong> Emergency button to recreate all webhook subscriptions immediately.
                         </p>
                       </div>
                     </div>
