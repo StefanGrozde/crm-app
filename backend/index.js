@@ -27,6 +27,7 @@ const auditRoutes = require('./routes/auditRoutes');
 const messengerRoutes = require('./routes/messengerRoutes');
 const emailToTicketRoutes = require('./routes/emailToTicketRoutes');
 const bulkImportRoutes = require('./routes/bulkImportRoutes');
+const webhookMonitorRoutes = require('./routes/webhookMonitorRoutes');
 const path = require('path');
 
 console.log("Application starting...");
@@ -104,6 +105,7 @@ app.use('/api/audit-logs', auditRoutes);
 app.use('/api/messenger', messengerRoutes);
 app.use('/api/email-to-ticket', emailToTicketRoutes);
 app.use('/api/bulk-import', bulkImportRoutes);
+app.use('/api/webhook-monitor', webhookMonitorRoutes);
 app.use('/api/widgets/buildin', express.static(path.join(__dirname, 'widgets', 'buildin')));
 app.use('/api/widgets/custom', express.static(path.join(__dirname, 'widgets', 'custom')));
 // Test Route to check DB connection
@@ -357,6 +359,10 @@ const startServer = async () => {
     // Use { force: true } only in development to drop and re-create tables
     // await sequelize.sync({ force: true });
     await sequelize.sync();
+    
+    // Start the webhook monitor service
+    const webhookMonitorService = require('./services/WebhookMonitorService');
+    webhookMonitorService.start();
     
     app.listen(PORT, () => {
         console.log(`Server running on port ${PORT}`);

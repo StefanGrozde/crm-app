@@ -12,6 +12,12 @@ const EmailToTicketConfigModal = ({ isOpen, onClose }) => {
   const [showConfigModal, setShowConfigModal] = useState(false);
   const [editingConfig, setEditingConfig] = useState(null);
   const [activeTab, setActiveTab] = useState('overview');
+  
+  // Webhook Monitor state
+  const [webhookStatus, setWebhookStatus] = useState(null);
+  const [webhookLoading, setWebhookLoading] = useState(false);
+  const [webhookError, setWebhookError] = useState(null);
+  const [lastWebhookAction, setLastWebhookAction] = useState(null);
 
   const isAdmin = user?.role === 'Administrator';
 
@@ -19,8 +25,11 @@ const EmailToTicketConfigModal = ({ isOpen, onClose }) => {
     if (isOpen && isAdmin) {
       fetchConfigurations();
       fetchStats();
+      if (activeTab === 'monitoring') {
+        fetchWebhookStatus();
+      }
     }
-  }, [isOpen, isAdmin]);
+  }, [isOpen, isAdmin, activeTab]);
 
   const fetchConfigurations = async () => {
     try {
@@ -128,6 +137,94 @@ const EmailToTicketConfigModal = ({ isOpen, onClose }) => {
     }
   };
 
+  // Webhook Monitor functions
+  const fetchWebhookStatus = async () => {
+    try {
+      setWebhookLoading(true);
+      setWebhookError(null);
+
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/webhook-monitor/status`, {
+        credentials: 'include'
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      setWebhookStatus(data.status);
+    } catch (error) {
+      console.error('Error fetching webhook monitor status:', error);
+      setWebhookError(error.message);
+    } finally {
+      setWebhookLoading(false);
+    }
+  };
+
+  const runWebhookHealthCheck = async () => {
+    try {
+      setWebhookLoading(true);
+      setWebhookError(null);
+      setLastWebhookAction('Running health check...');
+
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/webhook-monitor/check`, {
+        method: 'POST',
+        credentials: 'include'
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      setLastWebhookAction(`Health check completed: ${data.results.recreated} recreated, ${data.results.failed} failed`);
+      
+      // Refresh configurations and webhook status
+      await fetchConfigurations();
+      await fetchWebhookStatus();
+    } catch (error) {
+      console.error('Error running health check:', error);
+      setWebhookError(error.message);
+      setLastWebhookAction('Health check failed');
+    } finally {
+      setWebhookLoading(false);
+    }
+  };
+
+  const forceRecreateAllWebhooks = async () => {
+    if (!window.confirm('This will recreate ALL webhook subscriptions. Are you sure?')) {
+      return;
+    }
+
+    try {
+      setWebhookLoading(true);
+      setWebhookError(null);
+      setLastWebhookAction('Force recreating all webhooks...');
+
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/webhook-monitor/force-recreate`, {
+        method: 'POST',
+        credentials: 'include'
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      setLastWebhookAction(`Force recreation completed: ${data.results.recreated} recreated, ${data.results.failed} failed`);
+      
+      // Refresh configurations and webhook status
+      await fetchConfigurations();
+      await fetchWebhookStatus();
+    } catch (error) {
+      console.error('Error force recreating webhooks:', error);
+      setWebhookError(error.message);
+      setLastWebhookAction('Force recreation failed');
+    } finally {
+      setWebhookLoading(false);
+    }
+  };
+
   const handleConfigurationSaved = () => {
     setShowConfigModal(false);
     setEditingConfig(null);
@@ -201,6 +298,16 @@ const EmailToTicketConfigModal = ({ isOpen, onClose }) => {
                 }`}
               >
                 Processing History
+              </button>
+              <button
+                onClick={() => setActiveTab('monitoring')}
+                className={`py-4 px-6 text-sm font-medium border-b-2 ${
+                  activeTab === 'monitoring'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                Webhook Monitor
               </button>
             </nav>
           </div>
@@ -344,6 +451,159 @@ const EmailToTicketConfigModal = ({ isOpen, onClose }) => {
 
             {activeTab === 'history' && (
               <EmailProcessingHistory />
+            )}
+
+            {activeTab === 'monitoring' && (
+              <div className="space-y-6">
+                {/* Webhook Monitor Content */}
+                {webhookError && (
+                  <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                    <p className="text-red-800 text-sm">{webhookError}</p>
+                  </div>
+                )}
+
+                {lastWebhookAction && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <p className="text-blue-800 text-sm">{lastWebhookAction}</p>
+                  </div>
+                )}
+
+                {webhookStatus && (
+                  <div className="space-y-4">
+                    {/* Service Status */}
+                    <div className="bg-gray-50 rounded-lg p-6">
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-lg font-medium text-gray-900">Webhook Monitor Service</h3>
+                        <button
+                          onClick={fetchWebhookStatus}
+                          disabled={webhookLoading}
+                          className="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded hover:bg-gray-200 disabled:opacity-50"
+                        >
+                          {webhookLoading ? 'Loading...' : 'Refresh'}
+                        </button>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                          <span className="text-gray-600">Status:</span>
+                          <span className={`ml-2 px-2 py-1 rounded text-xs ${
+                            webhookStatus.isRunning ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                          }`}>
+                            {webhookStatus.isRunning ? 'Running' : 'Stopped'}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-gray-600">Schedule:</span>
+                          <span className="ml-2 text-gray-900">{webhookStatus.schedule}</span>
+                        </div>
+                        <div>
+                          <span className="text-gray-600">Last Run:</span>
+                          <span className="ml-2 text-gray-900">
+                            {webhookStatus.lastRunTime ? new Date(webhookStatus.lastRunTime).toLocaleString() : 'Never'}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-gray-600">Next Run:</span>
+                          <span className="ml-2 text-gray-900">
+                            {webhookStatus.nextRunTime ? new Date(webhookStatus.nextRunTime).toLocaleString() : 'Unknown'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Last Run Results */}
+                    {webhookStatus.lastRunResults && (
+                      <div className="bg-gray-50 rounded-lg p-6">
+                        <h3 className="text-lg font-medium text-gray-900 mb-4">Last Run Results</h3>
+                        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
+                          <div className="text-center">
+                            <div className="text-2xl font-semibold text-gray-900">{webhookStatus.lastRunResults.checked}</div>
+                            <div className="text-gray-600">Checked</div>
+                          </div>
+                          <div className="text-center">
+                            <div className="text-2xl font-semibold text-green-600">{webhookStatus.lastRunResults.healthy}</div>
+                            <div className="text-gray-600">Healthy</div>
+                          </div>
+                          <div className="text-center">
+                            <div className="text-2xl font-semibold text-blue-600">{webhookStatus.lastRunResults.renewed}</div>
+                            <div className="text-gray-600">Renewed</div>
+                          </div>
+                          <div className="text-center">
+                            <div className="text-2xl font-semibold text-orange-600">{webhookStatus.lastRunResults.recreated}</div>
+                            <div className="text-gray-600">Recreated</div>
+                          </div>
+                          <div className="text-center">
+                            <div className="text-2xl font-semibold text-red-600">{webhookStatus.lastRunResults.failed}</div>
+                            <div className="text-gray-600">Failed</div>
+                          </div>
+                        </div>
+                        {webhookStatus.lastRunResults.errors && webhookStatus.lastRunResults.errors.length > 0 && (
+                          <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded text-xs">
+                            <strong>Errors:</strong>
+                            <ul className="mt-2 list-disc list-inside">
+                              {webhookStatus.lastRunResults.errors.map((error, index) => (
+                                <li key={index} className="text-red-800">{error}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Actions */}
+                    <div className="bg-white border border-gray-200 rounded-lg p-6">
+                      <h3 className="text-lg font-medium text-gray-900 mb-4">Webhook Actions</h3>
+                      <div className="flex flex-wrap gap-3">
+                        <button
+                          onClick={runWebhookHealthCheck}
+                          disabled={webhookLoading}
+                          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+                        >
+                          Run Health Check
+                        </button>
+                        
+                        <button
+                          onClick={forceRecreateAllWebhooks}
+                          disabled={webhookLoading}
+                          className="px-4 py-2 bg-orange-600 text-white rounded hover:bg-orange-700 disabled:opacity-50"
+                        >
+                          🚨 Fix All Webhooks
+                        </button>
+                      </div>
+                      
+                      <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                        <h4 className="font-medium text-blue-900 mb-2">About Webhook Monitor</h4>
+                        <p className="text-sm text-blue-800">
+                          The webhook monitor automatically checks Microsoft Graph webhook subscriptions every 6 hours. 
+                          It will renew expiring subscriptions or recreate missing ones to ensure continuous email processing.
+                        </p>
+                        <p className="text-sm text-blue-800 mt-2">
+                          <strong>🚨 Fix All Webhooks:</strong> Use this button if emails are not being processed. 
+                          It will recreate all webhook subscriptions immediately.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {!webhookStatus && !webhookLoading && !webhookError && (
+                  <div className="text-center py-8">
+                    <button
+                      onClick={fetchWebhookStatus}
+                      className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                    >
+                      Load Webhook Monitor Status
+                    </button>
+                  </div>
+                )}
+
+                {webhookLoading && (
+                  <div className="text-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                    <p className="text-gray-500 mt-2">Loading webhook monitor status...</p>
+                  </div>
+                )}
+              </div>
             )}
           </div>
         </div>
